@@ -12,6 +12,7 @@
   import StatusBar from './StatusBar.svelte'
   import ToolButton from './ToolButton.svelte'
   import Preferences from './Preferences.svelte'
+  import SaveIndicator from './SaveIndicator.svelte'
   import Outline, { type Entry } from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
@@ -1117,6 +1118,7 @@
           <ToolButton icon="link" label="Link" hint="{keyMod}K" disabled={open === null} onclick={() => formatActive('link')} />
         </span>
         <span class="tools right">
+          {#if open}<SaveIndicator status={saveStatus} />{/if}
           <ToolButton icon="outline" label="{outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={outlineOpen} onclick={toggleOutline} />
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
@@ -1148,9 +1150,6 @@
             {/each}
           </div>
         {/key}
-        <span class="status" class:problem={saveStatus === 'error'} aria-live="polite">
-          {saveStatus === 'error' ? 'Could not save — retrying' : ''}
-        </span>
       {:else if selection.length > 1}
         <p class="hint">{selection.length} sheets selected.</p>
       {:else}
@@ -1477,15 +1476,5 @@
     margin: 28px auto;
     border: none;
     border-top: 1px dashed var(--border);
-  }
-  .status {
-    position: fixed;
-    right: 16px;
-    bottom: 12px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .status.problem {
-    color: #c0392b;
   }
 </style>
