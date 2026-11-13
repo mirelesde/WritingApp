@@ -22,3 +22,7 @@ npm test           # core unit tests
 npm run typecheck  # type-check every package
 npm run build      # production build of the desktop app
 ```
+
+## Licence
+
+[AGPL-3.0](LICENSE).

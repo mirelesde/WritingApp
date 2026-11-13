@@ -6,7 +6,7 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 
 ## Status
 
-- **Done:** milestone 1 (scaffold), except the licence, which is undecided.
+- **Done:** milestone 1 (scaffold). Licensed AGPL-3.0.
 - **Next:** milestone 2 (library core), then milestone 3 (library UI).
 - The app currently opens an empty placeholder window. It cannot open a
   library yet.
@@ -154,7 +154,7 @@ Proposed sidecar shape (not yet implemented):
 Each milestone ends with something usable. Do not start the next one until
 the "done when" line is true.
 
-### 1. Scaffold — done, licence outstanding
+### 1. Scaffold — done
 - `git init`, licence, npm workspace.
 - `apps/desktop`: Electron + Svelte + TypeScript.
 - `packages/core`: plain TypeScript with a test harness. It must never
@@ -274,8 +274,6 @@ Notes for this milestone:
 
 ## Open questions
 
-- **Licence.** Not chosen yet; no licence file is in the repo. AGPL-3.0 and
-  MIT are the candidates.
 - **"Join".** Confirm whether this means something different from merge.
 - **Images.** Where attached images live on disk (next to the sheet, or in
   a per-folder assets directory). Needed before milestone 7.

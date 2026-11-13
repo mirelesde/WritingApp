@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "WritingApp desktop app",
+  "license": "AGPL-3.0-only",
   "main": "./out/main/index.js",
   "scripts": {
     "format": "prettier --plugin prettier-plugin-svelte --write .",
