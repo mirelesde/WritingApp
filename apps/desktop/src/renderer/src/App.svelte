@@ -617,6 +617,40 @@
     }
   }
 
+  let templates = $state<{ name: string; path: string }[]>([])
+
+  async function newFromTemplate(template: string): Promise<void> {
+    const parent = group
+    if (!parent) return
+    const at = parent.children.findIndex((c) => c.path === cursor)
+    const result = await runOp(() =>
+      window.api.newFromTemplate(parent.path, template, at >= 0 ? at + 1 : undefined)
+    )
+    if (result?.created) {
+      anchor = result.created
+      await setSelection([result.created], result.created, true)
+    }
+  }
+
+  async function openDailyNote(): Promise<void> {
+    const parent = group
+    if (!parent) return
+    const result = await runOp(() => window.api.dailyNote(parent.path))
+    if (result?.created) {
+      anchor = result.created
+      await setSelection([result.created], result.created, true)
+    }
+  }
+
+  async function saveAsTemplate(): Promise<void> {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const text = path ? editors[path]?.getText() : undefined
+    if (text === undefined) return
+    await window.api.saveTemplate(text)
+    templates = await window.api.listTemplates()
+    showInfo('Saved as a template')
+  }
+
   async function newGroup(inRoot: boolean): Promise<void> {
     if (!library) return
     const parent = inRoot ? library.tree.path : selectedGroup
@@ -1108,6 +1142,9 @@
     if (command === 'toggle-sidebar') toggleSidebar()
     else if (command === 'toggle-sheets') toggleSheets()
     else if (command === 'new-sheet') void newSheet()
+    else if (command === 'daily-note') void openDailyNote()
+    else if (command === 'save-template') void saveAsTemplate()
+    else if (command === 'new-from-template') openPalette()
     else if (command === 'move-to') openMoveTo()
     else if (command === 'export-html') void openExport()
     else if (command === 'search') openSearch()
@@ -1143,6 +1180,7 @@
   function openPalette(): void {
     searchReturnFocus = document.activeElement as HTMLElement | null
     palette = true
+    void window.api.listTemplates().then((found) => (templates = found))
   }
 
   function closePalette(): void {
@@ -1173,6 +1211,14 @@
     const view = prefs
     const list: PaletteCommand[] = [
       menu('File', 'New Sheet', 'new-sheet', `${keyMod}N`),
+      ...templates.map((t) => ({
+        id: `File:template:${t.path}`,
+        section: 'File',
+        label: `New Sheet from Template: ${t.name}`,
+        run: () => void newFromTemplate(t.path)
+      })),
+      menu('File', 'Daily Note', 'daily-note', `${keyMod}⌥D`),
+      menu('File', 'Save Sheet as Template', 'save-template'),
       menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
       menu('File', 'New Project', 'new-project'),
       menu('File', 'Move to…', 'move-to', `${keyMod}${keyShift}M`),

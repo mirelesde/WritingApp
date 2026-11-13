@@ -80,3 +80,13 @@ export {
   stripFootnotes
 } from './footnotes'
 export type { FootnoteDef, FootnoteRef, TextChange } from './footnotes'
+export {
+  createFromTemplate,
+  dailyNote,
+  fillTemplate,
+  isoDate,
+  listTemplates,
+  saveAsTemplate,
+  TEMPLATES_DIR
+} from './templates'
+export type { Template } from './templates'

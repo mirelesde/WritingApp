@@ -4,7 +4,11 @@ import { join } from 'node:path'
 import {
   applyUndo,
   createGroup,
+  createFromTemplate,
   createSheet,
+  dailyNote,
+  listTemplates,
+  saveAsTemplate,
   deleteNodeUndoable,
   exportHtml,
   glueSheets,
@@ -282,6 +286,32 @@ export function registerLibraryIpc(): void {
       const parent = inside(group, true)
       const at = typeof index === 'number' ? index : undefined
       return { created: await createSheet(fs, parent, '', at) }
+    })
+  )
+
+  ipcMain.handle('templates:list', async () =>
+    currentRoot ? listTemplates(fs, currentRoot) : []
+  )
+
+  ipcMain.handle('templates:save', async (_event, text: unknown) => {
+    if (!currentRoot || typeof text !== 'string') throw new Error('No library is open')
+    await saveAsTemplate(fs, currentRoot, text)
+  })
+
+  ipcMain.handle('op:newFromTemplate', (_event, group: unknown, template: unknown, index: unknown) =>
+    change(async (root) => {
+      const parent = inside(group, true)
+      const source = inside(template)
+      if (!source.startsWith(`${root}/.templates/`)) throw new Error('Not a template')
+      const at = typeof index === 'number' ? index : undefined
+      return { created: await createFromTemplate(fs, parent, source, new Date(), at) }
+    })
+  )
+
+  ipcMain.handle('op:dailyNote', (_event, group: unknown) =>
+    change(async (root) => {
+      const parent = inside(group, true)
+      return { created: (await dailyNote(fs, root, parent, new Date())).path }
     })
   )
 

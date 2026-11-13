@@ -8,6 +8,11 @@ const api: Api = {
   readSheet: (path) => ipcRenderer.invoke('sheet:read', path),
   writeSheet: (path, text) => ipcRenderer.invoke('sheet:write', path, text),
   createSheet: (group, index) => ipcRenderer.invoke('op:createSheet', group, index),
+  listTemplates: () => ipcRenderer.invoke('templates:list'),
+  saveTemplate: (text) => ipcRenderer.invoke('templates:save', text),
+  newFromTemplate: (group, template, index) =>
+    ipcRenderer.invoke('op:newFromTemplate', group, template, index),
+  dailyNote: (group) => ipcRenderer.invoke('op:dailyNote', group),
   createGroup: (parent, name) => ipcRenderer.invoke('op:createGroup', parent, name),
   renameGroup: (path, name) => ipcRenderer.invoke('op:renameGroup', path, name),
   syncSheetNames: (paths) => ipcRenderer.invoke('op:syncSheetNames', paths),

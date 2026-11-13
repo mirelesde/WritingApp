@@ -541,7 +541,7 @@ asked for directly.
     (default), title, modified date, created date or word count; the card
     can show the date. Manual order stays in the sidecar, so sorting only
     changes the view until the user reorders.
-48. **Sheet templates and daily note.** New Sheet from Template, with
+48. ~~**Sheet templates and daily note.**~~ **Done.** File > New Sheet from Template… (palette entries per template), Save Sheet as Template, and Daily Note (Cmd/Ctrl+Alt+D); `{{date}}`, `{{time}}`, `{{weekday}}` are filled in, and a template titled "Daily Note" seeds each day. New Sheet from Template, with
     templates kept as sheets in a hidden `.templates` group, and a Daily
     Note command that opens or creates today's sheet in a chosen group.
 49. ~~**External change handling.**~~ **Done.** When a sheet changes on disk while it is
@@ -588,7 +588,7 @@ asked for directly.
     HTML export renderer in the sandboxed iframe. Scroll sync is optional.
 19. **Favorites (pinned sheets).** A pinned section at the top of the
     library; stored in the root sidecar so it travels with the folder.
-20. **Footnotes.** `[^1]` syntax rendered in export and preview, with
+20. **Footnotes.** *Mostly done:* Insert > Footnote, a chip with an editable popover, hidden from previews and numbered in HTML export; PDF shares the HTML path. Still to do: jump between reference and definition.* `[^1]` syntax rendered in export and preview, with
     editor highlighting and jump between reference and definition. Needs a
     `marked` footnote extension.
 21. **Goals and progress.** A word target per sheet or group with a

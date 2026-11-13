@@ -36,6 +36,9 @@ export type MenuCommand =
   | 'undo-sheet-change'
   | 'delete'
   | 'toggle-sidebar'
+  | 'daily-note'
+  | 'save-template'
+  | 'new-from-template'
   | 'toggle-sheets'
   | 'insert-table'
   | 'insert-footnote'
@@ -68,6 +71,14 @@ export interface Api {
   writeSheet(path: string, text: string): Promise<void>
   /** Creates a sheet in a group, at `index` among its children (default: the end). */
   createSheet(group: string, index?: number): Promise<OpResult>
+  /** The templates kept in the library's hidden `.templates` folder. */
+  listTemplates(): Promise<{ name: string; path: string }[]>
+  /** Keeps text as a new template. */
+  saveTemplate(text: string): Promise<void>
+  /** Creates a sheet in a group from a template, filling in its dates. */
+  newFromTemplate(group: string, template: string, index?: number): Promise<OpResult>
+  /** Opens today's sheet in a group, creating it first if needed. */
+  dailyNote(group: string): Promise<OpResult>
   /** Creates a group inside `parent` (at the library root, a project). */
   createGroup(parent: string, name?: string): Promise<OpResult>
   /** Renames a group. Rejects if a sibling already has the name. */

@@ -148,6 +148,19 @@ function buildMenu(): Menu {
           accelerator: 'CmdOrCtrl+Alt+Shift+N',
           click: () => sendCommand('new-project')
         },
+        {
+          label: 'New Sheet from Template…',
+          click: () => sendCommand('new-from-template')
+        },
+        {
+          label: 'Daily Note',
+          accelerator: 'CmdOrCtrl+Alt+D',
+          click: () => sendCommand('daily-note')
+        },
+        {
+          label: 'Save Sheet as Template',
+          click: () => sendCommand('save-template')
+        },
         { type: 'separator' },
         {
           label: 'Move to…',
