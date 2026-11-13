@@ -1,4 +1,5 @@
 import { EditorState, StateField, type Extension, type Range } from '@codemirror/state'
+import { inlineSpans } from './inlineMarks'
 import { redo, undo } from '@codemirror/commands'
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view'
 import {
@@ -196,6 +197,34 @@ function cellKeys(e: KeyboardEvent, dom: HTMLElement, view: EditorView, row: num
   e.stopPropagation()
 }
 
+/** Shows a cell's Markdown formatted, with the marks dimmed, as the editor does. */
+function renderCell(cell: HTMLElement, text: string): void {
+  cell.replaceChildren()
+  for (const span of inlineSpans(text)) {
+    if (span.marks.length === 0) {
+      cell.append(span.text)
+      continue
+    }
+    const mark = span.marks[0] ?? ''
+    const closing = mark
+    const box = document.createElement(span.code ? 'code' : 'span')
+    box.className = [
+      span.bold ? 'cm-table-bold' : '',
+      span.italic ? 'cm-table-italic' : '',
+      span.strike ? 'cm-table-strike' : ''
+    ]
+      .filter(Boolean)
+      .join(' ')
+    const open = document.createElement('span')
+    open.className = 'cm-table-mark'
+    open.textContent = mark
+    const close = open.cloneNode() as HTMLElement
+    close.textContent = closing
+    box.append(span.text)
+    cell.append(open, box, close)
+  }
+}
+
 /** Builds (or rebuilds) everything inside a table's element from its model. */
 function fill(dom: HTMLElement, view: EditorView): void {
   const state = live.get(dom)
@@ -273,14 +302,26 @@ function fill(dom: HTMLElement, view: EditorView): void {
     cell.spellcheck = true
     cell.dataset.row = String(row)
     cell.dataset.col = String(col)
-    cell.textContent = text
+    renderCell(cell, text)
     cell.style.textAlign = table.align[col] ?? ''
+    const raw = (): string => (row === -1 ? state.table.header[col] : state.table.rows[row]?.[col]) ?? ''
     cell.addEventListener('focus', () => {
       state.row = row
       state.col = col
       dom.classList.add('editing')
+      // While editing, the cell shows its Markdown as written.
+      if (cell.querySelector('.cm-table-mark')) {
+        cell.textContent = raw()
+        const range = document.createRange()
+        range.selectNodeContents(cell)
+        range.collapse(false)
+        const selection = window.getSelection()
+        selection?.removeAllRanges()
+        selection?.addRange(range)
+      }
     })
     cell.addEventListener('blur', () => {
+      renderCell(cell, raw())
       commit(dom, view)
       setTimeout(() => {
         if (!dom.contains(document.activeElement)) dom.classList.remove('editing')
