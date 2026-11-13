@@ -10,7 +10,7 @@
   import SearchDialog from './SearchDialog.svelte'
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
-  import TopBar from './TopBar.svelte'
+  import ToolButton from './ToolButton.svelte'
   import Outline, { type Entry } from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
@@ -902,6 +902,9 @@
       window.removeEventListener('beforeunload', saveOnClose)
     }
   })
+  const isMac = navigator.platform.startsWith('Mac')
+  const keyMod = isMac ? '⌘' : 'Ctrl+'
+  const keyShift = isMac ? '⇧' : 'Shift+'
 </script>
 
 <svelte:window onkeydown={windowKeydown} />
@@ -918,17 +921,6 @@
     <button class="primary" onclick={chooseLibrary}>Choose library folder…</button>
   </main>
 {:else}
-  <TopBar
-    {sidebarCollapsed}
-    canFormat={open !== null}
-    onsidebar={toggleSidebar}
-    onnew={() => void newSheet()}
-    onsearch={openSearch}
-    onformat={formatActive}
-    outlineOpen={outlineOpen}
-    onoutline={toggleOutline}
-    onexport={() => void openExport()}
-  />
   <div class="layout" class:collapsed={sidebarCollapsed}>
     {#if sidebarCollapsed}
       <div class="edge" role="presentation" onmouseenter={peekSidebar}></div>
@@ -951,7 +943,10 @@
     >
       <header>
         <span class="title" title={library.path}>{library.tree.name}</span>
-        <button class="link" tabindex="-1" onclick={chooseLibrary}>Open…</button>
+        <span class="tools">
+          <ToolButton icon="new-group" label="New group" hint="{keyMod}{keyShift}N" onclick={() => void newGroup(false)} />
+          <ToolButton icon="sidebar" label="Hide sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
+        </span>
       </header>
       <ul role="none">
         <GroupTree
@@ -986,7 +981,12 @@
       ondragover={sheetsPaneDragOver}
       ondrop={dropSheets}
     >
-      <header><span class="title">{group?.name ?? ''}</span></header>
+      <header>
+        <span class="title">{group?.name ?? ''}</span>
+        <span class="tools">
+          <ToolButton icon="new-sheet" label="New sheet" hint="{keyMod}N" onclick={() => void newSheet()} />
+        </span>
+      </header>
       {#if sheets.length === 0}
         <p class="hint">No sheets in this group.</p>
       {:else}
@@ -1024,6 +1024,23 @@
     </div>
 
     <section class="editor" aria-label="Editor">
+      <div class="editor-bar" role="toolbar" aria-label="Editor tools">
+        <span class="tools">
+          {#if sidebarCollapsed}
+            <ToolButton icon="sidebar" label="Show sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
+          {/if}
+          <ToolButton icon="search" label="Find in library" hint="{keyMod}{keyShift}F" onclick={openSearch} />
+        </span>
+        <span class="tools">
+          <ToolButton icon="bold" label="Bold" hint="{keyMod}B" disabled={open === null} onclick={() => formatActive('bold')} />
+          <ToolButton icon="italic" label="Italic" hint="{keyMod}I" disabled={open === null} onclick={() => formatActive('italic')} />
+          <ToolButton icon="link" label="Link" hint="{keyMod}K" disabled={open === null} onclick={() => formatActive('link')} />
+        </span>
+        <span class="tools right">
+          <ToolButton icon="outline" label="{outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={outlineOpen} onclick={toggleOutline} />
+          <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
+        </span>
+      </div>
       <div class="scroller">
       {#if error}
         <p class="hint">{error}</p>
@@ -1128,7 +1145,7 @@
     cursor: default;
   }
   .layout {
-    height: calc(100% - var(--topbar-height));
+    height: 100%;
     display: grid;
     grid-template-columns: 540px minmax(0, 1fr);
   }
@@ -1144,7 +1161,7 @@
   /* Collapsed, the sidebar floats over the editor, off screen until it is peeked at. */
   .layout.collapsed .sidebar {
     position: fixed;
-    inset: var(--topbar-height) auto 0 0;
+    inset: 0 auto 0 0;
     width: 540px;
     z-index: 30;
     transform: translateX(-101%);
@@ -1158,7 +1175,7 @@
   }
   .edge {
     position: fixed;
-    inset: var(--topbar-height) auto 0 0;
+    inset: 0 auto 0 0;
     width: 6px;
     z-index: 29;
   }
@@ -1188,7 +1205,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 14px 14px 8px;
+    padding: 0 10px 0 14px;
+    min-height: var(--topbar-height);
     position: sticky;
     top: 0;
     background: inherit;
@@ -1198,13 +1216,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .link {
-    background: none;
-    border: none;
-    color: var(--accent);
-    padding: 0;
-    cursor: default;
   }
   ul {
     list-style: none;
@@ -1304,18 +1315,35 @@
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: var(--topbar-height) minmax(0, 1fr);
     overflow: hidden;
+  }
+  .editor-bar {
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 10px;
+    user-select: none;
+  }
+  .tools {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .tools.right {
+    justify-content: flex-end;
   }
   .scroller {
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 2;
     position: relative;
     overflow-y: auto;
   }
   .outline-slot {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 1 / span 2;
     display: flex;
     min-height: 0;
   }
