@@ -7,13 +7,13 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 ## Status
 
 - **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI),
-  4 (editor) and 5 (organising). Licensed AGPL-3.0.
-- **Next:** milestone 6 (sheet operations: split, merge, glue).
-- The app edits and organises a library: create sheets, groups and
-  projects; rename groups; select several sheets; reorder and move by
-  keyboard, picker or drag and drop. Not in the UI yet: deleting, and
-  renaming a sheet (its name comes from its first line). Outside edits to an
-  open library are not picked up (milestone 9).
+  4 (editor), 5 (organising) and 6 (sheet operations). Licensed AGPL-3.0.
+- **Next:** milestone 7 (HTML export).
+- The app edits and organises a library, and can split, merge, glue and
+  unglue sheets, with a glued run edited as one continuous document. Not in
+  the UI yet: deleting, renaming a sheet (its file name comes from its first
+  line), and undo for moves. Outside edits to an open library are not picked
+  up (milestone 9).
 
 If you are picking this up in a new session, read "Working in this repo"
 below, then start at milestone 3.
@@ -284,7 +284,7 @@ Notes from building it:
 - Drag and drop was checked with synthetic DOM drag events, not a real
   mouse drag.
 
-### 6. Sheet operations
+### 6. Sheet operations — done
 - **Split** at the cursor into two sheets.
 - **Merge** selected sheets into one.
 - **Glue / unglue** selected sheets: they stay separate files but display
@@ -292,6 +292,32 @@ Notes from building it:
 - Glued runs scroll as one continuous document in the editor.
 - A keyboard shortcut for each.
 - **Done when:** all three round-trip correctly on disk and are undoable.
+
+Notes from building it:
+
+- **Menu (Sheet):** Split at Cursor `Shift+Enter`, Merge `Shift+J`, Glue
+  `Shift+G`, Unglue `Alt+G`, Undo `Alt+Z` (all with Cmd on Mac, Ctrl
+  elsewhere). Plain Cmd/Ctrl+Z still undoes typing in the editor.
+- **Core:** `splitSheet`, `mergeSheets`, `glueSheets`, `unglueSheets` in
+  `operations.ts`. Each returns `undo`, a list of `UndoAction` steps (write a
+  file, trash a file, restore a sidecar) that `applyUndo` runs. The main
+  process keeps the last 20 on an in-memory stack for the open library.
+- **Semantics worth knowing:** split cuts the text the editor holds (not the
+  file) and the tail becomes the next sheet, inheriting the original's glue
+  to what follows. Merge joins with a blank line into the first sheet in
+  display order and trashes the rest. Glue links each selected sheet to the
+  next one it touches (one sheet: to the one after it). Unglue detaches the
+  selected sheets from neighbours on both sides.
+- **Undo is a stack of whole operations.** Undoing a split restores the
+  sheet's text from before the split, so typing done after the split in
+  either half is lost. Moves, renames and creation are not on the stack yet
+  (milestone 9).
+- **Runs in the editor** are one CodeMirror per sheet, stacked in one scroll
+  container (`.run`), not a single document. Arrow keys cross the seams, but
+  a text selection cannot span sheets. `runOf` (organise.ts) works out the
+  run from the group's order.
+- **Open question:** "Join" (see below) is still unconfirmed; this milestone
+  built merge only.
 
 ### 7. HTML export
 - Export a sheet, a glued run, a selection, or a whole group as one HTML file.
