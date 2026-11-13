@@ -46,6 +46,10 @@
   let info = $state('')
   let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
+  let sidebarCollapsed = $state(false)
+  let sidebarPeek = $state(false)
+  let peekTimer: ReturnType<typeof setTimeout> | undefined
+  const modKey = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+'
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
   let editors = $state<Record<string, Editor | undefined>>({})
@@ -117,6 +121,28 @@
     open = null
     error = ''
     readId++
+  }
+
+  /** Collapsed, the sidebar slides in while the pointer is at the left edge or over it. */
+  function peekSidebar(): void {
+    clearTimeout(peekTimer)
+    if (sidebarCollapsed) sidebarPeek = true
+  }
+
+  function unpeekSidebar(): void {
+    clearTimeout(peekTimer)
+    peekTimer = setTimeout(() => (sidebarPeek = false), 250)
+  }
+
+  function toggleSidebar(): void {
+    sidebarPeek = false
+    void window.api.setView({ sidebarCollapsed: !sidebarCollapsed })
+  }
+
+  function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
+    applyView(view)
+    sidebarCollapsed = view.sidebarCollapsed
+    if (!sidebarCollapsed) sidebarPeek = false
   }
 
   async function chooseLibrary(): Promise<void> {
@@ -784,8 +810,8 @@
   }
 
   onMount(() => {
-    void window.api.getView().then(applyView)
-    const unsubscribeView = window.api.onViewChanged(applyView)
+    void window.api.getView().then(applyViewSettings)
+    const unsubscribeView = window.api.onViewChanged(applyViewSettings)
     window.api
       .getLibrary()
       .then((info) => {
@@ -796,7 +822,8 @@
     const unsubscribeChanged = window.api.onLibraryChanged((info) => void externalChange(info))
     const unsubscribeMenu = window.api.onMenuCommand((command) => {
       if (!library) return
-      if (command === 'new-sheet') void newSheet()
+      if (command === 'toggle-sidebar') toggleSidebar()
+      else if (command === 'new-sheet') void newSheet()
       else if (command === 'move-to') openMoveTo()
       else if (command === 'export-html') void openExport()
       else if (command === 'search') openSearch()
@@ -835,7 +862,17 @@
     <button class="primary" onclick={chooseLibrary}>Choose library folder…</button>
   </main>
 {:else}
-  <div class="layout">
+  <div class="layout" class:collapsed={sidebarCollapsed}>
+    {#if sidebarCollapsed}
+      <div class="edge" role="presentation" onmouseenter={peekSidebar}></div>
+    {/if}
+    <div
+      class="sidebar"
+      class:peek={sidebarPeek}
+      role="presentation"
+      onmouseenter={peekSidebar}
+      onmouseleave={unpeekSidebar}
+    >
     <div
       class="pane library"
       role="tree"
@@ -917,7 +954,16 @@
       {/if}
     </div>
 
+    </div>
+
     <section class="editor" aria-label="Editor">
+      <button
+        class="sidebar-toggle"
+        title="{sidebarCollapsed ? 'Show' : 'Hide'} sidebar ({modKey}\)"
+        aria-label="{sidebarCollapsed ? 'Show' : 'Hide'} sidebar"
+        aria-pressed={sidebarCollapsed}
+        onclick={toggleSidebar}>▤</button
+      >
       <div class="scroller">
       {#if error}
         <p class="hint">{error}</p>
@@ -1015,7 +1061,55 @@
   .layout {
     height: 100%;
     display: grid;
-    grid-template-columns: 240px 300px 1fr;
+    grid-template-columns: 540px minmax(0, 1fr);
+  }
+  .sidebar {
+    display: grid;
+    grid-template-columns: 240px 300px;
+    min-width: 0;
+    min-height: 0;
+  }
+  .layout.collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Collapsed, the sidebar floats over the editor, off screen until it is peeked at. */
+  .layout.collapsed .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 540px;
+    z-index: 30;
+    transform: translateX(-101%);
+    transition: transform 140ms ease-out;
+    box-shadow: none;
+  }
+  .layout.collapsed .sidebar.peek,
+  .layout.collapsed .sidebar:has(:focus-visible) {
+    transform: none;
+    box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
+  }
+  .edge {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 6px;
+    z-index: 29;
+  }
+  .sidebar-toggle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: default;
+  }
+  .sidebar-toggle:hover {
+    background: var(--hover);
+    color: var(--text);
   }
   .pane:focus {
     outline: none;

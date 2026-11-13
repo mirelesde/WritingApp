@@ -54,6 +54,13 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
     label: 'View',
     submenu: [
       {
+        label: 'Toggle Sidebar',
+        accelerator: 'CmdOrCtrl+\\',
+        click: () =>
+          BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', 'toggle-sidebar')
+      },
+      { type: 'separator' },
+      {
         label: 'Theme',
         submenu: THEMES.map((theme) => ({
           label: themeNames[theme],

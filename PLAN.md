@@ -437,7 +437,7 @@ asked for directly.
 8. ~~**Theme, font and size.**~~ **Done.** Light, dark or follow the system; editor font
    family and size. A small settings store in the main process, applied as
    CSS variables. Export keeps its own stylesheet.
-9. **Collapsible sidebar (user).** A toggle button collapses the library
+9. ~~**Collapsible sidebar (user).**~~ **Done.** A toggle button collapses the library
    pane; when collapsed, moving the pointer to the left edge slides it in
    as an overlay that goes away when the pointer leaves. State is
    remembered. Also a menu item with a shortcut. Layout, hover timing and
@@ -462,6 +462,7 @@ asked for directly.
     paragraph or sentence; optionally keep the cursor line vertically
     centred. A toggle in the View menu.
    (Settings live in the app's settings file; the View menu has Theme, Editor Font, and Larger/Smaller/Default Text Size (Cmd/Ctrl + / - / 0). The theme drives `nativeTheme`, so dialogs agree.)
+   (The sidebar is both the library and sheet panes. Toggle with the button at the top left of the editor, View > Toggle Sidebar, or Cmd/Ctrl+\\; the state is remembered. The top bar in item 11 will take over the button.)
 
 **Medium**
 

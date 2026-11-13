@@ -31,6 +31,7 @@ export type MenuCommand =
   | 'unglue'
   | 'undo-sheet-change'
   | 'delete'
+  | 'toggle-sidebar'
 
 /** A preview of an HTML export. */
 export interface ExportPreview {
