@@ -1264,9 +1264,11 @@
                   void nodeMenu('sheet', sheet.path)
                 }}
               >
-                <span class="sheet-title">{sheet.title}</span>
-                {#if sortNote(sheet)}<span class="sheet-note">{sortNote(sheet)}</span>{/if}
-                <span class="sheet-preview">{sheet.preview}</span>
+                <span class="sheet-head">
+                  <span class="sheet-title">{sheet.title}</span>
+                  {#if sortNote(sheet)}<span class="sheet-note">{sortNote(sheet)}</span>{/if}
+                </span>
+                <span class="sheet-preview" class:blank={sheet.preview === ''}>{sheet.preview || '(No Content)'}</span>
               </button>
             </li>
           {/each}
@@ -1565,7 +1567,6 @@
   .sheet.selected {
     background: var(--selected);
   }
-  .sheet-title,
   .sort-wrap {
     position: relative;
   }
@@ -1575,7 +1576,14 @@
     transform: none;
     min-width: 160px;
   }
+  .sheet-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
   .sheet-note {
+    flex-shrink: 0;
     font-size: 11px;
     opacity: 0.65;
     font-variant-numeric: tabular-nums;
@@ -1587,6 +1595,15 @@
   .sheet-title {
     display: block;
     white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sheet-preview.blank {
+    display: block;
+    text-align: left;
+    font-style: italic;
+    opacity: 0.7;
   }
   .sheet-title {
     font-weight: 600;
@@ -1596,6 +1613,8 @@
     font-size: 12.5px;
     line-height: 1.4;
     margin-top: 3px;
+    /* Always three lines tall, so every card is the same height. */
+    height: calc(3 * 1.4 * 12.5px);
     /* Up to three lines, like a card in Ulysses. */
     white-space: normal;
     display: -webkit-box;
