@@ -544,7 +544,7 @@ asked for directly.
 48. **Sheet templates and daily note.** New Sheet from Template, with
     templates kept as sheets in a hidden `.templates` group, and a Daily
     Note command that opens or creates today's sheet in a chosen group.
-49. **External change handling.** When a sheet changes on disk while it is
+49. ~~**External change handling.**~~ **Done.** When a sheet changes on disk while it is
     open: reload it silently if it has no unsaved edits, otherwise ask
     whether to keep the editor's version or take the disk's, and show
     both. Check first what the watcher and autosaver do today.
@@ -557,6 +557,7 @@ asked for directly.
    A switch in Preferences and View > Line Numbers; each sheet of a glued run numbers its own lines.
    Sort menu in the sheet list header; dates shown on cards when sorting by date or words
    Accent presets and picker; theme files (colours only) in <userData>/themes, opened from Preferences
+   Save guard + conflict dialog; silent reload when no edits of mine in that sheet
 
 60. **Distraction-free mode.** Hides both side panes and the header rows so
     only the text remains; they return when the pointer reaches the top or

@@ -13,6 +13,8 @@
   } from '@writingapp/core'
   import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
   import { applyView } from './view'
+  import { createSaveGuard, SaveConflict } from './conflict'
+  import ConflictDialog from './ConflictDialog.svelte'
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
@@ -75,10 +77,47 @@
   let picker = $state<{ heading: string; paths: string[]; targets: MoveTarget[] } | null>(null)
   let pickerReturnFocus: HTMLElement | null = null
 
+  /** A sheet that changed on disk while it had unsaved edits, waiting for the user's choice. */
+  let conflict = $state<{ path: string; mine: string; disk: string } | null>(null)
+
+  const guard = createSaveGuard({
+    read: (path) => window.api.readSheet(path),
+    write: (path, content) => window.api.writeSheet(path, content)
+  })
   const autosaver = createAutosaver({
-    save: (path, content) => window.api.writeSheet(path, content),
+    save: async (path, content) => {
+      try {
+        await guard.save(path, content)
+      } catch (e) {
+        if (e instanceof SaveConflict) raiseConflict(path, edits[path] ?? content, e.disk)
+        throw e
+      }
+    },
     onStatus: (status) => (saveStatus = status)
   })
+
+  function raiseConflict(path: string, mine: string, disk: string): void {
+    if (conflict?.path !== path) conflict = { path, mine, disk }
+  }
+
+  function keepMine(): void {
+    if (!conflict) return
+    const { path, mine, disk } = conflict
+    conflict = null
+    guard.trust(path, disk)
+    autosaver.change(path, mine)
+  }
+
+  function useDisk(): void {
+    if (!conflict) return
+    const { path, disk } = conflict
+    conflict = null
+    autosaver.discard(path)
+    guard.trust(path, disk)
+    edits[path] = disk
+    editors[path]?.replaceText(disk)
+    showInfo('Reloaded the version from disk')
+  }
 
   const runText = $derived(open ? open.parts.map((p) => edits[p.path] ?? p.text).join('\n\n') : '')
 
@@ -300,6 +339,7 @@
     try {
       const texts = await Promise.all(paths.map((p) => window.api.readSheet(p)))
       if (id !== readId) return
+      paths.forEach((p, i) => guard.trust(p, texts[i]!))
       open = { parts: paths.map((p, i) => ({ path: p, text: texts[i]! })) }
       edits = {}
       selectedText = ''
@@ -611,17 +651,25 @@
       await refreshOpen(false)
     }
     if (!open) return
-    // Edits not yet saved win over the disk: the next save replaces the file.
-    if (saveStatus !== 'saved') return
     for (const part of open.parts) {
       const editor = editors[part.path]
       if (!editor) continue
       try {
+        const mine = editor.getText()
         const disk = await window.api.readSheet(part.path)
-        if (saveStatus === 'saved' && disk !== editor.getText()) {
+        if (disk === mine || editor.getText() !== mine) {
+          if (disk === mine) guard.trust(part.path, disk)
+          continue
+        }
+        if (mine === guard.baseline(part.path)) {
+          // No edits of mine in this sheet: take the disk's version.
           editor.replaceText(disk)
+          guard.trust(part.path, disk)
           edits[part.path] = disk
           showInfo('A sheet changed outside the app and was reloaded')
+        } else if (disk !== guard.baseline(part.path)) {
+          // Unsaved edits here and a change on disk: never overwrite without asking.
+          raiseConflict(part.path, mine, disk)
         }
       } catch {
         // The sheet vanished; the next tree update drops it.
@@ -1325,6 +1373,16 @@
 
 {#if searching}
   <SearchDialog onpick={revealSheet} oncancel={closeSearch} />
+{/if}
+
+{#if conflict}
+  <ConflictDialog
+    name={conflict.path.slice(conflict.path.lastIndexOf('/') + 1)}
+    mine={conflict.mine}
+    disk={conflict.disk}
+    onkeep={keepMine}
+    onuse={useDisk}
+  />
 {/if}
 
 {#if quickOpening && library}

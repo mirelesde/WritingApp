@@ -122,4 +122,12 @@ describe('createAutosaver', () => {
     await autosaver.flush()
     expect(statuses).toEqual(['unsaved', 'saving', 'saved'])
   })
+
+  it('discard forgets unsaved text', async () => {
+    const { autosaver, writes } = setup()
+    autosaver.change('/a.md', 'x')
+    autosaver.discard('/a.md')
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(writes).toEqual([])
+  })
 })

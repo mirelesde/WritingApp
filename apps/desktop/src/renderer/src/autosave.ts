@@ -5,6 +5,8 @@ export interface Autosaver {
   change(path: string, text: string): void
   /** Saves everything outstanding now. Resolves when the writes are done. */
   flush(): Promise<void>
+  /** Forgets unsaved text for a sheet, e.g. when the disk's version replaced it. */
+  discard(path: string): void
 }
 
 interface Options {
@@ -74,6 +76,10 @@ export function createAutosaver({
       status()
       schedule(delay)
     },
-    flush
+    flush,
+    discard(path) {
+      unsaved.delete(path)
+      status()
+    }
   }
 }
