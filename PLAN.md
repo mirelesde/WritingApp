@@ -399,64 +399,139 @@ Notes from building it:
 ## UI backlog (round 2)
 
 Ordered from easiest to hardest; implement top to bottom, one commit each,
-verified in the running app first. Requested by the user after milestone 9.
+verified in the running app first. The first eleven requested items came
+from the user after milestone 9; the rest are standard writing-app features
+suggested afterwards and accepted into the list. Items marked (user) were
+asked for directly.
 
-1. **More side margins in the editor.** CSS only: wider horizontal padding
-   and a centred, max-width text column. Easy.
-2. **Auto-close emphasis markers.** Typing `*` or `**` inserts the closing
-   marker and leaves the cursor between. With a selection it wraps the
-   selection instead; typing the closing marker steps over it. Probably
-   CodeMirror's `closeBrackets` configured with `*` and `_`, checked
-   against `**`. Easy to medium; the fiddly part is not misfiring on list
-   bullets (`* ` at line start).
-3. **Bold, italic and link shortcuts.** Cmd/Ctrl+B and +I wrap the
+**Easy**
+
+1. **More side margins in the editor (user).** CSS only: wider horizontal
+   padding and a centred, max-width text column.
+2. **Spell check.** Turn on Electron's built-in checker and add suggestions
+   to the editor's context menu. Language follows the system.
+3. **Word and character count, reading time.** A status bar showing the
+   open sheet, the selection, and the group total. Computed from text core
+   already has.
+4. **Smart list continuation.** Enter continues a bullet or number, Tab
+   indents, Enter on an empty item ends the list. CodeMirror's Markdown
+   commands cover most of it; mostly configuration.
+5. **Auto-close emphasis markers (user).** Typing `*` or `**` inserts the
+   closing marker and leaves the cursor between. With a selection it wraps
+   the selection; typing the closing marker steps over it. Must not misfire
+   on list bullets (`* ` at line start). Do this after item 4 so the two
+   agree on how `*` behaves.
+6. **Bold, italic and link shortcuts (user).** Cmd/Ctrl+B and +I wrap the
    selection in `**` / `*` (and unwrap if already wrapped); Cmd/Ctrl+K wraps
-   the selection as `[text](url)` and selects the `url` part. These become
-   editor commands that the top bar (item 5) reuses. Easy to medium.
-4. **Collapsible sidebar.** A toggle button collapses the library pane;
-   when collapsed, moving the pointer to the left edge slides it in as an
-   overlay and it goes away when the pointer leaves. Remember the state in
-   settings. Also a menu item with a shortcut. Medium (layout, hover
-   timing, focus).
-5. **Top bar.** Buttons: search (magnifier), new sheet (sheet with
-   pencil), bold, italic, link, export (sheet with up arrow). The
-   editor-command buttons come from item 3; the others call the existing
-   menu commands. Tooltips show the shortcut. Medium.
-6. **Commented-out text.** Syntax to settle first; proposal: `<!-- ... -->`
-   (valid Markdown everywhere), toggled on the selection or line with
-   Cmd/Ctrl+/ . Shown dimmed in the editor, and left out of HTML/PDF export
-   and of word counts. Search still finds it. Medium: editor decoration,
-   toggle command, export change in core.
-7. **Right-click menus.** On a sheet, a group and the library root: new
-   sheet/group, rename, move to…, duplicate, cut / copy / paste, delete.
-   Built as a native menu from the main process, reusing the existing
-   `op:*` handlers. Cut/copy/paste of sheets needs a node clipboard and a
-   copy operation in core (new, with undo). Medium.
-8. **Drag and drop to reorder.** Drag one or more selected sheets or
-   groups within and between groups, with a drop indicator and
-   auto-expand on hover. Uses `moveNodesUndoable`, so undo already works.
-   Must refuse dropping a group into itself. Medium to hard (hit testing,
-   multi-selection, keyboard-accessible alternative stays the Move to…
-   command).
-9. **Trash bin.** Today deletes go to the operating-system trash. Decide
-   between keeping that and adding an in-app Trash: a hidden `.trash`
-   folder in the library, a Trash entry in the tree, Restore and Empty
-   Trash, and undo across restarts as a side effect. Needs a decision on
-   how it syncs and how sidecar order is restored. Medium to hard.
-10. **Table editor.** Render GFM tables in the editor as editable grids
-    (CodeMirror block widget): edit cells, Tab to move, add/remove rows
-    and columns, column alignment, and write back clean Markdown. Cursor
-    entering the table shows raw source. Hard: widget focus, undo
-    integration, round-tripping, IME.
-11. **Tabs and windows.** Several sheets open at once as tabs, plus extra
-    windows on the same library. Needs per-tab editor state and unsaved
-    edits, save and reload rules when two views have the same sheet open,
-    a window-aware main process (watcher, undo stack and library root are
-    currently one per app), and menu commands routed to the focused
-    window. Hardest; touches almost every layer, so it goes last.
+   it as `[text](url)` and selects the `url`. These are editor commands that
+   the top bar (item 11) reuses.
+7. **Find and replace in the open sheet.** CodeMirror's search panel,
+   styled to match, with Cmd/Ctrl+F and Cmd/Ctrl+Alt+F. Distinct from Find in
+   Library.
 
-Open decisions for this list: the comment syntax (item 6) and in-app Trash
-versus the system trash (item 9).
+**Easy to medium**
+
+8. **Theme, font and size.** Light, dark or follow the system; editor font
+   family and size. A small settings store in the main process, applied as
+   CSS variables. Export keeps its own stylesheet.
+9. **Collapsible sidebar (user).** A toggle button collapses the library
+   pane; when collapsed, moving the pointer to the left edge slides it in
+   as an overlay that goes away when the pointer leaves. State is
+   remembered. Also a menu item with a shortcut. Layout, hover timing and
+   focus are the fiddly parts.
+10. **Quick open (Cmd/Ctrl+P).** Fuzzy jump to a sheet by title or group
+    path. A smaller cousin of Find in Library, same dialog style.
+11. **Top bar (user).** Buttons: search (magnifier), new sheet (sheet with
+    pencil), bold, italic, link, export (sheet with up arrow). Editor
+    buttons come from item 6, the rest call existing menu commands.
+    Tooltips show the shortcut.
+12. **Open recent library; restore the last sheet.** Reopens where you left
+    off, with a recent-libraries submenu. Needs the settings store from
+    item 8.
+13. **Commented-out text (user).** Syntax to settle first; proposal:
+    `<!-- ... -->` (valid Markdown everywhere), toggled on the selection or
+    line with Cmd/Ctrl+/. Dimmed in the editor, left out of HTML/PDF export
+    and of word counts (so after item 3). Search still finds it. Needs an
+    export change in core.
+14. **Heading outline.** A panel listing the headings of the open sheet;
+    click to jump. Reads the Markdown syntax tree the editor already has.
+15. **Focus and typewriter mode.** Dim everything except the current
+    paragraph or sentence; optionally keep the cursor line vertically
+    centred. A toggle in the View menu.
+
+**Medium**
+
+16. **Rename sheet and group.** Sheets take their name from the first line,
+    so renaming a sheet means moving focus to that line (and the file
+    renames itself on save); groups rename the folder and keep the sidecar.
+    Needs a rename operation with undo. Comes before item 17 so the context
+    menu can offer it.
+17. **Right-click menus (user).** On a sheet, a group and the library root:
+    new sheet/group, rename, move to…, duplicate, cut / copy / paste,
+    delete. A native menu from the main process, reusing the existing
+    `op:*` handlers. Cut/copy/paste and duplicate need a node clipboard and
+    a copy operation in core (new, with undo).
+18. **Markdown preview.** Toggle or side-by-side live preview, reusing the
+    HTML export renderer in the sandboxed iframe. Scroll sync is optional.
+19. **Favorites (pinned sheets).** A pinned section at the top of the
+    library; stored in the root sidecar so it travels with the folder.
+20. **Footnotes.** `[^1]` syntax rendered in export and preview, with
+    editor highlighting and jump between reference and definition. Needs a
+    `marked` footnote extension.
+21. **Goals and progress.** A word target per sheet or group with a
+    progress indicator in the status bar. Stored in the sidecar. (Moved up
+    from "Later".)
+22. **Drag and drop to reorder (user).** Drag one or more selected sheets
+    or groups within and between groups, with a drop indicator and
+    auto-expand on hover. Uses `moveNodesUndoable`, so undo already works.
+    Must refuse dropping a group into itself. The Move to… command stays as
+    the keyboard route. Hit testing and multi-selection are the hard parts.
+
+**Medium to hard**
+
+23. **Images.** Paste or drag an image into a sheet, render it inline,
+    embed it on export. Blocked on the open question of where images live
+    on disk (next to the sheet, or a per-folder assets directory).
+24. **Sheet notes.** A side note per sheet that is never exported, like
+    Ulysses' notes. Stored in the sidecar or a companion file; decide which
+    when starting.
+25. **Trash bin (user).** Today deletes go to the operating-system trash.
+    Decide between keeping that and an in-app Trash: a hidden `.trash`
+    folder in the library, a Trash entry in the tree, Restore and Empty
+    Trash, and undo that survives a restart. Needs a decision on sync
+    behaviour and on how sidecar order is restored.
+26. **Keywords (tags) and filters.** Tags per sheet in the sidecar, a
+    filter by tag in the library pane, and tag search. (Moved up from
+    "Later".)
+27. **Snapshots / version history.** Automatic copies of a sheet before big
+    edits, merges and deletes, with a browse-and-restore list. Overlaps the
+    trash design, so do it after item 25 and share the storage.
+
+**Hard**
+
+28. **Table editor (user).** Render GFM tables in the editor as editable
+    grids (CodeMirror block widget): edit cells, Tab to move, add/remove
+    rows and columns, column alignment, write back clean Markdown. The
+    cursor entering the table shows raw source. Widget focus, undo
+    integration, round-tripping and IME are the risks.
+29. **Tabs and windows (user).** Several sheets open at once as tabs, plus
+    extra windows on the same library. Needs per-tab editor state and
+    unsaved edits, save and reload rules when two views show the same
+    sheet, a window-aware main process (watcher, undo stack and library
+    root are currently one per app), and menu commands routed to the
+    focused window. Touches almost every layer.
+30. **Wiki-links `[[sheet]]` and backlinks.** Links by sheet title,
+    autocomplete, a backlinks panel, rewriting links on rename (so after
+    item 16). Worth doing only if notes-style use is wanted.
+31. **Sync conflict handling.** Detect conflict copies from iCloud or
+    Dropbox (`name (conflicted copy).md`) and offer a side-by-side merge.
+    Needs a diff view.
+32. **Global quick capture.** A system-wide hotkey that opens a small
+    window and appends to an Inbox sheet. Depends on windows (item 29).
+
+Open decisions for this list: the comment syntax (item 13), where images
+live (item 23), where sheet notes are stored (item 24) and in-app Trash
+versus the system trash (item 25).
 
 ## Still open
 
@@ -474,7 +549,6 @@ versus the system trash (item 9).
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
 - ePub export.
-- Writing goals, keywords, filters.
 - Publishing to WordPress and Ghost.
 
 ## Open questions
