@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    // No DOM and no Node types on purpose: the core must not reach for
+    // platform APIs. Disk access goes through the FileSystem interface.
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "writingapp",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @writingapp/desktop",
+    "build": "npm run build -w @writingapp/desktop",
+    "test": "npm test -w @writingapp/core",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}
