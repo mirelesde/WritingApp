@@ -432,6 +432,22 @@ asked for directly.
    (Built as an input handler in `emphasis.ts`, not `closeBrackets`, so it also handles `_`, widening `*|*` to `**|**`, a list-bullet exception and Backspace on an empty pair.)
    (Acts on one sheet at a time: in a glued run each sheet has its own bar.)
 
+33. **Auto-pair brackets, backticks and quotes.** Typing `(`, `[`, `` ` ``
+    or `"` inserts the closing character and steps over it when typed;
+    wraps a selection; Backspace removes the empty pair. Reuses the
+    `emphasis.ts` input handler. Not inside fenced code.
+34. **Paste a URL over selected text to make a link.** The selection
+    becomes `[text](url)`. Also Cmd/Ctrl-click on a link opens it in the
+    browser.
+35. **Keyboard behaviour audit.** Check and fix, with tests:
+    Tab and Shift-Tab indent and outdent nested list items (and a
+    selection of several), Enter inside a blockquote or task list
+    continues it, Backspace at the start of an item removes its marker,
+    move line up and down (Alt+Up/Down), duplicate line, select line,
+    and Home/End on wrapped lines.
+36. **Jump between headings.** Cmd/Ctrl+Alt+Up and Down move the cursor to
+    the previous or next heading; the outline marks the current section.
+
 **Easy to medium**
 
 8. ~~**Theme, font and size.**~~ **Done.** Light, dark or follow the system; editor font
@@ -470,6 +486,39 @@ asked for directly.
    (View > Show Outline, Cmd/Ctrl+Alt+O, or the button at the right of the top bar. Clicking an entry moves the cursor there. Headings in code blocks and comments are skipped; the panel's state is remembered.)
    (View > Focus Mode (Cmd/Ctrl+Shift+L) dims all but the current paragraph, and other sheets of a glued run fade too; View > Typewriter Scrolling keeps the cursor line in the middle. Both are remembered.)
 
+37. **Preferences window.** A real settings window, opened with
+    Cmd/Ctrl+, so settings stop being menu-only. Holds the existing theme,
+    font and size, plus the writing comfort options (item 38), smart
+    quotes (item 39) and hide markers (item 41) as they arrive.
+38. **Writing comfort settings.** All stored with the view settings:
+    - Text column width: narrow, medium, wide, or full window.
+    - Line spacing and paragraph spacing, as separate controls.
+    - Caret: highlight the current line (off, subtle), caret width.
+    - Focus mode scope: dim all but the current line, sentence or
+      paragraph, and how strongly.
+    - Typewriter position: centre, or upper third.
+    - Scroll past the end of the text, on or off.
+    - Distraction-free mode: hides both side panes and the header rows,
+      which return when the pointer reaches the top or left edge.
+    - Text alignment (left, justified) and an optional first-line indent
+      for prose.
+39. **Smart quotes and dashes.** Optional: straight quotes become curly,
+    `--` becomes an en or em dash, `...` becomes an ellipsis. A setting,
+    off by default; never applied inside code or comments. Needs the
+    Preferences window (item 37).
+40. **Format menu and style popover.** Keep the editor header uncluttered:
+    it keeps only Bold, Italic and Link. Everything else lives in:
+    - A **Format** menu in the menu bar, with shortcuts: Heading 1 to 3
+      and Body (Cmd/Ctrl+Alt+1 to 4), Quote, Bullet list, Numbered list,
+      Task list, Strikethrough, Inline code, Code block, Comment, Horizontal
+      rule. Items show their checked state at the cursor.
+    - One **Aa** button at the right of the header that opens a small
+      popover with the same actions as compact rows (styles, lists,
+      inline), so the mouse route is one click plus one click.
+    - The same list as a Format submenu in the right-click menu (item 17).
+    Core gets a pure function per block style (toggle line prefix) with
+    tests; the editor applies them as a transaction.
+
 **Medium**
 
 16. **Rename sheet and group.** Sheets take their name from the first line,
@@ -498,6 +547,17 @@ asked for directly.
     Must refuse dropping a group into itself. The Move to… command stays as
     the keyboard route. Hit testing and multi-selection are the hard parts.
 
+41. **Hide Markdown markers (setting).** Off by default: the editor keeps
+    showing markers, dimmed, as Ulysses does. When on, `**`, `#`, link
+    addresses and similar markers are hidden except on the line or
+    selection that holds the cursor. Risks are cursor movement across
+    hidden ranges and selection that includes hidden text. Needs the
+    Preferences window (item 37).
+42. **Folding sections.** Collapse the text under a heading from a gutter
+    arrow or Cmd/Ctrl+Alt+[ and ]; fold all and unfold all. Fold state is
+    remembered per sheet. The outline and quick jump (item 36) keep
+    working on folded text.
+
 **Medium to hard**
 
 23. **Images.** Not supported yet. Wanted:
@@ -510,9 +570,25 @@ asked for directly.
       into the library, rendered inline in the editor and embedded on
       HTML and PDF export. Unreadable or missing images show a placeholder
       rather than failing the sheet.
-    - Blocked on the open question of where images live on disk (next to
-      the sheet, or a per-folder assets directory); moves, renames and
-      deletes of sheets must keep their images with them.
+    - Blocked on the open question of where images live on disk; moves,
+      renames and deletes of sheets must keep their images with them.
+    - **Alternative A, next to each sheet** (in the folder or a
+      `sheet.assets/` subfolder). Pros: self-contained, images belong to
+      one sheet and go with it, short links, works in other Markdown apps.
+      Cons: clutters the tree; moves, renames, merges and splits must move
+      or rewrite images; the same image pasted twice is stored twice.
+    - **Alternative B, shared assets folder** (one hidden `.assets/` at
+      the library root, or one per folder). Pros: the tree stays clean,
+      moves never break links, easy to store a duplicate once, a common
+      convention. Cons: images outlive their sheets, so unused images
+      pile up; per-folder assets break when a sheet changes group.
+    - **B plus a stash:** unused images are a feature, not a leak. Insert
+      opens a picker of every image in the library with "Add new…" first;
+      paste and drop add to the stash and insert at once; the picker marks
+      images no sheet uses and can delete them, warning when one is still
+      linked. Keep original file names (a short suffix only on a
+      collision) so the picker is browsable. Leaning towards this, not
+      decided. Parked until the user picks it up again.
 24. **Sheet notes.** A side note per sheet that is never exported, like
     Ulysses' notes. Stored in the sidecar or a companion file; decide which
     when starting.
@@ -551,7 +627,7 @@ asked for directly.
     window and appends to an Inbox sheet. Depends on windows (item 29).
 
 Open decisions for this list: where images
-live (item 23), where sheet notes are stored (item 24) and in-app Trash
+live (item 23, alternatives written out there), where sheet notes are stored (item 24) and in-app Trash
 versus the system trash (item 25).
 
 ## Look and feel (modelled on Ulysses)
@@ -618,6 +694,7 @@ Skipped from the Ulysses window: promotional buttons, and its blue accent
 ## Open questions
 
 - **"Join".** Confirm whether this means something different from merge.
-- **Images.** Where attached images live on disk (next to the sheet, or in
-  a per-folder assets directory). Needed before milestone 7.
+- **Images.** Where attached images live on disk: next to the sheet, or
+  in a shared assets folder with a browsable stash (see item 23, which
+  lists both). Parked.
 - **Name.** "WritingApp" is a placeholder; the sidecar filename depends on it.
