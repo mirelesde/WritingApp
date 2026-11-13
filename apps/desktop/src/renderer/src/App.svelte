@@ -1057,8 +1057,9 @@
   function keepFocus(pane: HTMLElement | undefined) {
     return (e: MouseEvent): void => {
       if (!(e.target as HTMLElement).closest('input')) {
-        e.preventDefault()
-        pane?.focus()
+        // Not preventDefault: cancelling mousedown stops a drag from starting.
+        // Take focus back once the click has had its say instead.
+        setTimeout(() => pane?.focus(), 0)
       }
     }
   }
