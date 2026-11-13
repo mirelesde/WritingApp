@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { attachEditMenu } from './editMenu'
 import { chooseLibrary, registerLibraryIpc } from './library'
 
 function createWindow(): void {
@@ -13,9 +14,12 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: true
+      sandbox: true,
+      spellcheck: true
     }
   })
+
+  attachEditMenu(mainWindow.webContents)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
