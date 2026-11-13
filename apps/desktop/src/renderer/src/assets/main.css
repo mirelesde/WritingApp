@@ -1,17 +1,17 @@
 :root {
   color-scheme: light dark;
   /* Three tones, lightest to darkest in dark mode: sidebar, sheet list, editor. */
-  --bg: #fbfaf8;
-  --list: #f3f1ed;
-  --sidebar: #ebe8e1;
+  --bg: #fcfcfc;
+  --list: #f4f4f4;
+  --sidebar: #ebebeb;
   --pane: var(--list);
-  --text: #24221f;
-  --muted: #7a756d;
-  --border: #e2dfd8;
-  --hover: #eae7e1;
-  --selected: #dcd8cf;
-  --selection: #cfe3df;
-  --marker: #b3aea4;
+  --text: #222222;
+  --muted: #757575;
+  --border: #e2e2e2;
+  --hover: #eaeaea;
+  --selected: #dcdcdc;
+  --selection: #d3e0de;
+  --marker: #b4b4b4;
   /* Markdown markers and link addresses: present, but out of the way. */
   --faint: color-mix(in srgb, var(--text) 30%, transparent);
   --accent: #2f6f6a;
@@ -25,16 +25,16 @@
    this media query sees, so the app and its native dialogs always agree. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1b1a18;
-    --list: #232220;
-    --sidebar: #2c2b28;
-    --text: #e6e2da;
-    --muted: #8e897f;
-    --border: #35332f;
-    --hover: #383632;
-    --selected: #45433e;
-    --selection: #2f4b48;
-    --marker: #66625b;
+    --bg: #1c1c1c;
+    --list: #242424;
+    --sidebar: #2d2d2d;
+    --text: #e6e6e6;
+    --muted: #8e8e8e;
+    --border: #353535;
+    --hover: #393939;
+    --selected: #464646;
+    --selection: #2f4543;
+    --marker: #666666;
     --accent: #6fb3ac;
   }
 }
