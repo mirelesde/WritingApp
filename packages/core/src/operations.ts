@@ -2,6 +2,7 @@ import type { DirEntry, FileSystem } from './filesystem'
 import { sheetFileName } from './filename'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
 import { parseSidecar, reconcileFolder, SIDECAR_NAME, type Sidecar } from './sidecar'
+import { snapshotSidecar, type UndoAction } from './undo'
 
 /*
  * Structural operations. Each one changes the disk and then rewrites the
@@ -235,4 +236,150 @@ export async function moveNodes(
 /** Moves a sheet or group to `index` within its own group. */
 export async function reorderNode(fs: FileSystem, path: string, index: number): Promise<void> {
   await moveNode(fs, path, parentPath(trimSlashes(path)), index)
+}
+
+// --- Split, merge and glue ---------------------------------------------------
+
+/** What a sheet operation hands back: the way to reverse it, and what it made. */
+export interface SheetChange {
+  /** Reverses the change. Pass to `applyUndo`. */
+  undo: UndoAction[]
+  /** The sheet that was created (split) or that now holds the result (merge). */
+  path?: string
+}
+
+/** Splits `text`, the content of the sheet at `path`, at `offset`. */
+export async function splitSheet(
+  fs: FileSystem,
+  path: string,
+  text: string,
+  offset: number,
+): Promise<SheetChange & { path: string }> {
+  const from = trimSlashes(path)
+  const dir = parentPath(from)
+  const name = baseName(from)
+  const head = text.slice(0, offset).replace(/\s+$/, '')
+  const tail = text
+    .slice(offset)
+    .replace(/^(?:[ \t]*\r?\n)+/, '')
+    .replace(/^[ \t]+/, '')
+  if (head === '' || tail.trim() === '') throw new Error('Nothing to split off')
+
+  const folder = await readFolder(fs, dir)
+  const at = folder.order.indexOf(name)
+  if (at < 0) throw new Error(`Not part of the library: ${from}`)
+  const sidecarBefore = await snapshotSidecar(fs, dir)
+
+  const newName = sheetFileName(tail, folder.entries.map((e) => e.name))
+  const created = joinPath(dir, newName)
+  await fs.writeText(created, tail)
+  await fs.writeText(from, head + '\n')
+
+  // The new sheet inherits the original's link to whatever followed it.
+  const wasGlued = folder.glued.has(name)
+  folder.glued.delete(name)
+  insertName(folder, newName, at + 1)
+  if (wasGlued) folder.glued.add(newName)
+  await writeFolder(fs, dir, folder)
+
+  return {
+    path: created,
+    undo: [
+      { kind: 'write', path: from, text },
+      { kind: 'trash', path: created },
+      sidecarBefore,
+    ],
+  }
+}
+
+/** Reads the sheets and checks that they are distinct siblings in the library. */
+async function siblingSheets(fs: FileSystem, paths: string[]) {
+  const froms = [...new Set(paths.map(trimSlashes))]
+  if (froms.length === 0) throw new Error('Select a sheet first')
+  const dir = parentPath(froms[0]!)
+  if (froms.some((p) => parentPath(p) !== dir)) throw new Error('Sheets must be in the same group')
+  const folder = await readFolder(fs, dir)
+  const names = froms.map(baseName)
+  for (const name of names) {
+    const entry = folder.entries.find((e) => e.name === name)
+    if (entry?.kind !== 'file' || !folder.order.includes(name)) {
+      throw new Error(`Not a sheet in the library: ${joinPath(dir, name)}`)
+    }
+  }
+  const indexes = names.map((n) => folder.order.indexOf(n)).sort((a, b) => a - b)
+  return { dir, folder, indexes, names: indexes.map((i) => folder.order[i]!) }
+}
+
+/**
+ * Merges sheets into the first of them (in display order), joining their
+ * text with a blank line, and trashes the rest. The merged sheet keeps
+ * the link to the next sheet that the last one had, if they were adjacent.
+ */
+export async function mergeSheets(
+  fs: FileSystem,
+  paths: string[],
+): Promise<SheetChange & { path: string }> {
+  const { dir, folder, indexes, names } = await siblingSheets(fs, paths)
+  if (names.length < 2) throw new Error('Select at least two sheets to merge')
+  const sidecarBefore = await snapshotSidecar(fs, dir)
+  const files = names.map((name) => joinPath(dir, name))
+  const texts = await Promise.all(files.map((f) => fs.readText(f)))
+
+  const adjacent = indexes.every((n, i) => i === 0 || n === indexes[i - 1]! + 1)
+  const lastGlued = folder.glued.has(names[names.length - 1]!)
+  const merged =
+    texts
+      .map((t) => t.replace(/\s+$/, ''))
+      .filter((t) => t !== '')
+      .join('\n\n') + '\n'
+  await fs.writeText(files[0]!, merged)
+  for (const file of files.slice(1)) await fs.trash(file)
+  for (const name of names.slice(1)) removeName(folder, name)
+  if (adjacent && lastGlued) folder.glued.add(names[0]!)
+  await writeFolder(fs, dir, folder)
+
+  return {
+    path: files[0]!,
+    undo: [
+      ...files.slice(1).map((file, i): UndoAction => ({ kind: 'write', path: file, text: texts[i + 1]! })),
+      { kind: 'write', path: files[0]!, text: texts[0]! },
+      sidecarBefore,
+    ],
+  }
+}
+
+/**
+ * Glues sheets to the sheet after them, so they read and export as one run.
+ * With several selected, each is glued to the next selected one it sits next
+ * to; with one selected, it is glued to the sheet that follows it.
+ */
+export async function glueSheets(fs: FileSystem, paths: string[]): Promise<SheetChange> {
+  const { dir, folder, indexes } = await siblingSheets(fs, paths)
+  const sidecarBefore = await snapshotSidecar(fs, dir)
+  const pairs: number[] = []
+  if (indexes.length === 1) {
+    const next = folder.entries.find((e) => e.name === folder.order[indexes[0]! + 1])
+    if (next?.kind === 'file') pairs.push(indexes[0]!)
+  } else {
+    for (const n of indexes) if (indexes.includes(n + 1)) pairs.push(n)
+  }
+  if (pairs.length === 0) throw new Error('Select sheets that sit next to each other')
+  for (const n of pairs) folder.glued.add(folder.order[n]!)
+  await writeFolder(fs, dir, folder)
+  return { undo: [sidecarBefore] }
+}
+
+/** Detaches sheets from the runs they are in, on both sides. */
+export async function unglueSheets(fs: FileSystem, paths: string[]): Promise<SheetChange> {
+  const { dir, folder, indexes } = await siblingSheets(fs, paths)
+  const sidecarBefore = await snapshotSidecar(fs, dir)
+  let changed = false
+  for (const n of indexes) {
+    for (const flagged of [folder.order[n]!, folder.order[n - 1]]) {
+      if (flagged !== undefined && folder.glued.delete(flagged)) changed = true
+    }
+  }
+  if (!changed) throw new Error('These sheets are not glued')
+  await writeFolder(fs, dir, folder)
+  return { undo: [sidecarBefore] }
 }

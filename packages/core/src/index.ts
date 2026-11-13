@@ -10,8 +10,15 @@ export {
   createGroup,
   createSheet,
   deleteNode,
+  glueSheets,
+  mergeSheets,
   moveNode,
   moveNodes,
   renameGroup,
   reorderNode,
+  splitSheet,
+  unglueSheets,
 } from './operations'
+export type { SheetChange } from './operations'
+export { applyUndo } from './undo'
+export type { UndoAction } from './undo'
