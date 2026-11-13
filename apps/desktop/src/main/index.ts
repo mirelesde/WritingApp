@@ -43,7 +43,8 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    // Only web and mail addresses leave the app; anything else is ignored.
+    if (/^(https?:\/\/|mailto:)/i.test(details.url)) void shell.openExternal(details.url)
     return { action: 'deny' }
   })
 

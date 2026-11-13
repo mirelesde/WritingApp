@@ -7,6 +7,7 @@ import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from
 import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
 import { bracketPairs } from './pairs'
+import { linkBehaviour } from './links'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 
@@ -147,6 +148,7 @@ export function editorExtensions({
     markdown({ base: markdownLanguage }),
     ...emphasisPairs,
     ...bracketPairs,
+    linkBehaviour,
     linkChips,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),

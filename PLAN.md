@@ -436,7 +436,7 @@ asked for directly.
     or `"` inserts the closing character and steps over it when typed;
     wraps a selection; Backspace removes the empty pair. Quotes and
     backticks open only after a non-word character. Lives in `pairs.ts`.
-34. **Paste a URL over selected text to make a link.** The selection
+34. ~~**Paste a URL over selected text to make a link.**~~ **Done.** The selection
     becomes `[text](url)`. Also Cmd/Ctrl-click on a link opens it in the
     browser.
 35. **Keyboard behaviour audit.** Check and fix, with tests:
