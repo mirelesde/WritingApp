@@ -38,6 +38,7 @@
   }
 
   const subgroups = $derived(group.children.filter((c) => c.kind === 'group'))
+  const sheetCount = $derived(group.children.filter((c) => c.kind === 'sheet').length)
   const isOpen = $derived(expanded[group.path] === true)
 </script>
 
@@ -87,12 +88,23 @@
         onblur={(e) => oncommitrename(group.path, e.currentTarget.value)}
       />
     {:else}
+      {#if depth === 0}
+        <svg class="kind" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M4 4.5h9.5A1.5 1.5 0 0 1 15 6v10H5.5A1.5 1.5 0 0 1 4 14.5z" />
+          <path d="M4 14.5A1.5 1.5 0 0 1 5.5 13H15" />
+        </svg>
+      {:else}
+        <svg class="kind" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3l1.5 1.8h6A1.5 1.5 0 0 1 16.5 8.3V14A1.5 1.5 0 0 1 15 15.5H4.5A1.5 1.5 0 0 1 3 14z" />
+        </svg>
+      {/if}
       <button
         class="name"
         tabindex="-1"
         onclick={() => onselect(group.path)}
         ondblclick={() => depth > 0 && onstartrename(group.path)}>{group.name}</button
       >
+      {#if sheetCount > 0}<span class="count">{sheetCount}</span>{/if}
     {/if}
   </div>
   {#if isOpen && subgroups.length > 0}
@@ -162,6 +174,31 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .kind {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    margin-right: 7px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .count {
+    flex: none;
+    margin: 0 8px 0 4px;
+    font-size: 11.5px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  :global(.pane:focus) .row.selected .kind {
+    stroke: currentColor;
+  }
+  :global(.pane:focus) .row.selected .count {
+    color: inherit;
+    opacity: 0.8;
   }
   .rename {
     flex: 1;

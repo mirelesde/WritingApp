@@ -571,7 +571,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 - L6. ~~**Hidden title bar and vibrancy.**~~ **Done.** `titleBarStyle: 'hiddenInset'` and
   a translucent sidebar on macOS, with the traffic lights inside the
   sidebar header; plain solid tones on Windows and Linux.
-- L7. **Sidebar structure.** Small muted section headers, an icon per kind
+- L7. ~~**Sidebar structure.**~~ **Done.** Small muted section headers, an icon per kind
   of item (project, group), chevrons, and sheet-count badges.
 - L8. **Project colours.** A colour per project, kept in its sidecar and
   shown on its icon.
