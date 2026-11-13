@@ -1,3 +1,5 @@
 export type { DirEntry, FileSystem } from './filesystem'
 export { sheetTitle, UNTITLED } from './sheet'
 export { MemoryFileSystem } from './testing/memoryFileSystem'
+export { isVisibleEntry, parseSidecar, reconcileFolder, SIDECAR_NAME } from './sidecar'
+export type { ReconciledFolder, Sidecar } from './sidecar'
