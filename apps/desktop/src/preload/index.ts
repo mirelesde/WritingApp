@@ -27,6 +27,13 @@ const api: Api = {
       ipcRenderer.removeListener('menu:command', listener)
     }
   },
+  onLibraryChanged(callback) {
+    const listener = (_event: unknown, library: LibraryInfo): void => callback(library)
+    ipcRenderer.on('library:changed', listener)
+    return () => {
+      ipcRenderer.removeListener('library:changed', listener)
+    }
+  },
   onLibraryOpened(callback) {
     const listener = (_event: unknown, library: LibraryInfo): void => callback(library)
     ipcRenderer.on('library:opened', listener)

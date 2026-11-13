@@ -24,11 +24,13 @@ import type { ExportPreview } from '../preload/api'
 import { parsePdfOptions, renderPdf } from './pdf'
 import { createNodeFileSystem } from './nodeFileSystem'
 import { isInside, isSheetInside, toPosix } from './paths'
+import { watchFolder } from './watcher'
 import { createSettingsStore } from './settings'
 
 const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
 let settings: ReturnType<typeof createSettingsStore>
 let currentRoot: string | undefined
+let stopWatching: (() => void) | undefined
 
 // How to reverse the latest structural changes, newest last. Held in memory
 // for the open library only.
@@ -38,12 +40,25 @@ const UNDO_DEPTH = 20
 async function open(path: string): Promise<LibraryInfo | null> {
   try {
     const tree = await loadLibrary(fs, path)
-    if (tree.path !== currentRoot) undoStack.length = 0
+    if (tree.path !== currentRoot) {
+      undoStack.length = 0
+      stopWatching?.()
+      stopWatching = watchFolder(tree.path, () => void announceChange(tree.path))
+    }
     currentRoot = tree.path
     return { path: tree.path, tree }
   } catch {
     return null
   }
+}
+
+/** Tells the windows that something changed in the library folder from outside. */
+async function announceChange(root: string): Promise<void> {
+  if (root !== currentRoot) return
+  const info = await open(root)
+  if (!info) return
+  for (const window of BrowserWindow.getAllWindows())
+    window.webContents.send('library:changed', info)
 }
 
 /** Shows the folder picker and opens the chosen library, remembering it. */

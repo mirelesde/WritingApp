@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { EditorView } from '@codemirror/view'
-  import { createEditorState } from './editor'
+  import { createEditorState, fromDisk } from './editor'
 
   interface Props {
     /** The text to start from. Edits are reported through `onchange`. */
@@ -33,6 +33,22 @@
       scrollIntoView: true
     })
     view.focus()
+  }
+
+  /** The text now in the editor. */
+  export function getText(): string {
+    return view?.state.doc.toString() ?? text
+  }
+
+  /** Swaps in text that changed on disk, keeping the cursor near where it was. No save follows. */
+  export function replaceText(next: string): void {
+    if (!view) return
+    const head = Math.min(view.state.selection.main.head, next.length)
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: next },
+      selection: { anchor: head },
+      annotations: fromDisk.of(true)
+    })
   }
 
   /** The text and cursor position, if the cursor is in this editor. */

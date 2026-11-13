@@ -1,4 +1,4 @@
-import { EditorState, type Extension } from '@codemirror/state'
+import { Annotation, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, drawSelection, keymap, type KeyBinding } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
@@ -44,6 +44,9 @@ const markdownStyle = HighlightStyle.define([
   { tag: tags.quote, color: 'var(--muted)', fontStyle: 'italic' },
   { tag: [tags.processingInstruction, tags.contentSeparator], color: 'var(--marker)' }
 ])
+
+/** Marks a change that came from the disk, not from typing, so it is not saved back. */
+export const fromDisk = Annotation.define<boolean>()
 
 interface Hooks {
   onchange: (text: string) => void
@@ -113,7 +116,9 @@ export function editorExtensions({
     syntaxHighlighting(markdownStyle),
     EditorView.contentAttributes.of({ spellcheck: 'true', autocapitalize: 'sentences' }),
     EditorView.updateListener.of((update) => {
-      if (update.docChanged) onchange(update.state.doc.toString())
+      if (update.docChanged && !update.transactions.some((t) => t.annotation(fromDisk))) {
+        onchange(update.state.doc.toString())
+      }
     }),
     EditorView.domEventHandlers({
       blur: () => {

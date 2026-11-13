@@ -86,6 +86,8 @@ export interface Api {
   saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
+  /** Called when files in the open library change outside the app, with the library as it is now. */
+  onLibraryChanged(callback: (library: LibraryInfo) => void): () => void
   /** Called when File > Open Library loads a library. Returns an unsubscribe function. */
   onLibraryOpened(callback: (library: LibraryInfo) => void): () => void
 }

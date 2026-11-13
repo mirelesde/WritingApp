@@ -351,6 +351,39 @@
     expanded[path] = !expanded[path]
   }
 
+  // --- Changes made outside the app -----------------------------------------
+
+  /** Takes in a change to the library folder made by something else: a sync client, a file manager. */
+  async function externalChange(info: LibraryInfo): Promise<void> {
+    if (!library || info.path !== library.path) return
+    if (JSON.stringify(info.tree) === JSON.stringify(library.tree) && !open) return
+    if (JSON.stringify(info.tree) !== JSON.stringify(library.tree)) {
+      library = info
+      if (!findGroup(info.tree, selectedGroup)) {
+        selectedGroup = info.tree.path
+        clearSheets()
+        return
+      }
+      await refreshOpen(false)
+    }
+    if (!open) return
+    // Edits not yet saved win over the disk: the next save replaces the file.
+    if (saveStatus !== 'saved') return
+    for (const part of open.parts) {
+      const editor = editors[part.path]
+      if (!editor) continue
+      try {
+        const disk = await window.api.readSheet(part.path)
+        if (saveStatus === 'saved' && disk !== editor.getText()) {
+          editor.replaceText(disk)
+          showInfo('A sheet changed outside the app and was reloaded')
+        }
+      } catch {
+        // The sheet vanished; the next tree update drops it.
+      }
+    }
+  }
+
   // --- Search ----------------------------------------------------------------
 
   let searching = $state(false)
@@ -728,6 +761,7 @@
       })
       .finally(() => (loading = false))
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
+    const unsubscribeChanged = window.api.onLibraryChanged((info) => void externalChange(info))
     const unsubscribeMenu = window.api.onMenuCommand((command) => {
       if (!library) return
       if (command === 'new-sheet') void newSheet()
@@ -747,6 +781,7 @@
     window.addEventListener('beforeunload', saveOnClose)
     return () => {
       unsubscribeOpened()
+      unsubscribeChanged()
       unsubscribeMenu()
       window.removeEventListener('beforeunload', saveOnClose)
     }
