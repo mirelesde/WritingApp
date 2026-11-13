@@ -416,7 +416,7 @@ asked for directly.
 4. ~~**Smart list continuation.**~~ **Done.** Enter continues a bullet or number, Tab
    indents, Enter on an empty item ends the list. CodeMirror's Markdown
    commands cover most of it; mostly configuration.
-5. **Auto-close emphasis markers (user).** Typing `*` or `**` inserts the
+5. ~~**Auto-close emphasis markers (user).**~~ **Done.** Typing `*` or `**` inserts the
    closing marker and leaves the cursor between. With a selection it wraps
    the selection; typing the closing marker steps over it. Must not misfire
    on list bullets (`* ` at line start). Do this after item 4 so the two
@@ -429,6 +429,7 @@ asked for directly.
    styled to match, with Cmd/Ctrl+F and Cmd/Ctrl+Alt+F. Distinct from Find in
    Library.
    (Already worked through the Markdown keymap from milestone 4; this added tests for task lists, Shift-Tab and ordered nesting, and a check in the running app.)
+   (Built as an input handler in `emphasis.ts`, not `closeBrackets`, so it also handles `_`, widening `*|*` to `**|**`, a list-bullet exception and Backspace on an empty pair.)
 
 **Easy to medium**
 

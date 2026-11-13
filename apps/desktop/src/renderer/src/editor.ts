@@ -4,6 +4,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
+import { emphasisPairs } from './emphasis'
 
 const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif"
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
@@ -100,6 +101,7 @@ export function editorExtensions({
     // The markdown keymap (included) continues lists on Enter and
     // removes list markers on Backspace.
     markdown({ base: markdownLanguage }),
+    ...emphasisPairs,
     // Four spaces nests correctly under both "- " and "1. " markers.
     indentUnit.of('    '),
     keymap.of([
