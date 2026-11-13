@@ -7,7 +7,8 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 ## Status
 
 - **Done:** milestones 1 (scaffold) to 9 (hardening). Licensed AGPL-3.0.
-- **Next:** nothing planned. See "Later" and "Still open" below.
+- **Next:** the UI backlog (round 2), worked in order, one commit per item.
+  See "UI backlog" below. Then "Later" and "Still open".
 - The app edits and organises a library, splits, merges, glues and
   unglues sheets, deletes (to the system trash), searches, exports to HTML
   and PDF, and follows changes made outside the app. Undo covers move,
@@ -16,7 +17,7 @@ export. Cross-platform on desktop first, iPad and iPhone later.
   renaming groups and sheets.
 
 If you are picking this up in a new session, read "Working in this repo"
-below, then pick from "Still open" and "Later".
+below, then pick from "UI backlog", "Still open" and "Later".
 
 ## Working in this repo
 
@@ -394,6 +395,68 @@ Notes from building it:
   when the secrets named at the top of `release.yml` exist. **The workflows
   have never run**, and no certificates exist yet; only a local unsigned Mac
   build (`npm run build:mac`) was tried.
+
+## UI backlog (round 2)
+
+Ordered from easiest to hardest; implement top to bottom, one commit each,
+verified in the running app first. Requested by the user after milestone 9.
+
+1. **More side margins in the editor.** CSS only: wider horizontal padding
+   and a centred, max-width text column. Easy.
+2. **Auto-close emphasis markers.** Typing `*` or `**` inserts the closing
+   marker and leaves the cursor between. With a selection it wraps the
+   selection instead; typing the closing marker steps over it. Probably
+   CodeMirror's `closeBrackets` configured with `*` and `_`, checked
+   against `**`. Easy to medium; the fiddly part is not misfiring on list
+   bullets (`* ` at line start).
+3. **Bold, italic and link shortcuts.** Cmd/Ctrl+B and +I wrap the
+   selection in `**` / `*` (and unwrap if already wrapped); Cmd/Ctrl+K wraps
+   the selection as `[text](url)` and selects the `url` part. These become
+   editor commands that the top bar (item 5) reuses. Easy to medium.
+4. **Collapsible sidebar.** A toggle button collapses the library pane;
+   when collapsed, moving the pointer to the left edge slides it in as an
+   overlay and it goes away when the pointer leaves. Remember the state in
+   settings. Also a menu item with a shortcut. Medium (layout, hover
+   timing, focus).
+5. **Top bar.** Buttons: search (magnifier), new sheet (sheet with
+   pencil), bold, italic, link, export (sheet with up arrow). The
+   editor-command buttons come from item 3; the others call the existing
+   menu commands. Tooltips show the shortcut. Medium.
+6. **Commented-out text.** Syntax to settle first; proposal: `<!-- ... -->`
+   (valid Markdown everywhere), toggled on the selection or line with
+   Cmd/Ctrl+/ . Shown dimmed in the editor, and left out of HTML/PDF export
+   and of word counts. Search still finds it. Medium: editor decoration,
+   toggle command, export change in core.
+7. **Right-click menus.** On a sheet, a group and the library root: new
+   sheet/group, rename, move to…, duplicate, cut / copy / paste, delete.
+   Built as a native menu from the main process, reusing the existing
+   `op:*` handlers. Cut/copy/paste of sheets needs a node clipboard and a
+   copy operation in core (new, with undo). Medium.
+8. **Drag and drop to reorder.** Drag one or more selected sheets or
+   groups within and between groups, with a drop indicator and
+   auto-expand on hover. Uses `moveNodesUndoable`, so undo already works.
+   Must refuse dropping a group into itself. Medium to hard (hit testing,
+   multi-selection, keyboard-accessible alternative stays the Move to…
+   command).
+9. **Trash bin.** Today deletes go to the operating-system trash. Decide
+   between keeping that and adding an in-app Trash: a hidden `.trash`
+   folder in the library, a Trash entry in the tree, Restore and Empty
+   Trash, and undo across restarts as a side effect. Needs a decision on
+   how it syncs and how sidecar order is restored. Medium to hard.
+10. **Table editor.** Render GFM tables in the editor as editable grids
+    (CodeMirror block widget): edit cells, Tab to move, add/remove rows
+    and columns, column alignment, and write back clean Markdown. Cursor
+    entering the table shows raw source. Hard: widget focus, undo
+    integration, round-tripping, IME.
+11. **Tabs and windows.** Several sheets open at once as tabs, plus extra
+    windows on the same library. Needs per-tab editor state and unsaved
+    edits, save and reload rules when two views have the same sheet open,
+    a window-aware main process (watcher, undo stack and library root are
+    currently one per app), and menu commands routed to the focused
+    window. Hardest; touches almost every layer, so it goes last.
+
+Open decisions for this list: the comment syntax (item 6) and in-app Trash
+versus the system trash (item 9).
 
 ## Still open
 
