@@ -25,7 +25,8 @@ const theme = EditorView.theme({
     padding: '0 64px',
     caretColor: 'var(--text)'
   },
-  '.cm-line': { padding: '0' },
+  '.cm-line': { padding: '0', transition: 'opacity 0.2s' },
+  '.cm-line.cm-dim': { opacity: '0.3' },
   '.cm-cursor': { borderLeftColor: 'var(--text)' },
   // Find and replace bar: sticky at the top of the sheet, in the app's own colours.
   '.cm-panels': {
@@ -180,6 +181,6 @@ export function editorExtensions({
   ]
 }
 
-export function createEditorState(doc: string, hooks: Hooks): EditorState {
-  return EditorState.create({ doc, extensions: editorExtensions(hooks) })
+export function createEditorState(doc: string, hooks: Hooks, extra: Extension = []): EditorState {
+  return EditorState.create({ doc, extensions: [editorExtensions(hooks), extra] })
 }

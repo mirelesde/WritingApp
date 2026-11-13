@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { Compartment } from '@codemirror/state'
   import { EditorView } from '@codemirror/view'
   import { createEditorState, fromDisk } from './editor'
+  import { focusExtensions } from './focusMode'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
 
   interface Props {
@@ -17,11 +19,20 @@
     onedge?: (direction: 'back' | 'forward') => boolean
     /** The selected text changed; empty when the selection is. */
     onselection?: (selected: string) => void
+    /** Dim everything but the current paragraph. */
+    focusMode?: boolean
+    /** Keep the cursor line in the middle of the window. */
+    typewriter?: boolean
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
 
-  let { text, onchange, onblur, onescape, onfocus, onedge, onselection, autofocus = false }: Props = $props()
+  let { text, onchange, onblur, onescape, onfocus, onedge,
+    onselection,
+    focusMode = false,
+    typewriter = false,
+    autofocus = false
+  }: Props = $props()
   let view: EditorView | undefined
 
   export function focus(): void {
@@ -79,11 +90,22 @@
     return { text: view.state.doc.toString(), offset: view.state.selection.main.head }
   }
   let host: HTMLDivElement
+  const focusing = new Compartment()
+
+  // Focus mode and typewriter scrolling can change while the editor is open.
+  $effect(() => {
+    const options = { dim: focusMode, typewriter }
+    view?.dispatch({ effects: focusing.reconfigure(focusExtensions(options)) })
+  })
 
   onMount(() => {
     view = new EditorView({
       parent: host,
-      state: createEditorState(text, { onchange, onblur, onescape, onfocus, onedge, onselection })
+      state: createEditorState(
+        text,
+        { onchange, onblur, onescape, onfocus, onedge, onselection },
+        focusing.of(focusExtensions({ dim: focusMode, typewriter }))
+      )
     })
     if (autofocus) view.focus()
     return () => view?.destroy()

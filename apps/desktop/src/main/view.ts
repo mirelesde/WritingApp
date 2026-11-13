@@ -66,6 +66,19 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
         checked: current.outline,
         click: () => setView({ outline: !current.outline })
       },
+      {
+        label: 'Focus Mode',
+        type: 'checkbox',
+        accelerator: 'CmdOrCtrl+Shift+L',
+        checked: current.focusMode,
+        click: () => setView({ focusMode: !current.focusMode })
+      },
+      {
+        label: 'Typewriter Scrolling',
+        type: 'checkbox',
+        checked: current.typewriter,
+        click: () => setView({ typewriter: !current.typewriter })
+      },
       { type: 'separator' },
       {
         label: 'Theme',

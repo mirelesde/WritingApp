@@ -458,7 +458,7 @@ asked for directly.
     export change in core.
 14. ~~**Heading outline.**~~ **Done.** A panel listing the headings of the open sheet;
     click to jump. Reads the Markdown syntax tree the editor already has.
-15. **Focus and typewriter mode.** Dim everything except the current
+15. ~~**Focus and typewriter mode.**~~ **Done.** Dim everything except the current
     paragraph or sentence; optionally keep the cursor line vertically
     centred. A toggle in the View menu.
    (Settings live in the app's settings file; the View menu has Theme, Editor Font, and Larger/Smaller/Default Text Size (Cmd/Ctrl + / - / 0). The theme drives `nativeTheme`, so dialogs agree.)
@@ -468,6 +468,7 @@ asked for directly.
    (File > Open Recent lists the last ten libraries, drops one that is gone, and has Clear Menu. The open sheet is saved on each selection and reopened, without taking focus, at launch.)
    (Syntax: `<!-- ... -->`, toggled with Cmd/Ctrl+/ on the selection or line. Comments inside fenced code blocks count as code and are kept. Resolved the open decision on comment syntax.)
    (View > Show Outline, Cmd/Ctrl+Alt+O, or the button at the right of the top bar. Clicking an entry moves the cursor there. Headings in code blocks and comments are skipped; the panel's state is remembered.)
+   (View > Focus Mode (Cmd/Ctrl+Shift+L) dims all but the current paragraph, and other sheets of a glued run fade too; View > Typewriter Scrolling keeps the cursor line in the middle. Both are remembered.)
 
 **Medium**
 

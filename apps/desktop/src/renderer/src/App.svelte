@@ -52,6 +52,8 @@
   let sidebarCollapsed = $state(false)
   let sidebarPeek = $state(false)
   let outlineOpen = $state(false)
+  let focusMode = $state(false)
+  let typewriter = $state(false)
   let peekTimer: ReturnType<typeof setTimeout> | undefined
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
@@ -174,6 +176,8 @@
     applyView(view)
     sidebarCollapsed = view.sidebarCollapsed
     outlineOpen = view.outline
+    focusMode = view.focusMode
+    typewriter = view.typewriter
     if (!sidebarCollapsed) sidebarPeek = false
   }
 
@@ -1025,7 +1029,7 @@
         <p class="hint">{error}</p>
       {:else if open}
         {#key open.parts.map((p) => p.path).join('\n')}
-          <div class="run">
+          <div class="run" class:focus-mode={focusMode} class:typewriter>
             {#each open.parts as part, i (part.path)}
               {#if i > 0}<hr class="seam" />{/if}
               <div class="part" data-path={part.path}>
@@ -1038,6 +1042,8 @@
                   onfocus={() => focusedPart(part.path)}
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (selectedText = text)}
+                  {focusMode}
+                  {typewriter}
                   autofocus={focusEditor && part.path === selection[0]}
                 />
               </div>
@@ -1300,6 +1306,17 @@
   }
   .run {
     padding: 48px 0 40vh;
+  }
+  /* Typewriter scrolling needs room above the first line to centre it. */
+  .run.typewriter {
+    padding-top: 45vh;
+  }
+  /* Focus mode: the parts of a run that do not have the cursor fade out too. */
+  .run.focus-mode:focus-within .part:not(:focus-within) {
+    opacity: 0.3;
+  }
+  .part {
+    transition: opacity 0.2s;
   }
   .seam {
     /* Lines up with the text column of the editors above and below. */

@@ -20,6 +20,10 @@ export interface ViewSettings {
   sidebarCollapsed: boolean
   /** True when the heading outline is shown beside the editor. */
   outline: boolean
+  /** Dim everything but the paragraph being written. */
+  focusMode: boolean
+  /** Keep the line being written in the middle of the window. */
+  typewriter: boolean
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -28,6 +32,8 @@ export const DEFAULT_VIEW: ViewSettings = {
   fontSize: 18,
   sidebarCollapsed: false,
   outline: false,
+  focusMode: false,
+  typewriter: false,
 }
 
 /** CSS font stacks, by name. */
@@ -45,7 +51,7 @@ export function clampFontSize(size: number): number {
 export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   const out: Partial<ViewSettings> = {}
   if (typeof data !== 'object' || data === null) return out
-  const { theme, font, fontSize, sidebarCollapsed, outline } = data as Record<string, unknown>
+  const { theme, font, fontSize, sidebarCollapsed, outline, focusMode, typewriter } = data as Record<string, unknown>
   if (typeof theme === 'string' && (THEMES as readonly string[]).includes(theme)) {
     out.theme = theme as Theme
   }
@@ -57,6 +63,8 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   }
   if (typeof sidebarCollapsed === 'boolean') out.sidebarCollapsed = sidebarCollapsed
   if (typeof outline === 'boolean') out.outline = outline
+  if (typeof focusMode === 'boolean') out.focusMode = focusMode
+  if (typeof typewriter === 'boolean') out.typewriter = typewriter
   return out
 }
 
