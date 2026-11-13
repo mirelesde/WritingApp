@@ -74,38 +74,11 @@ html.hang-marks .cm-hang {
   unicode-bidi: bidi-override;
   transform: translateX(-0.35em);
 }
-/* A separator: a thin rule across the text. With hanging marks on, its dashes
-   sit out in the margin; otherwise they stay in the line, over the rule. */
-.cm-rule {
-  position: relative;
-}
-.cm-rule::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  border-top: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
-  pointer-events: none;
-}
-.cm-rule .cm-hang,
-.cm-rule .cm-hang * {
+/* A separator keeps its dashes (no drawn line); hanging, they go quiet like hashes. */
+html.hang-marks .cm-hang-rule,
+html.hang-marks .cm-hang-rule * {
   letter-spacing: 0;
   color: var(--faint);
-}
-/* Not hanging: the separator reads as a plain rule until the cursor is on it. */
-html:not(.hang-marks) .cm-rule:not(.cm-rule-active) .cm-hang,
-html:not(.hang-marks) .cm-rule:not(.cm-rule-active) .cm-hang * {
-  color: transparent;
-}
-html:not(.hang-marks) .cm-rule:not(.cm-rule-active) .cm-hang {
-  background: none;
-}
-html:not(.hang-marks) .cm-rule .cm-hang {
-  position: relative;
-  z-index: 1;
-  background: var(--bg);
-  padding-right: 0.5em;
 }
 html.hang-marks .cm-hang-gap {
   display: inline-block;

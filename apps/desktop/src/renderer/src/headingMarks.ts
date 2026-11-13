@@ -4,8 +4,7 @@ import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate
 
 const hang = Decoration.mark({ class: 'cm-hang' })
 const gap = Decoration.mark({ class: 'cm-hang-gap' })
-const rule = Decoration.line({ class: 'cm-rule' })
-const activeRule = Decoration.line({ class: 'cm-rule cm-rule-active' })
+const hangRule = Decoration.mark({ class: 'cm-hang cm-hang-rule' })
 
 /**
  * Tags the `#` characters of a heading, and the spaces after them (and the dashes of a
@@ -21,7 +20,7 @@ export const headingMarks = ViewPlugin.fromClass(
       this.decorations = this.build(view)
     }
     update(update: ViewUpdate): void {
-      if (update.docChanged || update.viewportChanged || update.selectionSet || syntaxTree(update.state) !== syntaxTree(update.startState)) {
+      if (update.docChanged || update.viewportChanged || syntaxTree(update.state) !== syntaxTree(update.startState)) {
         this.decorations = this.build(update.view)
       }
     }
@@ -34,11 +33,8 @@ export const headingMarks = ViewPlugin.fromClass(
           to,
           enter(node) {
             if (node.name === 'HorizontalRule') {
-              // A --- separator: the line is drawn across the page, its dashes hang in the margin.
-              const line = state.doc.lineAt(node.from)
-              const here = state.doc.lineAt(state.selection.main.head).number === line.number
-              builder.add(line.from, line.from, here ? activeRule : rule)
-              builder.add(node.from, node.to, hang)
+              // A --- separator: its dashes hang in the margin, like the hashes of a heading.
+              builder.add(node.from, node.to, hangRule)
               return
             }
             if (node.name !== 'HeaderMark') return
