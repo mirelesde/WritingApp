@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isSheetInside, toPosix } from './paths'
+import { isInside, isSheetInside, toPosix } from './paths'
 
 describe('toPosix', () => {
   it('turns backslashes into slashes', () => {
@@ -29,5 +29,25 @@ describe('isSheetInside', () => {
 
   it('works when the library is the filesystem root', () => {
     expect(isSheetInside('/', '/a.md')).toBe(true)
+  })
+})
+
+describe('isInside', () => {
+  const root = '/Users/me/Lib'
+
+  it('accepts descendants of any kind', () => {
+    expect(isInside(root, '/Users/me/Lib/Novel')).toBe(true)
+    expect(isInside(root, '/Users/me/Lib/Novel/a.md')).toBe(true)
+  })
+
+  it('accepts the root itself only when asked', () => {
+    expect(isInside(root, root)).toBe(false)
+    expect(isInside(root, root, true)).toBe(true)
+  })
+
+  it('rejects traversal and sibling folders sharing a prefix', () => {
+    expect(isInside(root, '/Users/me/Lib/../x')).toBe(false)
+    expect(isInside(root, '/Users/me/Library/x')).toBe(false)
+    expect(isInside(root, '/etc/passwd', true)).toBe(false)
   })
 })

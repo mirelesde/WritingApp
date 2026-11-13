@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
-  import type { LibraryInfo } from '../../preload/api'
+  import type { LibraryInfo, OpResult } from '../../preload/api'
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
+  import { errorMessage, remapPath } from './organise'
 
   let library = $state<LibraryInfo | null>(null)
   let loading = $state(true)
@@ -16,6 +17,9 @@
   let error = $state('')
   let readId = 0
   let saveStatus = $state<SaveStatus>('saved')
+  let renaming = $state<string | null>(null)
+  let notice = $state('')
+  let focusEditor = $state(false)
 
   const autosaver = createAutosaver({
     save: (path, content) => window.api.writeSheet(path, content),
@@ -51,10 +55,7 @@
     if (info) showLibrary(info)
   }
 
-  async function selectSheet(path: string): Promise<void> {
-    if (path === selectedSheet) return
-    await autosaver.flush()
-    selectedSheet = path
+  async function loadSheet(path: string): Promise<void> {
     const id = ++readId
     try {
       const content = await window.api.readSheet(path)
@@ -66,6 +67,70 @@
       open = null
       error = 'This sheet could not be read.'
     }
+  }
+
+  async function selectSheet(path: string, focus = false): Promise<void> {
+    if (path === selectedSheet) return
+    await autosaver.flush()
+    selectedSheet = path
+    focusEditor = focus
+    await loadSheet(path)
+  }
+
+  /** Runs a structural change, then brings the UI in line with the result. */
+  async function runOp(op: () => Promise<OpResult>): Promise<OpResult | undefined> {
+    await autosaver.flush()
+    try {
+      const result = await op()
+      const wasOpen = open?.path
+      library = result.library
+      selectedGroup = remapPath(selectedGroup, result.moved)
+      if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = result.library.tree.path
+      if (selectedSheet) selectedSheet = remapPath(selectedSheet, result.moved)
+      expanded = Object.fromEntries(
+        Object.entries(expanded).map(([path, isOpen]) => [remapPath(path, result.moved), isOpen])
+      )
+      if (wasOpen && remapPath(wasOpen, result.moved) !== wasOpen) {
+        await loadSheet(remapPath(wasOpen, result.moved))
+      }
+      notice = ''
+      return result
+    } catch (e) {
+      notice = errorMessage(e)
+      return undefined
+    }
+  }
+
+  async function newSheet(): Promise<void> {
+    const parent = group
+    if (!parent) return
+    const at = parent.children.findIndex((c) => c.path === selectedSheet)
+    const result = await runOp(() =>
+      window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
+    )
+    if (result?.created) await selectSheet(result.created, true)
+  }
+
+  async function newGroup(inRoot: boolean): Promise<void> {
+    if (!library) return
+    const parent = inRoot ? library.tree.path : selectedGroup
+    const result = await runOp(() =>
+      window.api.createGroup(parent, inRoot ? 'Untitled Project' : undefined)
+    )
+    if (!result?.created) return
+    expanded[parent] = true
+    selectedGroup = result.created
+    selectedSheet = null
+    open = null
+    renaming = result.created
+  }
+
+  async function commitRename(path: string, name: string): Promise<void> {
+    if (renaming !== path) return
+    renaming = null
+    const trimmed = name.trim()
+    if (trimmed === '' || trimmed === path.slice(path.lastIndexOf('/') + 1)) return
+    await runOp(() => window.api.renameGroup(path, trimmed))
   }
 
   function edited(path: string, content: string): void {
@@ -98,12 +163,18 @@
         if (info) showLibrary(info)
       })
       .finally(() => (loading = false))
-    const unsubscribe = window.api.onLibraryOpened(showLibrary)
+    const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
+    const unsubscribeMenu = window.api.onMenuCommand((command) => {
+      if (!library) return
+      if (command === 'new-sheet') void newSheet()
+      else void newGroup(command === 'new-project')
+    })
     // Last chance to save when the window closes.
     const saveOnClose = (): void => void autosaver.flush()
     window.addEventListener('beforeunload', saveOnClose)
     return () => {
-      unsubscribe()
+      unsubscribeOpened()
+      unsubscribeMenu()
       window.removeEventListener('beforeunload', saveOnClose)
     }
   })
@@ -132,10 +203,17 @@
           group={library.tree}
           selected={selectedGroup}
           {expanded}
+          {renaming}
           onselect={selectGroup}
           ontoggle={toggle}
+          onstartrename={(path) => (renaming = path)}
+          oncommitrename={commitRename}
+          oncancelrename={() => (renaming = null)}
         />
       </ul>
+      {#if notice}
+        <p class="notice" role="alert">{notice}</p>
+      {/if}
     </nav>
 
     <section class="pane sheets" aria-label="Sheets">
@@ -170,6 +248,7 @@
             text={open.text}
             onchange={(content) => edited(path, content)}
             onblur={() => void autosaver.flush()}
+            autofocus={focusEditor}
           />
         {/key}
         <span class="status" class:problem={saveStatus === 'error'} aria-live="polite">
@@ -286,6 +365,12 @@
     color: var(--muted);
     font-size: 12px;
     margin-top: 2px;
+  }
+  .notice {
+    margin: 0;
+    padding: 8px 14px;
+    color: #c0392b;
+    font-size: 12px;
   }
   .hint {
     color: var(--muted);

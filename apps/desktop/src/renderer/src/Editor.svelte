@@ -8,9 +8,11 @@
     text: string
     onchange: (text: string) => void
     onblur: () => void
+    /** Put the cursor in the editor when it opens. */
+    autofocus?: boolean
   }
 
-  let { text, onchange, onblur }: Props = $props()
+  let { text, onchange, onblur, autofocus = false }: Props = $props()
   let host: HTMLDivElement
 
   onMount(() => {
@@ -18,6 +20,7 @@
       parent: host,
       state: createEditorState(text, { onchange, onblur })
     })
+    if (autofocus) view.focus()
     return () => view.destroy()
   })
 </script>

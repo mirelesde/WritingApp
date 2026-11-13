@@ -16,3 +16,14 @@ export function isSheetInside(root: string, path: string): boolean {
     path.endsWith('.md')
   )
 }
+
+/**
+ * True if `path` is a clean absolute path inside `root`: a descendant, or
+ * `root` itself when `allowRoot` is set (the library root is a valid place
+ * to put things, but never something to move or rename).
+ */
+export function isInside(root: string, path: string, allowRoot = false): boolean {
+  if (posix.normalize(path) !== path) return false
+  if (path === root) return allowRoot
+  return path.startsWith(root === '/' ? '/' : root + '/')
+}

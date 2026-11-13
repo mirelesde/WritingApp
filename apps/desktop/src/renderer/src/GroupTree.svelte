@@ -7,11 +7,32 @@
     depth?: number
     selected: string
     expanded: Record<string, boolean>
+    renaming: string | null
     onselect: (path: string) => void
     ontoggle: (path: string) => void
+    onstartrename: (path: string) => void
+    oncommitrename: (path: string, name: string) => void
+    oncancelrename: () => void
   }
 
-  let { group, depth = 0, selected, expanded, onselect, ontoggle }: Props = $props()
+  let {
+    group,
+    depth = 0,
+    selected,
+    expanded,
+    renaming,
+    onselect,
+    ontoggle,
+    onstartrename,
+    oncommitrename,
+    oncancelrename
+  }: Props = $props()
+
+  /** Focuses a freshly shown input with its text selected. */
+  function focusSelect(input: HTMLInputElement): void {
+    input.focus()
+    input.select()
+  }
 
   const subgroups = $derived(group.children.filter((c) => c.kind === 'group'))
   const isOpen = $derived(expanded[group.path] === true)
@@ -29,12 +50,42 @@
     {:else}
       <span class="chevron"></span>
     {/if}
-    <button class="name" onclick={() => onselect(group.path)}>{group.name}</button>
+    {#if renaming === group.path}
+      <input
+        class="rename"
+        value={group.name}
+        use:focusSelect
+        aria-label="Group name"
+        onkeydown={(e) => {
+          if (e.key === 'Enter') oncommitrename(group.path, e.currentTarget.value)
+          else if (e.key === 'Escape') oncancelrename()
+          e.stopPropagation()
+        }}
+        onblur={(e) => oncommitrename(group.path, e.currentTarget.value)}
+      />
+    {:else}
+      <button
+        class="name"
+        onclick={() => onselect(group.path)}
+        ondblclick={() => depth > 0 && onstartrename(group.path)}>{group.name}</button
+      >
+    {/if}
   </div>
   {#if isOpen && subgroups.length > 0}
     <ul role="group">
       {#each subgroups as child (child.path)}
-        <GroupTree group={child} depth={depth + 1} {selected} {expanded} {onselect} {ontoggle} />
+        <GroupTree
+          group={child}
+          depth={depth + 1}
+          {selected}
+          {expanded}
+          {renaming}
+          {onselect}
+          {ontoggle}
+          {onstartrename}
+          {oncommitrename}
+          {oncancelrename}
+        />
       {/each}
     </ul>
   {/if}
@@ -72,6 +123,18 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .rename {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 3px 5px;
+    margin: 1px 4px 1px 0;
+    outline: none;
   }
   ul {
     list-style: none;

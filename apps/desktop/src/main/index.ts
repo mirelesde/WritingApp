@@ -38,6 +38,10 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+function sendCommand(command: string): void {
+  BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', command)
+}
+
 function buildMenu(): Menu {
   const isMac = process.platform === 'darwin'
   return Menu.buildFromTemplate([
@@ -53,6 +57,22 @@ function buildMenu(): Menu {
             const library = await chooseLibrary(target)
             if (library && target) target.webContents.send('library:opened', library)
           }
+        },
+        { type: 'separator' },
+        {
+          label: 'New Sheet',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => sendCommand('new-sheet')
+        },
+        {
+          label: 'New Group',
+          accelerator: 'CmdOrCtrl+Shift+N',
+          click: () => sendCommand('new-group')
+        },
+        {
+          label: 'New Project',
+          accelerator: 'CmdOrCtrl+Alt+Shift+N',
+          click: () => sendCommand('new-project')
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
