@@ -14,6 +14,7 @@ import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
 import { bracketPairs } from './pairs'
 import { linkBehaviour } from './links'
+import { richPaste } from './richPaste'
 import { blankLines } from './blankLines'
 import { taskBoxes } from './taskBoxes'
 import { tableWidgets } from './tableWidget'
@@ -187,6 +188,7 @@ export function editorExtensions({
     ...emphasisPairs,
     ...bracketPairs,
     linkBehaviour,
+    richPaste,
     linkChips,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),

@@ -90,3 +90,4 @@ export {
   TEMPLATES_DIR
 } from './templates'
 export type { Template } from './templates'
+export { htmlToMarkdown, isRichPaste } from './htmlToMarkdown'

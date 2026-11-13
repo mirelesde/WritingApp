@@ -611,7 +611,7 @@ asked for directly.
     remembered per sheet. The outline and quick jump (item 36) keep
     working on folded text.
 
-52. **Paste rich text as Markdown.** Copying from a web page or a word
+52. ~~**Paste rich text as Markdown.**~~ **Done.** `htmlToMarkdown` in core (own tag reader, handles Word and Google Docs styles); `richPaste.ts` in the editor; Cmd/Ctrl+Shift+V pastes plain. Copying from a web page or a word
     processor pastes as Markdown (headings, emphasis, links, lists), with
     Paste as Plain Text as the escape. HTML-to-Markdown conversion in core,
     with tests; the editor's paste handler calls it.
