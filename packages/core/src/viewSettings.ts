@@ -44,6 +44,8 @@ export interface ViewSettings {
   fontSize: number
   /** True when the library pane is hidden (it still slides in on hover). */
   sidebarCollapsed: boolean
+  /** True when the sheet list is hidden, leaving the editor wider. */
+  sheetsCollapsed: boolean
   /** True when the heading outline is shown beside the editor. */
   outline: boolean
   /** Dim everything but the paragraph being written. */
@@ -89,6 +91,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   font: 'serif',
   fontSize: 18,
   sidebarCollapsed: false,
+  sheetsCollapsed: false,
   outline: false,
   focusMode: false,
   typewriter: false,
@@ -135,7 +138,7 @@ export function isHexColour(value: string): boolean {
 export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   const out: Partial<ViewSettings> = {}
   if (typeof data !== 'object' || data === null) return out
-  const { theme, font, fontSize, sidebarCollapsed, outline, focusMode, typewriter, lineNumbers } = data as Record<string, unknown>
+  const { theme, font, fontSize, sidebarCollapsed, sheetsCollapsed, outline, focusMode, typewriter, lineNumbers } = data as Record<string, unknown>
   if (typeof theme === 'string' && (THEMES as readonly string[]).includes(theme)) {
     out.theme = theme as Theme
   }
@@ -146,6 +149,7 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
     out.fontSize = clampFontSize(fontSize)
   }
   if (typeof sidebarCollapsed === 'boolean') out.sidebarCollapsed = sidebarCollapsed
+  if (typeof sheetsCollapsed === 'boolean') out.sheetsCollapsed = sheetsCollapsed
   if (typeof outline === 'boolean') out.outline = outline
   if (typeof focusMode === 'boolean') out.focusMode = focusMode
   if (typeof typewriter === 'boolean') out.typewriter = typewriter

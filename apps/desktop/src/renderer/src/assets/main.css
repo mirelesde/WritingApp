@@ -120,6 +120,15 @@ html.hang-marks .cm-hang-gap {
 .mac .layout.collapsed .editor-bar {
   padding-left: 84px;
 }
+.mac .layout.no-library .sheets header {
+  padding-left: 84px;
+}
+.mac .layout.no-library.no-sheets .editor-bar {
+  padding-left: 84px;
+}
+.mac .layout.no-library .library {
+  background: var(--sidebar);
+}
 .mac .layout.collapsed .sidebar .library {
   /* Floating over the editor, it needs to be solid. */
   background: var(--sidebar);

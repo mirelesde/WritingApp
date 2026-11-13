@@ -69,6 +69,11 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
           BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', 'toggle-sidebar')
       },
       {
+        label: 'Toggle Sheet List',
+        click: () =>
+          BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', 'toggle-sheets')
+      },
+      {
         label: 'Distraction-Free Mode',
         accelerator: 'CmdOrCtrl+Shift+D',
         click: () =>

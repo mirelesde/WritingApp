@@ -68,6 +68,7 @@
   let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
   let sidebarCollapsed = $state(false)
+  let sheetsCollapsed = $state(false)
   /** Distraction-free: only the text, with the panes and tools out of sight until the pointer asks. */
   let zen = $state(false)
   const sidebarHidden = $derived(sidebarCollapsed || zen)
@@ -306,6 +307,10 @@
     editors[entry.path]?.goTo(entry.offset)
   }
 
+  function toggleSheets(): void {
+    void window.api.setView({ sheetsCollapsed: !sheetsCollapsed })
+  }
+
   function toggleSidebar(): void {
     sidebarPeek = false
     void window.api.setView({ sidebarCollapsed: !sidebarCollapsed })
@@ -322,6 +327,7 @@
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
     prefs = view
     sidebarCollapsed = view.sidebarCollapsed
+    sheetsCollapsed = view.sheetsCollapsed
     outlineOpen = view.outline
     focusMode = view.focusMode
     typewriter = view.typewriter
@@ -1100,6 +1106,7 @@
   function handleCommand(command: MenuCommand): void {
     if (!library) return
     if (command === 'toggle-sidebar') toggleSidebar()
+    else if (command === 'toggle-sheets') toggleSheets()
     else if (command === 'new-sheet') void newSheet()
     else if (command === 'move-to') openMoveTo()
     else if (command === 'export-html') void openExport()
@@ -1188,6 +1195,7 @@
       menu('Insert', 'Table', 'insert-table'),
       menu('Insert', 'Footnote', 'insert-footnote'),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
+      menu('View', 'Toggle Sheet List', 'toggle-sheets'),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
       { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
       setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }),
@@ -1253,7 +1261,13 @@
     <button class="primary" onclick={chooseLibrary}>Choose library folder…</button>
   </main>
 {:else}
-  <div class="layout" class:collapsed={sidebarHidden} class:zen>
+  <div
+    class="layout"
+    class:collapsed={zen}
+    class:no-library={sidebarHidden && !zen}
+    class:no-sheets={sheetsCollapsed && !zen}
+    class:zen
+  >
     {#if sidebarHidden}
       <div class="edge" role="presentation" onmouseenter={peekSidebar}></div>
     {/if}
@@ -1425,6 +1439,11 @@
           {#if sidebarCollapsed}
             <ToolButton icon="sidebar" label="Show sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
           {/if}
+          <ToolButton
+            icon={sheetsCollapsed ? 'shrink' : 'expand'}
+            label={sheetsCollapsed ? 'Show sheet list' : 'Hide sheet list'}
+            onclick={toggleSheets}
+          />
           <ToolButton icon="back" label="Back" hint="{keyMod}[" disabled={!canBack} onclick={() => void step(-1)} />
           <ToolButton icon="forward" label="Forward" hint="{keyMod}]" disabled={!canForward} onclick={() => void step(1)} />
           <ToolButton icon="search" label="Find in library" hint="{keyMod}{keyShift}F" onclick={openSearch} />
@@ -1590,7 +1609,7 @@
   .layout {
     height: 100%;
     display: grid;
-    grid-template-columns: 540px minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
   .sidebar {
     display: grid;
@@ -1600,6 +1619,32 @@
   }
   .layout.collapsed {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .layout.no-sheets .sheets {
+    display: none;
+  }
+  .layout.no-sheets .sidebar {
+    grid-template-columns: 240px;
+  }
+  .layout.no-library .sidebar {
+    grid-template-columns: 300px;
+  }
+  .layout.no-library.no-sheets .sidebar {
+    grid-template-columns: 0;
+  }
+  /* Only the library hidden: it floats over the editor until it is peeked at. */
+  .layout.no-library .library {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 240px;
+    z-index: 30;
+    transform: translateX(-101%);
+    transition: transform 140ms ease-out;
+  }
+  .layout.no-library .sidebar.peek .library,
+  .layout.no-library .library:focus-within {
+    transform: none;
+    box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
   /* Collapsed, the sidebar floats over the editor, off screen until it is peeked at. */
   .layout.collapsed .sidebar {
