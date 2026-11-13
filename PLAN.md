@@ -531,7 +531,7 @@ asked for directly.
 44. ~~**Toggle line numbers (user).**~~ **Done.** A preference (item 37) that shows a
     line-number gutter in the editor. Off by default; remembered with the
     view settings; applies to every sheet of a glued run.
-45. **Command palette.** Cmd/Ctrl+Shift+P opens a fuzzy list of every
+45. ~~**Command palette.**~~ **Done.** Cmd/Ctrl+Shift+P opens a fuzzy list of every
     menu command and setting by name, with its shortcut. Reuses the quick
     open dialog; commands come from one registry shared with the menus.
 46. ~~**Clickable task lists.**~~ **Done.** `- [ ]` and `- [x]` draw as checkboxes in the
@@ -558,6 +558,7 @@ asked for directly.
    Sort menu in the sheet list header; dates shown on cards when sorting by date or words
    Accent presets and picker; theme files (colours only) in <userData>/themes, opened from Preferences
    Save guard + conflict dialog; silent reload when no edits of mine in that sheet
+   File menu > Command Palette (Cmd/Ctrl+Shift+P); commands built in App.svelte, not one shared registry with the menus
 
 60. **Distraction-free mode.** Hides both side panes and the header rows so
     only the text remains; they return when the pointer reaches the top or

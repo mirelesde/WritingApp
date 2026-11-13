@@ -9,12 +9,15 @@
     type GroupNode,
     type ColorTheme,
     type SheetNode,
-    type SheetSort
+    type SheetSort,
+    type ViewSettings
   } from '@writingapp/core'
-  import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
+  import type { LibraryInfo, MenuCommand, OpResult, PdfOptions } from '../../preload/api'
   import { applyView } from './view'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
+  import CommandPalette from './CommandPalette.svelte'
+  import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
@@ -1067,6 +1070,101 @@
     }
   }
 
+  /** Runs a menu command; the menus and the command palette both come through here. */
+  function handleCommand(command: MenuCommand): void {
+    if (!library) return
+    if (command === 'toggle-sidebar') toggleSidebar()
+    else if (command === 'new-sheet') void newSheet()
+    else if (command === 'move-to') openMoveTo()
+    else if (command === 'export-html') void openExport()
+    else if (command === 'search') openSearch()
+    else if (command === 'quick-open') openQuick()
+    else if (command === 'command-palette') openPalette()
+    else if (command === 'preferences') preferencesOpen = true
+    else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
+    else if (command === 'delete') void deleteSelected()
+    else if (command === 'split') void splitAtCursor()
+    else if (command === 'merge') void mergeSelected()
+    else if (command === 'glue') void glueSelected(true)
+    else if (command === 'unglue') void glueSelected(false)
+    else if (command === 'undo-sheet-change') void undoSheetChange()
+    else void newGroup(command === 'new-project')
+  }
+
+  // --- Command palette ---------------------------------------------------------
+
+  let palette = $state(false)
+
+  function openPalette(): void {
+    searchReturnFocus = document.activeElement as HTMLElement | null
+    palette = true
+  }
+
+  function closePalette(): void {
+    palette = false
+    searchReturnFocus?.focus()
+  }
+
+  function runPaletteCommand(command: PaletteCommand): void {
+    palette = false
+    searchReturnFocus?.focus()
+    command.run()
+  }
+
+  const paletteCommands = $derived.by((): PaletteCommand[] => {
+    const menu = (section: string, label: string, command: MenuCommand, shortcut?: string): PaletteCommand => ({
+      id: `${section}:${label}`,
+      section,
+      label,
+      shortcut,
+      run: () => handleCommand(command)
+    })
+    const setting = (section: string, label: string, patch: Partial<ViewSettings>): PaletteCommand => ({
+      id: `${section}:${label}`,
+      section,
+      label,
+      run: () => void window.api.setView(patch)
+    })
+    const view = prefs
+    const list: PaletteCommand[] = [
+      menu('File', 'New Sheet', 'new-sheet', `${keyMod}N`),
+      menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
+      menu('File', 'New Project', 'new-project'),
+      menu('File', 'Move to…', 'move-to', `${keyMod}${keyShift}M`),
+      menu('File', 'Move to Trash', 'delete'),
+      menu('File', 'Quick Open…', 'quick-open', `${keyMod}P`),
+      menu('File', 'Find in Library…', 'search', `${keyMod}${keyShift}F`),
+      menu('File', 'Export…', 'export-html', `${keyMod}E`),
+      menu('File', 'Preferences…', 'preferences', `${keyMod},`),
+      menu('Sheet', 'Split at Cursor', 'split', `${keyMod}${keyShift}↩`),
+      menu('Sheet', 'Merge Sheets', 'merge', `${keyMod}${keyShift}J`),
+      menu('Sheet', 'Glue Sheets', 'glue', `${keyMod}${keyShift}G`),
+      menu('Sheet', 'Unglue Sheets', 'unglue'),
+      menu('Sheet', 'Undo Library Change', 'undo-sheet-change'),
+      ...STYLES.flat().map((s) =>
+        menu('Format', s.label, `format-${s.kind}`, s.hint ? `${keyMod}⌥${s.hint}` : undefined)
+      ),
+      menu('Format', 'Bold', 'format-bold', `${keyMod}B`),
+      menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
+      menu('Format', 'Link', 'format-link', `${keyMod}K`),
+      menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
+      { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
+      setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }),
+      setting('View', `${view?.typewriter ? 'Turn off' : 'Turn on'} Typewriter Scrolling`, { typewriter: !view?.typewriter }),
+      setting('View', `${view?.lineNumbers ? 'Hide' : 'Show'} Line Numbers`, { lineNumbers: !view?.lineNumbers }),
+      setting('View', 'Light Theme', { theme: 'light' }),
+      setting('View', 'Dark Theme', { theme: 'dark' }),
+      setting('View', 'Match System Theme', { theme: 'system' }),
+      setting('View', 'Serif Font', { font: 'serif' }),
+      setting('View', 'Sans-serif Font', { font: 'sans' }),
+      setting('View', 'Monospace Font', { font: 'mono' }),
+      setting('View', 'Larger Text', { fontSize: (view?.fontSize ?? 18) + 1 }),
+      setting('View', 'Smaller Text', { fontSize: (view?.fontSize ?? 18) - 1 }),
+      ...SORTS.map(([value, label]) => setting('Sort', `Sheets by ${label}`, { sheetSort: value }))
+    ]
+    return list
+  })
+
   onMount(() => {
     void window.api.listThemes().then((found) => (themes = found))
     void window.api.getView().then(applyViewSettings)
@@ -1083,24 +1181,7 @@
       .finally(() => (loading = false))
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
     const unsubscribeChanged = window.api.onLibraryChanged((info) => void externalChange(info))
-    const unsubscribeMenu = window.api.onMenuCommand((command) => {
-      if (!library) return
-      if (command === 'toggle-sidebar') toggleSidebar()
-      else if (command === 'new-sheet') void newSheet()
-      else if (command === 'move-to') openMoveTo()
-      else if (command === 'export-html') void openExport()
-      else if (command === 'search') openSearch()
-      else if (command === 'quick-open') openQuick()
-      else if (command === 'preferences') preferencesOpen = true
-      else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
-      else if (command === 'delete') void deleteSelected()
-      else if (command === 'split') void splitAtCursor()
-      else if (command === 'merge') void mergeSelected()
-      else if (command === 'glue') void glueSelected(true)
-      else if (command === 'unglue') void glueSelected(false)
-      else if (command === 'undo-sheet-change') void undoSheetChange()
-      else void newGroup(command === 'new-project')
-    })
+    const unsubscribeMenu = window.api.onMenuCommand(handleCommand)
     // Last chance to save when the window closes.
     const saveOnClose = (): void => void autosaver.flush()
     window.addEventListener('beforeunload', saveOnClose)
@@ -1379,6 +1460,10 @@
 
 {#if searching}
   <SearchDialog onpick={revealSheet} oncancel={closeSearch} />
+{/if}
+
+{#if palette}
+  <CommandPalette commands={paletteCommands} onrun={runPaletteCommand} oncancel={closePalette} />
 {/if}
 
 {#if conflict}

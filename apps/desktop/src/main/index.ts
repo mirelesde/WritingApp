@@ -166,6 +166,11 @@ function buildMenu(): Menu {
           click: () => sendCommand('quick-open')
         },
         {
+          label: 'Command Palette…',
+          accelerator: 'CmdOrCtrl+Shift+P',
+          click: () => sendCommand('command-palette')
+        },
+        {
           label: 'Find in Library…',
           accelerator: 'CmdOrCtrl+Shift+F',
           click: () => sendCommand('search')
