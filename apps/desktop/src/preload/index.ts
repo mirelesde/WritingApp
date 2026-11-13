@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { ViewSettings } from '@writingapp/core'
 import type { Api, LibraryInfo, MenuCommand } from './api'
 
 const api: Api = {
@@ -21,6 +22,15 @@ const api: Api = {
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
   saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),
+  getView: () => ipcRenderer.invoke('view:get'),
+  setView: (patch) => ipcRenderer.invoke('view:set', patch),
+  onViewChanged(callback) {
+    const listener = (_event: unknown, view: ViewSettings): void => callback(view)
+    ipcRenderer.on('view:changed', listener)
+    return () => {
+      ipcRenderer.removeListener('view:changed', listener)
+    }
+  },
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

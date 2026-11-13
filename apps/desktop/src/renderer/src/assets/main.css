@@ -10,9 +10,13 @@
   --selection: #cfe3df;
   --marker: #b3aea4;
   --accent: #2f6f6a;
+  --editor-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --editor-size: 18px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
+/* The Theme setting drives nativeTheme in the main process, which is what
+   this media query sees, so the app and its native dialogs always agree. */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1d1c1a;

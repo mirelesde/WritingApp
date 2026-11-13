@@ -1,23 +1,34 @@
 import { promises as fs } from 'node:fs'
 import { dirname } from 'node:path'
+import { parseViewSettings, type ViewSettings } from '@writingapp/core'
 
 export interface Settings {
   /** The library folder to reopen at launch. */
   libraryPath?: string
+  /** Look and layout choices; only what the user changed. */
+  view?: Partial<ViewSettings>
 }
 
 /** A small JSON settings file. A missing or damaged file reads as empty. */
 export function createSettingsStore(file: string): {
   load(): Promise<Settings>
   save(settings: Settings): Promise<void>
+  /** Loads, lays `patch` over what is there (view fields merge), and saves. */
+  update(patch: Settings): Promise<Settings>
 } {
   return {
     async load() {
       try {
         const data: unknown = JSON.parse(await fs.readFile(file, 'utf8'))
         if (typeof data === 'object' && data !== null) {
-          const { libraryPath } = data as Record<string, unknown>
-          if (typeof libraryPath === 'string' && libraryPath !== '') return { libraryPath }
+          const { libraryPath, view } = data as Record<string, unknown>
+          const settings: Settings = {}
+          if (typeof libraryPath === 'string' && libraryPath !== '') {
+            settings.libraryPath = libraryPath
+          }
+          const parsed = parseViewSettings(view)
+          if (Object.keys(parsed).length > 0) settings.view = parsed
+          return settings
         }
       } catch {
         // Missing or malformed: start from defaults.
@@ -28,6 +39,14 @@ export function createSettingsStore(file: string): {
     async save(settings) {
       await fs.mkdir(dirname(file), { recursive: true })
       await fs.writeFile(file, JSON.stringify(settings, null, 2) + '\n', 'utf8')
+    },
+
+    async update(patch) {
+      const current = await this.load()
+      const next: Settings = { ...current, ...patch }
+      if (current.view || patch.view) next.view = { ...current.view, ...patch.view }
+      await this.save(next)
+      return next
     }
   }
 }

@@ -1,4 +1,4 @@
-import type { GroupNode, SearchHit } from '@writingapp/core'
+import type { GroupNode, SearchHit, ViewSettings } from '@writingapp/core'
 
 /** A loaded library: where it lives and its tree. */
 export interface LibraryInfo {
@@ -86,6 +86,12 @@ export interface Api {
   saveExport(paths: string[]): Promise<string | null>
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
   saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
+  /** How the app looks, with defaults filled in. */
+  getView(): Promise<ViewSettings>
+  /** Changes some view settings; every window is told through `onViewChanged`. */
+  setView(patch: Partial<ViewSettings>): Promise<ViewSettings>
+  /** Called when a view setting changes, from the View menu or elsewhere. */
+  onViewChanged(callback: (view: ViewSettings) => void): () => void
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when files in the open library change outside the app, with the library as it is now. */

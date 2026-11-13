@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { attachEditMenu } from './editMenu'
+import { loadView, registerViewIpc, viewMenu } from './view'
 import { chooseLibrary, registerLibraryIpc } from './library'
 
 function createWindow(): void {
@@ -138,13 +139,15 @@ function buildMenu(): Menu {
       ]
     },
     { role: 'editMenu' },
-    { role: 'viewMenu' },
+    viewMenu(isMac),
     { role: 'windowMenu' }
   ])
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   registerLibraryIpc()
+  registerViewIpc()
+  await loadView(() => Menu.setApplicationMenu(buildMenu()))
   Menu.setApplicationMenu(buildMenu())
 
   // Set app user model id for windows

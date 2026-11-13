@@ -8,7 +8,6 @@ import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
 import { formattingKeymap } from './formatting'
 
-const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif"
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 
 /** Layout and typography: a readable column, generous leading. */
@@ -16,7 +15,9 @@ const theme = EditorView.theme({
   // The editor grows with its text; the run it sits in does the scrolling.
   '&': { color: 'var(--text)', backgroundColor: 'transparent' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: serif, fontSize: '18px', lineHeight: '1.7', overflow: 'visible' },
+  '.cm-scroller': {
+    fontFamily: 'var(--editor-font)',
+    fontSize: 'var(--editor-size)', lineHeight: '1.7', overflow: 'visible' },
   '.cm-content': {
     // A 46rem column with 64px of air each side leaves about 38rem of text.
     maxWidth: '46rem',

@@ -2,6 +2,7 @@
   import { onMount, tick } from 'svelte'
   import { sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
   import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
+  import { applyView } from './view'
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
@@ -783,6 +784,8 @@
   }
 
   onMount(() => {
+    void window.api.getView().then(applyView)
+    const unsubscribeView = window.api.onViewChanged(applyView)
     window.api
       .getLibrary()
       .then((info) => {
@@ -812,6 +815,7 @@
       unsubscribeOpened()
       unsubscribeChanged()
       unsubscribeMenu()
+      unsubscribeView()
       window.removeEventListener('beforeunload', saveOnClose)
     }
   })

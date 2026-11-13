@@ -34,4 +34,24 @@ describe('createSettingsStore', () => {
     await writeFile(file, text)
     expect(await createSettingsStore(file).load()).toEqual({})
   })
+
+  it('round-trips view settings and drops invalid ones', async () => {
+    const file = join(dir, 'settings.json')
+    await writeFile(file, JSON.stringify({ view: { theme: 'dark', fontSize: 99, font: 'wingdings' } }))
+    expect(await createSettingsStore(file).load()).toEqual({ view: { theme: 'dark', fontSize: 32 } })
+  })
+
+  it('reads view settings next to the library path', async () => {
+    const store = createSettingsStore(join(dir, 'settings.json'))
+    await store.save({ libraryPath: '/L', view: { font: 'sans' } })
+    expect(await store.load()).toEqual({ libraryPath: '/L', view: { font: 'sans' } })
+  })
+
+  it('update keeps the other fields and merges view settings', async () => {
+    const store = createSettingsStore(join(dir, 'settings.json'))
+    await store.save({ libraryPath: '/L', view: { theme: 'dark' } })
+    await store.update({ view: { fontSize: 20 } })
+    await store.update({ libraryPath: '/M' })
+    expect(await store.load()).toEqual({ libraryPath: '/M', view: { theme: 'dark', fontSize: 20 } })
+  })
 })

@@ -1,0 +1,35 @@
+import { describe, expect, it } from 'vitest'
+import { clampFontSize, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
+
+describe('parseViewSettings', () => {
+  it('keeps valid fields', () => {
+    expect(
+      parseViewSettings({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true })
+    ).toEqual({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true })
+  })
+
+  it('drops invalid fields and unknown keys', () => {
+    expect(
+      parseViewSettings({ theme: 'neon', font: 3, fontSize: 'big', sidebarCollapsed: 'yes', x: 1 })
+    ).toEqual({})
+  })
+
+  it('clamps the font size', () => {
+    expect(parseViewSettings({ fontSize: 2 }).fontSize).toBe(12)
+    expect(parseViewSettings({ fontSize: 999 }).fontSize).toBe(32)
+    expect(clampFontSize(17.6)).toBe(18)
+  })
+
+  it('rejects things that are not objects', () => {
+    expect(parseViewSettings(null)).toEqual({})
+    expect(parseViewSettings('dark')).toEqual({})
+    expect(parseViewSettings({ fontSize: NaN })).toEqual({})
+  })
+})
+
+describe('resolveView', () => {
+  it('fills in the defaults', () => {
+    expect(resolveView()).toEqual(DEFAULT_VIEW)
+    expect(resolveView({ theme: 'light' })).toEqual({ ...DEFAULT_VIEW, theme: 'light' })
+  })
+})

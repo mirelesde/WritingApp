@@ -30,3 +30,15 @@ export { searchLibrary } from './search'
 export type { SearchHit } from './search'
 export { countWords, groupWordCount, textStats, WORDS_PER_MINUTE } from './stats'
 export type { TextStats } from './stats'
+export {
+  clampFontSize,
+  DEFAULT_VIEW,
+  FONT_STACKS,
+  FONTS,
+  MAX_FONT_SIZE,
+  MIN_FONT_SIZE,
+  parseViewSettings,
+  resolveView,
+  THEMES,
+} from './viewSettings'
+export type { Font, Theme, ViewSettings } from './viewSettings'

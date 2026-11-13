@@ -434,7 +434,7 @@ asked for directly.
 
 **Easy to medium**
 
-8. **Theme, font and size.** Light, dark or follow the system; editor font
+8. ~~**Theme, font and size.**~~ **Done.** Light, dark or follow the system; editor font
    family and size. A small settings store in the main process, applied as
    CSS variables. Export keeps its own stylesheet.
 9. **Collapsible sidebar (user).** A toggle button collapses the library
@@ -461,6 +461,7 @@ asked for directly.
 15. **Focus and typewriter mode.** Dim everything except the current
     paragraph or sentence; optionally keep the cursor line vertically
     centred. A toggle in the View menu.
+   (Settings live in the app's settings file; the View menu has Theme, Editor Font, and Larger/Smaller/Default Text Size (Cmd/Ctrl + / - / 0). The theme drives `nativeTheme`, so dialogs agree.)
 
 **Medium**
 

@@ -80,7 +80,7 @@ export async function chooseLibrary(window?: BrowserWindow): Promise<LibraryInfo
     dialog.showErrorBox('Could not open library', `The folder could not be read:\n${picked}`)
     return null
   }
-  await settings.save({ libraryPath: info.path })
+  await settings.update({ libraryPath: info.path })
   return info
 }
 
@@ -127,6 +127,11 @@ function inside(path: unknown, allowRoot = false): string {
     throw new Error('Not part of the open library')
   }
   return path
+}
+
+/** The app's settings file, once the library IPC is registered. */
+export function appSettings(): ReturnType<typeof createSettingsStore> {
+  return settings
 }
 
 export function registerLibraryIpc(): void {
