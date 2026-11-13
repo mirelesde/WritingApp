@@ -859,12 +859,15 @@
   }
 
   function sheetsPaneDragOver(e: DragEvent): void {
+    // A sorted list has no saved order to rearrange; sheets can still be dragged to a group.
+    if (sortBy !== 'manual') return
     if (drag?.kind !== 'sheets' || drag.parent !== selectedGroup) return
     e.preventDefault()
     sheetHint = 'end'
   }
 
   function sheetDragOver(path: string, e: DragEvent): void {
+    if (sortBy !== 'manual') return
     if (drag?.kind !== 'sheets' || drag.parent !== selectedGroup || drag.paths.includes(path))
       return
     e.preventDefault()
