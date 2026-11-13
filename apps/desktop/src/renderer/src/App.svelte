@@ -1107,7 +1107,9 @@
     padding: 48px 0 40vh;
   }
   .seam {
-    max-width: 40rem;
+    /* Lines up with the text column of the editors above and below. */
+    width: calc(100% - 128px);
+    max-width: calc(46rem - 128px);
     margin: 28px auto;
     border: none;
     border-top: 1px dashed var(--border);

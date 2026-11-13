@@ -111,7 +111,7 @@ typecheck, build) before committing.
 
 Three things, and nothing else until they are good enough to write in daily:
 
-1. **Organisation** — project > group > sheets, manually ordered.
+1. ~~**Organisation**~~ **Done.** — project > group > sheets, manually ordered.
 2. **Sheet operations** — split, merge, glue, move, all from the keyboard.
 3. **Export** — HTML and PDF of any sheet, glued run, or group.
 

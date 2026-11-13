@@ -15,9 +15,10 @@ const theme = EditorView.theme({
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: serif, fontSize: '18px', lineHeight: '1.7', overflow: 'visible' },
   '.cm-content': {
-    maxWidth: '40rem',
+    // A 46rem column with 64px of air each side leaves about 38rem of text.
+    maxWidth: '46rem',
     margin: '0 auto',
-    padding: '0 32px',
+    padding: '0 64px',
     caretColor: 'var(--text)'
   },
   '.cm-line': { padding: '0' },
