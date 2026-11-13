@@ -6,17 +6,17 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 
 ## Status
 
-- **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI),
-  4 (editor), 5 (organising), 6 (sheet operations) 7 (HTML export) and 8 (PDF export). Licensed AGPL-3.0.
-- **Next:** milestone 9 (hardening).
-- The app edits and organises a library, and can split, merge, glue and
-  unglue sheets, with a glued run edited as one continuous document. Not in
-  the UI yet: deleting, renaming a sheet (its file name comes from its first
-  line), and undo for moves. Outside edits to an open library are not picked
-  up (milestone 9).
+- **Done:** milestones 1 (scaffold) to 9 (hardening). Licensed AGPL-3.0.
+- **Next:** nothing planned. See "Later" and "Still open" below.
+- The app edits and organises a library, splits, merges, glues and
+  unglues sheets, deletes (to the system trash), searches, exports to HTML
+  and PDF, and follows changes made outside the app. Undo covers move,
+  delete, split, merge, glue and unglue. Not in the UI yet: renaming a sheet
+  (its file name comes from its first line) and undo for creating or
+  renaming groups and sheets.
 
 If you are picking this up in a new session, read "Working in this repo"
-below, then start at milestone 3.
+below, then pick from "Still open" and "Later".
 
 ## Working in this repo
 
@@ -361,13 +361,47 @@ Notes from building it:
   Windows and Linux use the same Electron call but have not been tried.
 - **Not yet:** custom fonts or sizes, title page, table of contents.
 
-### 9. Hardening
+### 9. Hardening — done
 - Watch the library folder and pick up outside changes, including sync
   conflicts.
 - Undo for structural operations (delete, move, merge, split).
 - Search across the library.
 - Signed builds and a release workflow.
 - **Done when:** it is the app the daily writing happens in.
+
+Notes from building it:
+
+- **Search:** File > Find in Library (`Cmd/Ctrl+Shift+F`). Case-insensitive
+  substring over every sheet's text, first 50 sheets in library order, with
+  a snippet. Plain substring only; no ranking, regex or word matching.
+- **Delete and undo:** File > Move to Trash (`Cmd/Ctrl+Alt+Backspace`).
+  Undo (`Cmd/Ctrl+Alt+Z`, "Undo Library Change") now covers move, delete,
+  split, merge, glue and unglue, in-memory, 20 deep, cleared when another
+  library opens. Undoing a delete rewrites the text of the sheets (and
+  sidecars) from a snapshot; other file types in a deleted group only come
+  back via the system trash.
+- **Outside changes:** the library folder is watched (`fs.watch`, recursive;
+  `main/watcher.ts`) and a burst of events becomes one `library:changed`.
+  The sheet list updates; an open sheet reloads if it changed on disk and has
+  no unsaved edits. With unsaved edits, the app's next save overwrites the
+  outside change (last write wins). A sync-conflict copy (for example
+  "a (conflicted copy).md") shows up as an ordinary extra sheet; there is no
+  merge tool. A moved or renamed file outside the app drops it from the
+  list and reorders by name for unknown files.
+- **Releases:** `.github/workflows/ci.yml` (typecheck, tests, lint) and
+  `release.yml` (tag `v*` builds Mac dmg, Windows installer, Linux AppImage
+  and deb into a draft GitHub release). Signing and Mac notarization turn on
+  when the secrets named at the top of `release.yml` exist. **The workflows
+  have never run**, and no certificates exist yet; only a local unsigned Mac
+  build (`npm run build:mac`) was tried.
+
+## Still open
+
+- Get signing certificates (Apple Developer ID, a Windows code-signing
+  certificate) and run the release workflow once end to end.
+- Try export, watching and builds on Windows and Linux.
+- Whether "Join" is different from merge.
+- Undo for creating and renaming; undo that survives a restart.
 
 ## Later, in rough order
 
