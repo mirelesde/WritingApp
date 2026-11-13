@@ -74,6 +74,24 @@ html.hang-marks .cm-hang {
   unicode-bidi: bidi-override;
   transform: translateX(-0.35em);
 }
+/* A separator: a thin rule across the text, its dashes out in the margin. */
+html.hang-marks .cm-rule {
+  position: relative;
+}
+html.hang-marks .cm-rule::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid var(--marker);
+  pointer-events: none;
+}
+html.hang-marks .cm-rule .cm-hang,
+html.hang-marks .cm-rule .cm-hang * {
+  letter-spacing: 0;
+  color: var(--faint);
+}
 html.hang-marks .cm-hang-gap {
   display: inline-block;
   width: 0;

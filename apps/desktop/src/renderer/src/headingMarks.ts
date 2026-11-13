@@ -4,9 +4,11 @@ import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate
 
 const hang = Decoration.mark({ class: 'cm-hang' })
 const gap = Decoration.mark({ class: 'cm-hang-gap' })
+const rule = Decoration.line({ class: 'cm-rule' })
 
 /**
- * Tags the `#` characters of a heading, and the spaces after them, so the
+ * Tags the `#` characters of a heading, and the spaces after them (and the dashes of a
+ * `---` separator), so the
  * stylesheet can hang the hashes in the left margin and keep the heading
  * text flush with the body text. Without the `hang-marks` class on the page
  * they are plain text and nothing changes.
@@ -30,6 +32,12 @@ export const headingMarks = ViewPlugin.fromClass(
           from,
           to,
           enter(node) {
+            if (node.name === 'HorizontalRule') {
+              // A --- separator: the line is drawn across the page, its dashes hang in the margin.
+              builder.add(state.doc.lineAt(node.from).from, state.doc.lineAt(node.from).from, rule)
+              builder.add(node.from, node.to, hang)
+              return
+            }
             if (node.name !== 'HeaderMark') return
             if (!/^ATXHeading/.test(node.node.parent?.name ?? '')) return
             const line = state.doc.lineAt(node.from)
