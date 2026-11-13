@@ -448,6 +448,10 @@ asked for directly.
 36. **Jump between headings.** Cmd/Ctrl+Alt+Up and Down move the cursor to
     the previous or next heading; the outline marks the current section.
 
+43. **Reveal and open externally.** Reveal in Finder or Explorer, copy the
+    file path, and open the sheet in another editor, from the sheet's
+    menu once item 17 exists. Electron's `shell` does all of it.
+
 **Easy to medium**
 
 8. ~~**Theme, font and size.**~~ **Done.** Light, dark or follow the system; editor font
@@ -519,6 +523,33 @@ asked for directly.
     Core gets a pure function per block style (toggle line prefix) with
     tests; the editor applies them as a transaction.
 
+44. **Toggle line numbers (user).** A preference (item 37) that shows a
+    line-number gutter in the editor. Off by default; remembered with the
+    view settings; applies to every sheet of a glued run.
+45. **Command palette.** Cmd/Ctrl+Shift+P opens a fuzzy list of every
+    menu command and setting by name, with its shortcut. Reuses the quick
+    open dialog; commands come from one registry shared with the menus.
+46. **Clickable task lists.** `- [ ]` and `- [x]` draw as checkboxes in the
+    editor; clicking one toggles the marker in the text. Cmd/Ctrl+Enter
+    toggles the item at the cursor.
+47. **Sheet list sorting and dates.** Sort a group's sheets by manual order
+    (default), title, modified date, created date or word count; the card
+    can show the date. Manual order stays in the sidecar, so sorting only
+    changes the view until the user reorders.
+48. **Sheet templates and daily note.** New Sheet from Template, with
+    templates kept as sheets in a hidden `.templates` group, and a Daily
+    Note command that opens or creates today's sheet in a chosen group.
+49. **External change handling.** When a sheet changes on disk while it is
+    open: reload it silently if it has no unsaved edits, otherwise ask
+    whether to keep the editor's version or take the disk's, and show
+    both. Check first what the watcher and autosaver do today.
+50. **Custom themes and accent colour.** An accent colour picker, and user
+    theme files (a small JSON of the colour tokens) dropped in a themes
+    folder and listed in Preferences.
+51. **Accessibility pass.** VoiceOver and screen-reader labels on every
+    control and pane, a high-contrast option, honouring reduced motion,
+    and full keyboard-only use of every dialog and menu.
+
 **Medium**
 
 16. **Rename sheet and group.** Sheets take their name from the first line,
@@ -557,6 +588,30 @@ asked for directly.
     arrow or Cmd/Ctrl+Alt+[ and ]; fold all and unfold all. Fold state is
     remembered per sheet. The outline and quick jump (item 36) keep
     working on folded text.
+
+52. **Paste rich text as Markdown.** Copying from a web page or a word
+    processor pastes as Markdown (headings, emphasis, links, lists), with
+    Paste as Plain Text as the escape. HTML-to-Markdown conversion in core,
+    with tests; the editor's paste handler calls it.
+53. **More Markdown in the editor and export.** Strikethrough, `==highlight==`,
+    syntax colours in fenced code, and maths (`$...$`), rendered in the
+    editor styling and in HTML and PDF export. Maths needs a renderer
+    (KaTeX) bundled for export.
+54. **Library-wide replace.** Find in Library gains a Replace field with a
+    per-match preview, replace one, replace all, and one undo step for the
+    whole replacement. Skips sheets with unsaved edits until they are saved.
+55. **Writing session stats.** Words written today, a streak, and a daily
+    target shown in the word-count pill; history kept in the app's own
+    settings, not the library. Builds on goals (item 21).
+56. **Writing aids.** Highlight repeated or overused words, a readability
+    score in the stats, and the system dictionary lookup on right-click.
+    Each is its own switch in Preferences.
+57. **Import.** Bring `.txt`, `.rtf` and `.docx` files in as sheets, or an
+    existing folder of Markdown as a project, by menu or by dropping files
+    onto the window. `.docx` needs a converter library.
+58. **More export routes.** Copy a sheet as rich text or HTML, export a
+    whole group as one Markdown file, and print. EPUB export is a bigger
+    sibling of these and lives in "Later".
 
 **Medium to hard**
 
@@ -603,6 +658,17 @@ asked for directly.
 27. **Snapshots / version history.** Automatic copies of a sheet before big
     edits, merges and deletes, with a browse-and-restore list. Overlaps the
     trash design, so do it after item 25 and share the storage.
+
+59. **Project and group notes (user).** A place to talk to your future self
+    ("add more quotes about this"): a note attached to a project or group,
+    never exported, instead of extra sheets that exist only as reminders.
+    Opens from the group's header or the inspector (L11) next to the
+    sheet notes of item 24, and shares its storage decision: a companion
+    hidden file in the folder (`.notes.md`, plain Markdown, easy to sync)
+    or a field in the sidecar. Leaning to the companion file, because
+    notes can get long and the sidecar is read on every load. Needs:
+    a note editor reusing the editor component, a marker on groups that
+    have notes, and exclusion from export, search-and-replace and counts.
 
 **Hard**
 
@@ -688,7 +754,11 @@ Skipped from the Ulysses window: promotional buttons, and its blue accent
 - Export styles: user-selectable and user-editable stylesheets.
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
-- ePub export.
+- **EPUB export.** Another export target next to HTML and PDF: one book
+  from a group, sheets as chapters, headings as the table of contents,
+  title and author from a small dialog. An EPUB is a zip of XHTML, so the
+  HTML export can be reused; needs a zip writer, a cover option, and a
+  validity check (epubcheck) before release.
 - Publishing to WordPress and Ghost.
 
 ## Open questions
