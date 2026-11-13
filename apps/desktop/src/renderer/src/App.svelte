@@ -10,6 +10,7 @@
   import SearchDialog from './SearchDialog.svelte'
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
+  import TopBar from './TopBar.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
@@ -50,7 +51,6 @@
   let sidebarCollapsed = $state(false)
   let sidebarPeek = $state(false)
   let peekTimer: ReturnType<typeof setTimeout> | undefined
-  const modKey = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+'
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
   let editors = $state<Record<string, Editor | undefined>>({})
@@ -133,6 +133,12 @@
   function unpeekSidebar(): void {
     clearTimeout(peekTimer)
     peekTimer = setTimeout(() => (sidebarPeek = false), 250)
+  }
+
+  /** Applies bold, italic or link to the sheet being typed in (the last one focused in a run). */
+  function formatActive(kind: 'bold' | 'italic' | 'link'): void {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (path) editors[path]?.format(kind)
   }
 
   function toggleSidebar(): void {
@@ -879,6 +885,15 @@
     <button class="primary" onclick={chooseLibrary}>Choose library folder…</button>
   </main>
 {:else}
+  <TopBar
+    {sidebarCollapsed}
+    canFormat={open !== null}
+    onsidebar={toggleSidebar}
+    onnew={() => void newSheet()}
+    onsearch={openSearch}
+    onformat={formatActive}
+    onexport={() => void openExport()}
+  />
   <div class="layout" class:collapsed={sidebarCollapsed}>
     {#if sidebarCollapsed}
       <div class="edge" role="presentation" onmouseenter={peekSidebar}></div>
@@ -974,13 +989,6 @@
     </div>
 
     <section class="editor" aria-label="Editor">
-      <button
-        class="sidebar-toggle"
-        title="{sidebarCollapsed ? 'Show' : 'Hide'} sidebar ({modKey}\)"
-        aria-label="{sidebarCollapsed ? 'Show' : 'Hide'} sidebar"
-        aria-pressed={sidebarCollapsed}
-        onclick={toggleSidebar}>▤</button
-      >
       <div class="scroller">
       {#if error}
         <p class="hint">{error}</p>
@@ -1080,7 +1088,7 @@
     cursor: default;
   }
   .layout {
-    height: 100%;
+    height: calc(100% - var(--topbar-height));
     display: grid;
     grid-template-columns: 540px minmax(0, 1fr);
   }
@@ -1096,7 +1104,7 @@
   /* Collapsed, the sidebar floats over the editor, off screen until it is peeked at. */
   .layout.collapsed .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: var(--topbar-height) auto 0 0;
     width: 540px;
     z-index: 30;
     transform: translateX(-101%);
@@ -1110,27 +1118,9 @@
   }
   .edge {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: var(--topbar-height) auto 0 0;
     width: 6px;
     z-index: 29;
-  }
-  .sidebar-toggle {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 5;
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--muted);
-    font-size: 16px;
-    cursor: default;
-  }
-  .sidebar-toggle:hover {
-    background: var(--hover);
-    color: var(--text);
   }
   .pane:focus {
     outline: none;

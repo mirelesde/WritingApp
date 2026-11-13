@@ -12,6 +12,7 @@
   --accent: #2f6f6a;
   --editor-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --editor-size: 18px;
+  --topbar-height: 40px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
