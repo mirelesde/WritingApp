@@ -24,6 +24,8 @@ export interface ViewSettings {
   focusMode: boolean
   /** Keep the line being written in the middle of the window. */
   typewriter: boolean
+  /** Show a line-number gutter in the editor. */
+  lineNumbers: boolean
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -34,6 +36,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   outline: false,
   focusMode: false,
   typewriter: false,
+  lineNumbers: false,
 }
 
 /** CSS font stacks, by name. */
@@ -51,7 +54,7 @@ export function clampFontSize(size: number): number {
 export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   const out: Partial<ViewSettings> = {}
   if (typeof data !== 'object' || data === null) return out
-  const { theme, font, fontSize, sidebarCollapsed, outline, focusMode, typewriter } = data as Record<string, unknown>
+  const { theme, font, fontSize, sidebarCollapsed, outline, focusMode, typewriter, lineNumbers } = data as Record<string, unknown>
   if (typeof theme === 'string' && (THEMES as readonly string[]).includes(theme)) {
     out.theme = theme as Theme
   }
@@ -65,6 +68,7 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof outline === 'boolean') out.outline = outline
   if (typeof focusMode === 'boolean') out.focusMode = focusMode
   if (typeof typewriter === 'boolean') out.typewriter = typewriter
+  if (typeof lineNumbers === 'boolean') out.lineNumbers = lineNumbers
   return out
 }
 

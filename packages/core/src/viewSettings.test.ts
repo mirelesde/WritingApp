@@ -4,7 +4,7 @@ import { clampFontSize, DEFAULT_VIEW, parseViewSettings, resolveView } from './v
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
     expect(
-      parseViewSettings({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true, outline: true, focusMode: true, typewriter: true })
+      parseViewSettings({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true, outline: true, focusMode: true, typewriter: true, lineNumbers: true })
     ).toEqual({
       theme: 'dark',
       font: 'mono',
@@ -13,12 +13,13 @@ describe('parseViewSettings', () => {
       outline: true,
       focusMode: true,
       typewriter: true,
+      lineNumbers: true,
     })
   })
 
   it('drops invalid fields and unknown keys', () => {
     expect(
-      parseViewSettings({ theme: 'neon', font: 3, fontSize: 'big', sidebarCollapsed: 'yes', outline: 1, focusMode: 'on', typewriter: 0, x: 1 })
+      parseViewSettings({ theme: 'neon', font: 3, fontSize: 'big', sidebarCollapsed: 'yes', outline: 1, focusMode: 'on', typewriter: 0, lineNumbers: 'yes', x: 1 })
     ).toEqual({})
   })
 

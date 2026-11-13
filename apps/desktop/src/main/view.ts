@@ -79,6 +79,12 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
         checked: current.typewriter,
         click: () => setView({ typewriter: !current.typewriter })
       },
+      {
+        label: 'Line Numbers',
+        type: 'checkbox',
+        checked: current.lineNumbers,
+        click: () => setView({ lineNumbers: !current.lineNumbers })
+      },
       { type: 'separator' },
       {
         label: 'Theme',

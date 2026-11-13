@@ -118,6 +118,15 @@
           onchange={(e) => onchange({ typewriter: e.currentTarget.checked })}
         />
       </label>
+      <label class="row">
+        <span>Line numbers<small>Show a number beside each line of a sheet</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.lineNumbers}
+          onchange={(e) => onchange({ lineNumbers: e.currentTarget.checked })}
+        />
+      </label>
     </section>
   </div>
 </div>

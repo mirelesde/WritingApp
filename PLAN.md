@@ -525,7 +525,7 @@ asked for directly.
     tests; the editor applies them as a transaction.
    An in-app dialog (Cmd/Ctrl+,) with theme, font, text size, focus mode and typewriter; later settings (items 38, 39, 41, 44) go in it.
 
-44. **Toggle line numbers (user).** A preference (item 37) that shows a
+44. ~~**Toggle line numbers (user).**~~ **Done.** A preference (item 37) that shows a
     line-number gutter in the editor. Off by default; remembered with the
     view settings; applies to every sheet of a glued run.
 45. **Command palette.** Cmd/Ctrl+Shift+P opens a fuzzy list of every
@@ -551,6 +551,7 @@ asked for directly.
 51. **Accessibility pass.** VoiceOver and screen-reader labels on every
     control and pane, a high-contrast option, honouring reduced motion,
     and full keyboard-only use of every dialog and menu.
+   A switch in Preferences and View > Line Numbers; each sheet of a glued run numbers its own lines.
 
 **Medium**
 

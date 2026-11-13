@@ -39,6 +39,14 @@ const theme = EditorView.theme({
   },
   '.cm-line.cm-dim': { opacity: '0.3' },
   '.cm-cursor': { borderLeftColor: 'var(--text)' },
+  '.cm-gutters': {
+    backgroundColor: 'transparent',
+    color: 'var(--faint)',
+    border: 'none',
+    fontFamily: 'var(--editor-font)',
+    fontSize: '0.75em'
+  },
+  '.cm-lineNumbers .cm-gutterElement': { padding: '0 12px 0 8px', minWidth: '2.5em' },
   // Find and replace bar: sticky at the top of the sheet, in the app's own colours.
   '.cm-panels': {
     backgroundColor: 'var(--pane)',

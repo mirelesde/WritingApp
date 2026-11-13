@@ -56,6 +56,7 @@
   let outlineOpen = $state(false)
   let focusMode = $state(false)
   let typewriter = $state(false)
+  let lineNumbers = $state(false)
   let peekTimer: ReturnType<typeof setTimeout> | undefined
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
@@ -199,6 +200,7 @@
     outlineOpen = view.outline
     focusMode = view.focusMode
     typewriter = view.typewriter
+    lineNumbers = view.lineNumbers
     if (!sidebarCollapsed) sidebarPeek = false
   }
 
@@ -1144,6 +1146,7 @@
                   onsection={(heading) => (currentSection = { path: part.path, heading })}
                   {focusMode}
                   {typewriter}
+                  {lineNumbers}
                   autofocus={focusEditor && part.path === selection[0]}
                 />
               </div>

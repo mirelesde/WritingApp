@@ -4,6 +4,7 @@
   import { EditorView } from '@codemirror/view'
   import { createEditorState, fromDisk } from './editor'
   import { focusExtensions } from './focusMode'
+  import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
 
   interface Props {
@@ -25,6 +26,8 @@
     focusMode?: boolean
     /** Keep the cursor line in the middle of the window. */
     typewriter?: boolean
+    /** Show line numbers in a gutter. */
+    lineNumbers?: boolean
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
@@ -34,6 +37,7 @@
     onsection,
     focusMode = false,
     typewriter = false,
+    lineNumbers = false,
     autofocus = false
   }: Props = $props()
   let view: EditorView | undefined
@@ -94,11 +98,17 @@
   }
   let host: HTMLDivElement
   const focusing = new Compartment()
+  const gutter = new Compartment()
 
   // Focus mode and typewriter scrolling can change while the editor is open.
   $effect(() => {
     const options = { dim: focusMode, typewriter }
     view?.dispatch({ effects: focusing.reconfigure(focusExtensions(options)) })
+  })
+
+  $effect(() => {
+    const show = lineNumbers
+    view?.dispatch({ effects: gutter.reconfigure(show ? lineNumbersExtension() : []) })
   })
 
   onMount(() => {
@@ -107,7 +117,10 @@
       state: createEditorState(
         text,
         { onchange, onblur, onescape, onfocus, onedge, onselection, onsection },
-        focusing.of(focusExtensions({ dim: focusMode, typewriter }))
+        [
+          focusing.of(focusExtensions({ dim: focusMode, typewriter })),
+          gutter.of(lineNumbers ? lineNumbersExtension() : [])
+        ]
       )
     })
     if (autofocus) view.focus()
