@@ -292,3 +292,8 @@ button {
 .cm-footnote-remove:hover {
   color: var(--comment);
 }
+
+.mac .layout.no-library .sidebar.peek .sheets header,
+.mac .layout.no-library .library:focus-within ~ .sheets header {
+  padding-left: 14px;
+}

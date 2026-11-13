@@ -1646,6 +1646,17 @@
     transform: none;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
+  /* The sheet list is pushed along to the right, so the library sits beside it. */
+  .layout.no-library .sheets {
+    position: relative;
+    z-index: 29;
+    transition: transform 140ms ease-out;
+  }
+  .layout.no-library .sidebar.peek .sheets,
+  .layout.no-library .library:focus-within ~ .sheets {
+    transform: translateX(240px);
+    box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
+  }
   /* Collapsed, the sidebar floats over the editor, off screen until it is peeked at. */
   .layout.collapsed .sidebar {
     position: fixed;
