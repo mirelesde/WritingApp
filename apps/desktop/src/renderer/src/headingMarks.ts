@@ -22,7 +22,7 @@ export const headingMarks = ViewPlugin.fromClass(
       this.decorations = this.build(view)
     }
     update(update: ViewUpdate): void {
-      if (update.docChanged || update.viewportChanged || update.selectionSet || syntaxTree(update.state) !== syntaxTree(update.startState)) {
+      if (update.docChanged || update.viewportChanged || update.selectionSet || update.focusChanged || syntaxTree(update.state) !== syntaxTree(update.startState)) {
         this.decorations = this.build(update.view)
       }
     }
@@ -47,7 +47,7 @@ export const headingMarks = ViewPlugin.fromClass(
             // While the cursor is among the marks, or the heading has no text yet, they
             // stay in the line so typing and moving through them behaves normally.
             const head = state.selection.main.head
-            const editing = head >= line.from && head < end && head <= line.to
+            const editing = view.hasFocus && head >= line.from && head < end && head <= line.to
             if (end === node.to || editing) {
               builder.add(node.from, node.to, inline)
               return
