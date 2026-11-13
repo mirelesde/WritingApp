@@ -12,6 +12,8 @@ export const THEME_COLORS = [
   'selected',
   'selection',
   'marker',
+  'comment',
+  'quote',
   'accent'
 ] as const
 export type ThemeColor = (typeof THEME_COLORS)[number]

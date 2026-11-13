@@ -12,6 +12,9 @@
   --selected: #dcdcdc;
   --selection: #d3e0de;
   --marker: #b4b4b4;
+  /* Commented-out text is red and quotations blue; a theme can change either. */
+  --comment: #c8372d;
+  --quote: #1f6fd0;
   /* Markdown markers and link addresses: present, but out of the way. */
   --faint: color-mix(in srgb, var(--text) 30%, transparent);
   --accent: #2f6f6a;
@@ -35,6 +38,8 @@
     --selected: #464646;
     --selection: #2f4543;
     --marker: #666666;
+    --comment: #ff7b6e;
+    --quote: #6cb0ff;
     --accent: #6fb3ac;
   }
 }

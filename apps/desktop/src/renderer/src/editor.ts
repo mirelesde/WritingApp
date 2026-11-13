@@ -109,10 +109,10 @@ const markdownStyle = HighlightStyle.define([
   { tag: tags.strikethrough, textDecoration: 'line-through' },
   { tag: tags.link, color: 'var(--accent)' },
   // Commented-out text: kept in the file, left out of exports and counts.
-  { tag: tags.comment, color: 'var(--marker)', fontStyle: 'italic' },
+  { tag: tags.comment, color: 'var(--comment)', fontStyle: 'italic' },
   { tag: tags.url, color: 'var(--faint)' },
   { tag: tags.monospace, fontFamily: mono, fontSize: '0.88em' },
-  { tag: tags.quote, color: 'var(--muted)', fontStyle: 'italic' },
+  { tag: tags.quote, color: 'var(--quote)', fontStyle: 'italic' },
   // Markers (#, *, >, brackets) stay in the text but fade back.
   { tag: tags.processingInstruction, color: 'var(--faint)' },
   // A --- rule is drawn as a spaced accent line.

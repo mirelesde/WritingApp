@@ -19,6 +19,8 @@ const SAMPLE = {
     selected: '#34425a',
     selection: '#2d4a6b',
     marker: '#566478',
+    comment: '#ff8a7a',
+    quote: '#7db8ff',
     accent: '#6aa9ff'
   }
 }
