@@ -6,14 +6,14 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 
 ## Status
 
-- **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI) and
-  4 (editor). Licensed AGPL-3.0.
-- **Next:** milestone 5 (organising).
-- The app opens a library folder, remembers it, and shows three panes:
-  groups, sheets (title + preview), and a CodeMirror Markdown editor for the
-  selected sheet. Edits autosave; File > Open Library (Cmd/Ctrl+O) switches
-  library. There is no way yet to create, move or delete anything from the
-  UI, and outside edits to an open sheet are not picked up (milestone 9).
+- **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI),
+  4 (editor) and 5 (organising). Licensed AGPL-3.0.
+- **Next:** milestone 6 (sheet operations: split, merge, glue).
+- The app edits and organises a library: create sheets, groups and
+  projects; rename groups; select several sheets; reorder and move by
+  keyboard, picker or drag and drop. Not in the UI yet: deleting, and
+  renaming a sheet (its name comes from its first line). Outside edits to an
+  open library are not picked up (milestone 9).
 
 If you are picking this up in a new session, read "Working in this repo"
 below, then start at milestone 3.
@@ -256,12 +256,33 @@ Notes from building it:
   behaviour, tested in `editor.test.ts`).
 - The sheet list's title and preview update as you type.
 
-### 5. Organising
+### 5. Organising — done
 - New sheet, new group, new project, from menu and keyboard.
 - Reorder by drag and drop and by keyboard (move up / move down).
 - Move sheets between groups.
 - Multi-select in the sheet list.
 - **Done when:** a project can be restructured without touching the mouse.
+
+Notes from building it:
+
+- **Shortcuts** (Cmd on Mac, Ctrl elsewhere): `N` new sheet, `Shift+N` new
+  group, `Alt+Shift+N` new project, `Shift+M` Move to…, `1`/`2`/`3` focus
+  the tree, sheet list, editor. In the tree: arrows, Enter or F2 to rename,
+  `Alt+Up/Down` to move a group. In the sheet list: arrows, Shift to extend,
+  Home/End, `A` to select all, `Alt+Up/Down` to move the selection. Escape
+  in the editor returns to the sheet list.
+- **Structure changes go through the main process.** The renderer calls
+  `window.api.createSheet / createGroup / renameGroup / move`; each runs the
+  core operation, reloads the library, and returns it with the list of
+  `[from, to]` paths that changed, which `remapPath` applies to the
+  selection, expanded groups and open sheet.
+- **Never send Svelte state across the bridge.** `$state` arrays are
+  proxies and fail with "An object could not be cloned"; copy with `[...x]`.
+- The editor shows a sheet only when exactly one is selected.
+- Pure logic lives in `renderer/src/organise.ts` (tested): `moveSlot`,
+  `visibleGroups`, `moveTargets`, `dropZone`, `remapPath`.
+- Drag and drop was checked with synthetic DOM drag events, not a real
+  mouse drag.
 
 ### 6. Sheet operations
 - **Split** at the cursor into two sheets.
