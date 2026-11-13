@@ -7,7 +7,7 @@ export const FONTS = ['serif', 'sans', 'mono'] as const
 
 /** Options that are one of a few named choices; the first of each list is not necessarily the default. */
 export const CHOICES = {
-  columnWidth: ['narrow', 'medium', 'wide', 'full'],
+  columnWidth: ['compact', 'narrow', 'medium', 'wide', 'extra-wide', 'full'],
   paragraphSpacing: ['compact', 'normal', 'airy'],
   currentLine: ['off', 'subtle'],
   caretWidth: ['thin', 'normal', 'thick'],
@@ -93,7 +93,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   focusMode: false,
   typewriter: false,
   lineNumbers: false,
-  columnWidth: 'medium',
+  columnWidth: 'narrow',
   lineSpacing: 1.85,
   paragraphSpacing: 'normal',
   currentLine: 'off',

@@ -35,7 +35,14 @@
 
   /** Display names for the named choices. */
   const names: Record<Choice, Record<string, string>> = {
-    columnWidth: { narrow: 'Narrow', medium: 'Medium', wide: 'Wide', full: 'Full' },
+    columnWidth: {
+      compact: 'Compact',
+      narrow: 'Narrow',
+      medium: 'Medium',
+      wide: 'Wide',
+      'extra-wide': 'Wider',
+      full: 'Full'
+    },
     paragraphSpacing: { compact: 'Compact', normal: 'Normal', airy: 'Airy' },
     currentLine: { off: 'Off', subtle: 'Subtle' },
     caretWidth: { thin: 'Thin', normal: 'Normal', thick: 'Thick' },

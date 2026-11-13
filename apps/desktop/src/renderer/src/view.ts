@@ -1,6 +1,13 @@
 import { FONT_STACKS, THEME_COLORS, type ColorTheme, type ViewSettings } from '@writingapp/core'
 
-const COLUMN_WIDTH = { narrow: '38rem', medium: '46rem', wide: '60rem', full: '200rem' }
+const COLUMN_WIDTH = {
+  compact: '30rem',
+  narrow: '38rem',
+  medium: '46rem',
+  wide: '60rem',
+  'extra-wide': '76rem',
+  full: '200rem'
+}
 const BLANK_LINE_SCALE = { compact: '0.4', normal: '1', airy: '1.6' }
 const CARET_WIDTH = { thin: '1px', normal: '2px', thick: '3px' }
 const DIM_OPACITY = { light: '0.55', medium: '0.3', strong: '0.15' }
