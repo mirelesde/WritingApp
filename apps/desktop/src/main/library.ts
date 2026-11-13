@@ -27,7 +27,7 @@ import { parsePdfOptions, renderPdf } from './pdf'
 import { createNodeFileSystem } from './nodeFileSystem'
 import { isInside, isSheetInside, toPosix } from './paths'
 import { watchFolder } from './watcher'
-import { createSettingsStore } from './settings'
+import { createSettingsStore, withRecent } from './settings'
 
 const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
 let settings: ReturnType<typeof createSettingsStore>
@@ -80,7 +80,52 @@ export async function chooseLibrary(window?: BrowserWindow): Promise<LibraryInfo
     dialog.showErrorBox('Could not open library', `The folder could not be read:\n${picked}`)
     return null
   }
-  await settings.update({ libraryPath: info.path })
+  await remember(info.path)
+  return info
+}
+
+// Libraries opened before, for File > Open Recent. Cached so the menu can be built synchronously.
+let recent: string[] = []
+let onRecentChange: () => void = () => {}
+
+export function recentLibraries(): string[] {
+  return recent
+}
+
+/** Reads the saved list; `changed` is called whenever it changes afterwards. */
+export async function loadRecent(changed: () => void): Promise<void> {
+  const saved = await settings.load()
+  recent = saved.recentLibraries ?? []
+  // A library opened before this list existed still belongs in it.
+  if (saved.libraryPath && !recent.includes(saved.libraryPath)) {
+    recent = withRecent(recent, saved.libraryPath)
+  }
+  onRecentChange = changed
+}
+
+async function remember(path: string): Promise<void> {
+  recent = withRecent(recent, path)
+  await settings.update({ libraryPath: path, recentLibraries: recent })
+  onRecentChange()
+}
+
+export async function clearRecent(): Promise<void> {
+  recent = []
+  await settings.update({ recentLibraries: [] })
+  onRecentChange()
+}
+
+/** Opens a library from the recent list. A folder that is gone is dropped from the list. */
+export async function openRecentLibrary(path: string): Promise<LibraryInfo | null> {
+  const info = await open(toPosix(path))
+  if (!info) {
+    recent = recent.filter((p) => p !== path)
+    await settings.update({ recentLibraries: recent })
+    onRecentChange()
+    dialog.showErrorBox('Could not open library', `The folder could not be read:\n${path}`)
+    return null
+  }
+  await remember(info.path)
   return info
 }
 
@@ -140,6 +185,14 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('library:get', async () => {
     const { libraryPath } = await settings.load()
     return libraryPath ? open(libraryPath) : null
+  })
+
+  ipcMain.handle('session:lastSheet', async () => (await settings.load()).lastSheet ?? null)
+
+  ipcMain.handle('session:setLastSheet', async (_event, path: unknown) => {
+    if (typeof path === 'string' && currentRoot && isSheetInside(currentRoot, path)) {
+      await settings.update({ lastSheet: path })
+    }
   })
 
   ipcMain.handle('library:choose', (event) =>

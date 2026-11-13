@@ -22,6 +22,8 @@ const api: Api = {
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
   saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),
+  getLastSheet: () => ipcRenderer.invoke('session:lastSheet'),
+  setLastSheet: (path) => ipcRenderer.invoke('session:setLastSheet', path),
   getView: () => ipcRenderer.invoke('view:get'),
   setView: (patch) => ipcRenderer.invoke('view:set', patch),
   onViewChanged(callback) {

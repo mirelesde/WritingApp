@@ -448,7 +448,7 @@ asked for directly.
     pencil), bold, italic, link, export (sheet with up arrow). Editor
     buttons come from item 6, the rest call existing menu commands.
     Tooltips show the shortcut.
-12. **Open recent library; restore the last sheet.** Reopens where you left
+12. ~~**Open recent library; restore the last sheet.**~~ **Done.** Reopens where you left
     off, with a recent-libraries submenu. Needs the settings store from
     item 8.
 13. **Commented-out text (user).** Syntax to settle first; proposal:
@@ -465,6 +465,7 @@ asked for directly.
    (The sidebar is both the library and sheet panes. Toggle with the button at the top left of the editor, View > Toggle Sidebar, or Cmd/Ctrl+\\; the state is remembered. The top bar in item 11 will take over the button.)
    (File > Quick Open…, Cmd/Ctrl+P. Subsequence matching over the title and the group path, best first.)
    (Sidebar toggle, new sheet and find on the left; bold, italic, link in the middle; export on the right. Buttons keep the editor's focus and selection.)
+   (File > Open Recent lists the last ten libraries, drops one that is gone, and has Clear Menu. The open sheet is saved on each selection and reopened, without taking focus, at launch.)
 
 **Medium**
 

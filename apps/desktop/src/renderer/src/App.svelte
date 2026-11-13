@@ -64,6 +64,12 @@
 
   const runText = $derived(open ? open.parts.map((p) => edits[p.path] ?? p.text).join('\n\n') : '')
 
+  // Remember the open sheet, so the next launch can come back to it.
+  $effect(() => {
+    const only = selection.length === 1 ? selection[0] : undefined
+    if (only) void window.api.setLastSheet(only)
+  })
+
   // Total for the selected group, recounted shortly after the tree or a save changes.
   let wordsRequest = 0
   $effect(() => {
@@ -477,7 +483,7 @@
   }
 
   /** Opens a sheet found by search: selects its group, expands the way to it, and shows it. */
-  async function revealSheet(path: string): Promise<void> {
+  async function revealSheet(path: string, focus = true): Promise<void> {
     if (!library) return
     searching = false
     quickOpening = false
@@ -487,7 +493,7 @@
       expanded[p] = true
     }
     selectedGroup = parent
-    await setSelection([path], path, true)
+    await setSelection([path], path, focus)
   }
 
   // --- Export ----------------------------------------------------------------
@@ -836,8 +842,12 @@
     const unsubscribeView = window.api.onViewChanged(applyViewSettings)
     window.api
       .getLibrary()
-      .then((info) => {
-        if (info) showLibrary(info)
+      .then(async (info) => {
+        if (!info) return
+        showLibrary(info)
+        // Pick up where the last session ended.
+        const last = await window.api.getLastSheet()
+        if (last && sheetExists(info.tree, last)) await revealSheet(last, false)
       })
       .finally(() => (loading = false))
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)

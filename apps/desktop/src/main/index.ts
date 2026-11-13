@@ -4,7 +4,14 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { attachEditMenu } from './editMenu'
 import { loadView, registerViewIpc, viewMenu } from './view'
-import { chooseLibrary, registerLibraryIpc } from './library'
+import {
+  chooseLibrary,
+  clearRecent,
+  loadRecent,
+  openRecentLibrary,
+  recentLibraries,
+  registerLibraryIpc
+} from './library'
 
 function createWindow(): void {
   // Create the browser window.
@@ -62,6 +69,25 @@ function buildMenu(): Menu {
             const library = await chooseLibrary(target)
             if (library && target) target.webContents.send('library:opened', library)
           }
+        },
+        {
+          label: 'Open Recent',
+          submenu: [
+            ...recentLibraries().map((path) => ({
+              label: path,
+              click: async () => {
+                const target = BrowserWindow.getFocusedWindow() ?? undefined
+                const library = await openRecentLibrary(path)
+                if (library && target) target.webContents.send('library:opened', library)
+              }
+            })),
+            ...(recentLibraries().length > 0 ? [{ type: 'separator' as const }] : []),
+            {
+              label: 'Clear Menu',
+              enabled: recentLibraries().length > 0,
+              click: () => void clearRecent()
+            }
+          ]
         },
         { type: 'separator' },
         {
@@ -152,7 +178,9 @@ function buildMenu(): Menu {
 app.whenReady().then(async () => {
   registerLibraryIpc()
   registerViewIpc()
-  await loadView(() => Menu.setApplicationMenu(buildMenu()))
+  const rebuild = (): void => Menu.setApplicationMenu(buildMenu())
+  await loadView(rebuild)
+  await loadRecent(rebuild)
   Menu.setApplicationMenu(buildMenu())
 
   // Set app user model id for windows

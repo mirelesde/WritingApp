@@ -88,6 +88,10 @@ export interface Api {
   saveExport(paths: string[]): Promise<string | null>
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
   saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
+  /** The sheet that was open when the app last ran, if any. */
+  getLastSheet(): Promise<string | null>
+  /** Remembers the open sheet for the next launch. */
+  setLastSheet(path: string): Promise<void>
   /** How the app looks, with defaults filled in. */
   getView(): Promise<ViewSettings>
   /** Changes some view settings; every window is told through `onViewChanged`. */

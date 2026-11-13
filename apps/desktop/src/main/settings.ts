@@ -7,6 +7,17 @@ export interface Settings {
   libraryPath?: string
   /** Look and layout choices; only what the user changed. */
   view?: Partial<ViewSettings>
+  /** Libraries opened before, most recent first. */
+  recentLibraries?: string[]
+  /** The sheet that was open when the app last ran. */
+  lastSheet?: string
+}
+
+export const MAX_RECENT = 10
+
+/** `path` moved to the front of the list, without duplicates, cut to the limit. */
+export function withRecent(list: readonly string[], path: string): string[] {
+  return [path, ...list.filter((p) => p !== path)].slice(0, MAX_RECENT)
 }
 
 /** A small JSON settings file. A missing or damaged file reads as empty. */
@@ -21,13 +32,20 @@ export function createSettingsStore(file: string): {
       try {
         const data: unknown = JSON.parse(await fs.readFile(file, 'utf8'))
         if (typeof data === 'object' && data !== null) {
-          const { libraryPath, view } = data as Record<string, unknown>
+          const { libraryPath, view, recentLibraries, lastSheet } = data as Record<string, unknown>
           const settings: Settings = {}
           if (typeof libraryPath === 'string' && libraryPath !== '') {
             settings.libraryPath = libraryPath
           }
           const parsed = parseViewSettings(view)
           if (Object.keys(parsed).length > 0) settings.view = parsed
+          if (Array.isArray(recentLibraries)) {
+            const paths = recentLibraries.filter(
+              (p): p is string => typeof p === 'string' && p !== ''
+            )
+            if (paths.length > 0) settings.recentLibraries = [...new Set(paths)].slice(0, MAX_RECENT)
+          }
+          if (typeof lastSheet === 'string' && lastSheet !== '') settings.lastSheet = lastSheet
           return settings
         }
       } catch {
