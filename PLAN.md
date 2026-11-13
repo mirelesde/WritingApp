@@ -7,8 +7,8 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 ## Status
 
 - **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI),
-  4 (editor), 5 (organising), 6 (sheet operations) and 7 (HTML export). Licensed AGPL-3.0.
-- **Next:** milestone 8 (PDF export).
+  4 (editor), 5 (organising), 6 (sheet operations) 7 (HTML export) and 8 (PDF export). Licensed AGPL-3.0.
+- **Next:** milestone 9 (hardening).
 - The app edits and organises a library, and can split, merge, glue and
   unglue sheets, with a glued run edited as one continuous document. Not in
   the UI yet: deleting, renaming a sheet (its file name comes from its first
@@ -340,7 +340,7 @@ Notes from building it:
 - **Not yet:** no export options (title page, per-sheet headings) and no
   front matter handling.
 
-### 8. PDF export
+### 8. PDF export — done
 - Render the exported HTML with a print stylesheet through Electron's
   built-in print-to-PDF.
 - Page size, margins, page numbers.
@@ -348,6 +348,18 @@ Notes from building it:
   through the iOS print system.
 - **Done when:** the same group exports to a paginated PDF on Mac, Windows,
   and Linux.
+
+Notes from building it:
+
+- **Use it:** File > Export… (`Cmd/Ctrl+E`) opens the preview; choose page
+  size (A4 or Letter), margins and page numbers, then Save as PDF….
+- **How:** `main/pdf.ts` writes the export HTML to a temp file, loads it in a
+  hidden window with JavaScript off, and calls `printToPDF`. The page's
+  `@media print` rules apply (black on white whatever the system theme,
+  headings kept with their text). Page numbers are "n / total" in the footer.
+- **Verified on Mac only** (21-page output from a 4-sheet group looked right).
+  Windows and Linux use the same Electron call but have not been tried.
+- **Not yet:** custom fonts or sizes, title page, table of contents.
 
 ### 9. Hardening
 - Watch the library folder and pick up outside changes, including sync
