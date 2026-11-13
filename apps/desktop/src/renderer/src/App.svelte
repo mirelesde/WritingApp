@@ -94,6 +94,13 @@
 
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
   const sheets = $derived((group?.children.filter((c) => c.kind === 'sheet') ?? []) as SheetNode[])
+  let filter = $state('')
+  /** What the list shows: every sheet, or those whose title or preview contain the filter. */
+  const shown = $derived.by(() => {
+    const needle = filter.trim().toLowerCase()
+    if (!needle) return sheets
+    return sheets.filter((s) => `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
+  })
   const sheetPaths = $derived(sheets.map((s) => s.path))
   // Sheets that follow a glued sheet, so a run can be drawn as one bar.
   const gluedFrom = $derived(
@@ -469,6 +476,7 @@
   async function selectGroup(path: string): Promise<void> {
     await autosaver.flush()
     selectedGroup = path
+    filter = ''
     clearSheets()
   }
 
@@ -1024,11 +1032,30 @@
           <ToolButton icon="new-sheet" label="New sheet" hint="{keyMod}N" onclick={() => void newSheet()} />
         </span>
       </header>
+      {#if sheets.length > 0}
+        <div class="filter">
+          <input
+            type="search"
+            placeholder="Filter"
+            aria-label="Filter sheets"
+            bind:value={filter}
+            onkeydown={(e) => {
+              e.stopPropagation()
+              if (e.key === 'Escape') {
+                filter = ''
+                sheetsEl?.focus()
+              }
+            }}
+          />
+        </div>
+      {/if}
       {#if sheets.length === 0}
         <p class="hint">No sheets in this group.</p>
+      {:else if shown.length === 0}
+        <p class="hint">No sheets match.</p>
       {:else}
         <ul>
-          {#each sheets as sheet (sheet.path)}
+          {#each shown as sheet (sheet.path)}
             <li>
               <button
                 class="sheet"
@@ -1331,6 +1358,26 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;
+  }
+  .filter {
+    padding: 0 10px 8px;
+  }
+  .filter input {
+    width: 100%;
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 5px 9px;
+    outline: none;
+  }
+  .filter input:focus {
+    border-color: var(--accent);
+  }
+  .filter input::placeholder {
+    color: var(--muted);
   }
   .info {
     margin: 0;
