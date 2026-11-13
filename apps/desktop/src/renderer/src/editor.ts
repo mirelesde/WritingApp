@@ -59,6 +59,8 @@ interface Hooks {
    * if something else took over (the neighbouring sheet in a run).
    */
   onedge?: (direction: 'back' | 'forward') => boolean
+  /** The selected text changed; empty when nothing is selected. */
+  onselection?: (selected: string) => void
 }
 
 /** An arrow key that hands over to the next sheet when the cursor cannot go further. */
@@ -87,7 +89,8 @@ export function editorExtensions({
   onblur,
   onescape,
   onfocus,
-  onedge
+  onedge,
+  onselection
 }: Hooks): Extension[] {
   return [
     history(),
@@ -119,6 +122,10 @@ export function editorExtensions({
     EditorView.updateListener.of((update) => {
       if (update.docChanged && !update.transactions.some((t) => t.annotation(fromDisk))) {
         onchange(update.state.doc.toString())
+      }
+      if (onselection && (update.selectionSet || update.docChanged)) {
+        const { from, to } = update.state.selection.main
+        onselection(update.state.sliceDoc(from, to))
       }
     }),
     EditorView.domEventHandlers({

@@ -7,6 +7,7 @@
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
   import SearchDialog from './SearchDialog.svelte'
+  import StatusBar from './StatusBar.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
@@ -33,6 +34,10 @@
   // The sheets being edited: one, or a whole glued run. Set only once their text has loaded.
   let open = $state<{ parts: { path: string; text: string }[] } | null>(null)
   let error = $state('')
+  // Text typed since a run was loaded, by path; the status bar counts from it.
+  let edits = $state<Record<string, string>>({})
+  let selectedText = $state('')
+  let groupWords = $state<number | null>(null)
   let readId = 0
   let saveStatus = $state<SaveStatus>('saved')
   let renaming = $state<string | null>(null)
@@ -49,6 +54,26 @@
   const autosaver = createAutosaver({
     save: (path, content) => window.api.writeSheet(path, content),
     onStatus: (status) => (saveStatus = status)
+  })
+
+  const runText = $derived(open ? open.parts.map((p) => edits[p.path] ?? p.text).join('\n\n') : '')
+
+  // Total for the selected group, recounted shortly after the tree or a save changes.
+  let wordsRequest = 0
+  $effect(() => {
+    const path = selectedGroup
+    void library
+    if (!library || saveStatus !== 'saved') return
+    const id = ++wordsRequest
+    const timer = setTimeout(() => {
+      window.api
+        .groupWords(path)
+        .then((total) => {
+          if (id === wordsRequest) groupWords = total
+        })
+        .catch(() => {})
+    }, 300)
+    return () => clearTimeout(timer)
   })
 
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
@@ -120,6 +145,8 @@
       const texts = await Promise.all(paths.map((p) => window.api.readSheet(p)))
       if (id !== readId) return
       open = { parts: paths.map((p, i) => ({ path: p, text: texts[i]! })) }
+      edits = {}
+      selectedText = ''
       error = ''
     } catch {
       if (id !== readId) return
@@ -333,6 +360,7 @@
 
   function edited(path: string, content: string): void {
     autosaver.change(path, content)
+    edits[path] = content
     // Keep the sheet list's title and preview in step with what is typed.
     const sheet = sheets.find((s) => s.path === path)
     if (sheet) {
@@ -376,6 +404,7 @@
         const disk = await window.api.readSheet(part.path)
         if (saveStatus === 'saved' && disk !== editor.getText()) {
           editor.replaceText(disk)
+          edits[part.path] = disk
           showInfo('A sheet changed outside the app and was reloaded')
         }
       } catch {
@@ -885,6 +914,7 @@
     </div>
 
     <section class="editor" aria-label="Editor">
+      <div class="scroller">
       {#if error}
         <p class="hint">{error}</p>
       {:else if open}
@@ -901,6 +931,7 @@
                   onescape={() => sheetsEl?.focus()}
                   onfocus={() => focusedPart(part.path)}
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
+                  onselection={(text) => (selectedText = text)}
                   autofocus={focusEditor && part.path === selection[0]}
                 />
               </div>
@@ -914,6 +945,10 @@
         <p class="hint">{selection.length} sheets selected.</p>
       {:else}
         <p class="hint">Select a sheet to read it.</p>
+      {/if}
+      </div>
+      {#if open}
+        <StatusBar text={runText} selected={selectedText} {groupWords} />
       {/if}
     </section>
   </div>
@@ -1101,6 +1136,12 @@
   .editor {
     min-width: 0;
     position: relative;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+  .scroller {
+    position: relative;
     overflow-y: auto;
   }
   .run {
@@ -1117,7 +1158,7 @@
   .status {
     position: fixed;
     right: 16px;
-    bottom: 10px;
+    bottom: 36px;
     font-size: 12px;
     color: var(--muted);
   }

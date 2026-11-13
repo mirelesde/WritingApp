@@ -28,3 +28,5 @@ export { escapeHtml, exportHtml, exportRuns, htmlDocument, markdownToHtml } from
 export type { HtmlExport } from './export'
 export { searchLibrary } from './search'
 export type { SearchHit } from './search'
+export { countWords, groupWordCount, textStats, WORDS_PER_MINUTE } from './stats'
+export type { TextStats } from './stats'

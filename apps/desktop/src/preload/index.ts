@@ -16,6 +16,7 @@ const api: Api = {
   unglue: (paths) => ipcRenderer.invoke('op:unglue', paths),
   deleteNodes: (paths) => ipcRenderer.invoke('op:delete', paths),
   undo: () => ipcRenderer.invoke('op:undo'),
+  groupWords: (path) => ipcRenderer.invoke('stats:group', path),
   search: (query) => ipcRenderer.invoke('search:run', query),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),

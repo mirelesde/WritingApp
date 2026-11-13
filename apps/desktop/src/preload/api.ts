@@ -78,6 +78,8 @@ export interface Api {
   undo(): Promise<OpResult>
   /** Sheets containing `query`, in library order. */
   search(query: string): Promise<SearchHit[]>
+  /** Total words in a group's sheets, including sub-groups. */
+  groupWords(path: string): Promise<number>
   /** Builds the HTML export of the given sheets and groups, without saving it. */
   previewExport(paths: string[]): Promise<ExportPreview>
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */

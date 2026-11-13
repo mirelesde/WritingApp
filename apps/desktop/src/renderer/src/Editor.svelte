@@ -14,11 +14,13 @@
     onfocus?: () => void
     /** The cursor hit the start or end; return true if focus moved elsewhere. */
     onedge?: (direction: 'back' | 'forward') => boolean
+    /** The selected text changed; empty when the selection is. */
+    onselection?: (selected: string) => void
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
 
-  let { text, onchange, onblur, onescape, onfocus, onedge, autofocus = false }: Props = $props()
+  let { text, onchange, onblur, onescape, onfocus, onedge, onselection, autofocus = false }: Props = $props()
   let view: EditorView | undefined
 
   export function focus(): void {
@@ -61,7 +63,7 @@
   onMount(() => {
     view = new EditorView({
       parent: host,
-      state: createEditorState(text, { onchange, onblur, onescape, onfocus, onedge })
+      state: createEditorState(text, { onchange, onblur, onescape, onfocus, onedge, onselection })
     })
     if (autofocus) view.focus()
     return () => view?.destroy()

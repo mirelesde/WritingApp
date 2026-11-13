@@ -8,6 +8,7 @@ import {
   deleteNodeUndoable,
   exportHtml,
   glueSheets,
+  groupWordCount,
   loadLibrary,
   searchLibrary,
   mergeSheets,
@@ -16,6 +17,7 @@ import {
   splitSheet,
   unglueSheets,
   type FileSystem,
+  type GroupNode,
   type SheetChange,
   type UndoAction
 } from '@writingapp/core'
@@ -110,6 +112,16 @@ function undoable(
   return { created: result.path, undo: { label, actions: result.undo } }
 }
 
+function findGroupNode(node: GroupNode, path: string): GroupNode | undefined {
+  if (node.path === path) return node
+  for (const child of node.children) {
+    if (child.kind !== 'group') continue
+    const found = findGroupNode(child, path)
+    if (found) return found
+  }
+  return undefined
+}
+
 function inside(path: unknown, allowRoot = false): string {
   if (typeof path !== 'string' || !currentRoot || !isInside(currentRoot, path, allowRoot)) {
     throw new Error('Not part of the open library')
@@ -159,6 +171,13 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('search:run', async (_event, query: unknown) => {
     if (typeof query !== 'string' || !currentRoot) return []
     return searchLibrary(fs, await loadLibrary(fs, currentRoot), query)
+  })
+
+  ipcMain.handle('stats:group', async (_event, path: unknown) => {
+    if (!currentRoot) return 0
+    const tree = await loadLibrary(fs, currentRoot)
+    const target = findGroupNode(tree, inside(path, true))
+    return target ? groupWordCount(fs, target) : 0
   })
 
   ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))
