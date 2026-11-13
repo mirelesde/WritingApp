@@ -5,7 +5,16 @@
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
-  import { errorMessage, moveSlot, pathRange, remapPath, visibleGroups } from './organise'
+  import MovePicker from './MovePicker.svelte'
+  import {
+    errorMessage,
+    moveSlot,
+    moveTargets,
+    pathRange,
+    remapPath,
+    visibleGroups,
+    type MoveTarget
+  } from './organise'
 
   let library = $state<LibraryInfo | null>(null)
   let loading = $state(true)
@@ -27,6 +36,8 @@
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
   let editor = $state<Editor>()
+  let picker = $state<{ heading: string; paths: string[]; targets: MoveTarget[] } | null>(null)
+  let pickerReturnFocus: HTMLElement | null = null
 
   const autosaver = createAutosaver({
     save: (path, content) => window.api.writeSheet(path, content),
@@ -199,6 +210,54 @@
     expanded[path] = !expanded[path]
   }
 
+  // --- Move to… ------------------------------------------------------------
+
+  /** Opens the group picker for the selected group (tree focused) or sheets. */
+  function openMoveTo(): void {
+    if (!library) return
+    const inTree = treeEl?.contains(document.activeElement) ?? false
+    const root = library.tree
+    let paths: string[]
+    let from: string
+    let moving: string[]
+    let heading: string
+    if (inTree) {
+      if (selectedGroup === root.path) return
+      paths = moving = [selectedGroup]
+      from = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
+      heading = `Move “${group?.name ?? 'group'}” to…`
+    } else {
+      paths = [...selection]
+      if (paths.length === 0) return
+      moving = []
+      from = selectedGroup
+      heading = paths.length === 1 ? 'Move 1 sheet to…' : `Move ${paths.length} sheets to…`
+    }
+    const targets = moveTargets(root, moving, from)
+    if (targets.length === 0) {
+      notice = 'There is nowhere else to move this.'
+      return
+    }
+    pickerReturnFocus = document.activeElement as HTMLElement | null
+    picker = { heading, paths, targets }
+  }
+
+  function closePicker(): void {
+    picker = null
+    pickerReturnFocus?.focus()
+  }
+
+  async function pickTarget(target: string): Promise<void> {
+    if (!picker) return
+    const paths = [...picker.paths] // a plain array: state proxies cannot cross the bridge
+    closePicker()
+    const movedSheets = !treeEl?.contains(pickerReturnFocus)
+    const result = await runOp(() => window.api.move(paths, target))
+    if (!result) return
+    expanded[target] = true
+    if (movedSheets) clearSheets()
+  }
+
   // --- Keyboard -----------------------------------------------------------
 
   function treeKeydown(e: KeyboardEvent): void {
@@ -342,6 +401,7 @@
     const unsubscribeMenu = window.api.onMenuCommand((command) => {
       if (!library) return
       if (command === 'new-sheet') void newSheet()
+      else if (command === 'move-to') openMoveTo()
       else void newGroup(command === 'new-project')
     })
     // Last chance to save when the window closes.
@@ -458,6 +518,15 @@
       {/if}
     </section>
   </div>
+{/if}
+
+{#if picker}
+  <MovePicker
+    heading={picker.heading}
+    targets={picker.targets}
+    onpick={pickTarget}
+    oncancel={closePicker}
+  />
 {/if}
 
 <style>

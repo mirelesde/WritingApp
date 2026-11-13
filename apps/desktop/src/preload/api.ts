@@ -16,7 +16,7 @@ export interface OpResult {
   created?: string
 }
 
-export type MenuCommand = 'new-sheet' | 'new-group' | 'new-project'
+export type MenuCommand = 'new-sheet' | 'new-group' | 'new-project' | 'move-to'
 
 /** What the main process offers the UI as `window.api`. */
 export interface Api {

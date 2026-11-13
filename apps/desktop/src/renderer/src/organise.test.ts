@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { GroupNode } from '@writingapp/core'
-import { errorMessage, moveSlot, pathRange, remapPath, visibleGroups } from './organise'
+import {
+  errorMessage,
+  filterTargets,
+  moveSlot,
+  moveTargets,
+  pathRange,
+  remapPath,
+  visibleGroups
+} from './organise'
 
 describe('remapPath', () => {
   const moved: [string, string][] = [['/Lib/Old', '/Lib/New']]
@@ -125,5 +133,47 @@ describe('pathRange', () => {
   })
   it('is empty for unknown paths', () => {
     expect(pathRange(list, 'x', 'b')).toEqual([])
+  })
+})
+
+describe('moveTargets', () => {
+  const tree = group('/L', group('/L/A', group('/L/A/x')), group('/L/B'))
+
+  it('lists every group with a label from the root down', () => {
+    expect(moveTargets(tree, [], '/none')).toEqual([
+      { path: '/L', label: 'L' },
+      { path: '/L/A', label: 'A' },
+      { path: '/L/A/x', label: 'A › x' },
+      { path: '/L/B', label: 'B' }
+    ])
+  })
+
+  it('leaves out the current group', () => {
+    expect(moveTargets(tree, [], '/L/B').map((t) => t.path)).toEqual(['/L', '/L/A', '/L/A/x'])
+  })
+
+  it('leaves out a moving group and everything inside it', () => {
+    expect(moveTargets(tree, ['/L/A'], '/L').map((t) => t.path)).toEqual(['/L/B'])
+  })
+})
+
+describe('filterTargets', () => {
+  const targets = [
+    { path: '/L/A', label: 'Novel' },
+    { path: '/L/B', label: 'Novel › Part One' },
+    { path: '/L/C', label: 'Essays › Part One' }
+  ]
+
+  it('returns everything for an empty query', () => {
+    expect(filterTargets(targets, '  ')).toEqual(targets)
+  })
+
+  it('requires every word, in any order, ignoring case', () => {
+    expect(filterTargets(targets, 'part novel').map((t) => t.path)).toEqual(['/L/B'])
+    expect(filterTargets(targets, 'ESSAYS').map((t) => t.path)).toEqual(['/L/C'])
+  })
+
+  it('finds nothing when nothing matches', () => {
+    expect(filterTargets(targets, 'zzz')).toEqual([])
   })
 })

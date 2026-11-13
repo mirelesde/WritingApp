@@ -75,6 +75,12 @@ function buildMenu(): Menu {
           click: () => sendCommand('new-project')
         },
         { type: 'separator' },
+        {
+          label: 'Move to…',
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => sendCommand('move-to')
+        },
+        { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },

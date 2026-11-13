@@ -68,3 +68,34 @@ export function pathRange(list: string[], from: string, to: string): string[] {
   if (a < 0 || b < 0) return []
   return list.slice(Math.min(a, b), Math.max(a, b) + 1)
 }
+
+export interface MoveTarget {
+  path: string
+  /** For display: the names from the library root down, e.g. "Novel › Part One". */
+  label: string
+}
+
+/**
+ * Every group that can receive a move, for the "Move to…" picker. Leaves
+ * out `current` (a no-op) and, for each path in `moving`, that group and
+ * everything inside it (a group cannot go into itself).
+ */
+export function moveTargets(root: GroupNode, moving: string[], current: string): MoveTarget[] {
+  const result: MoveTarget[] = []
+  const walk = (group: GroupNode, label: string): void => {
+    if (moving.some((m) => group.path === m)) return // skips the whole subtree
+    if (group.path !== current) result.push({ path: group.path, label })
+    for (const child of group.children) {
+      if (child.kind === 'group')
+        walk(child, group === root ? child.name : `${label} › ${child.name}`)
+    }
+  }
+  walk(root, root.name)
+  return result
+}
+
+/** Targets whose label contains every word of `query`, ignoring case. */
+export function filterTargets(targets: MoveTarget[], query: string): MoveTarget[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  return targets.filter((t) => words.every((w) => t.label.toLowerCase().includes(w)))
+}
