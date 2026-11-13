@@ -83,7 +83,12 @@ table { border-collapse: collapse; }
 th, td { border: 1px solid #8887; padding: .3em .6em; }
 hr.break { border: 0; text-align: center; margin: 3em 0; }
 hr.break::after { content: '* * *'; letter-spacing: .5em; color: #888; }
-@media print { body { max-width: none; padding: 0; color: #000; background: #fff; } }
+@media print {
+  body { max-width: none; padding: 0; font-size: 11.5pt; color: #000; background: #fff; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  pre, blockquote, table, img { break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+}
 `
 
 /** Wraps rendered body HTML in a complete, self-contained page. */

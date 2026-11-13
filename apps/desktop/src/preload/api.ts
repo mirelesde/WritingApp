@@ -37,6 +37,13 @@ export interface ExportPreview {
   sheets: number
 }
 
+/** Page layout for a PDF export. */
+export interface PdfOptions {
+  pageSize: 'A4' | 'Letter'
+  margin: 'narrow' | 'normal' | 'wide'
+  pageNumbers: boolean
+}
+
 /** What the main process offers the UI as `window.api`. */
 export interface Api {
   /** The remembered library, or null if there is none or it cannot be opened. */
@@ -69,6 +76,8 @@ export interface Api {
   previewExport(paths: string[]): Promise<ExportPreview>
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */
   saveExport(paths: string[]): Promise<string | null>
+  /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
+  saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when File > Open Library loads a library. Returns an unsubscribe function. */

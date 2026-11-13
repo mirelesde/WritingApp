@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import type { PdfOptions } from '../../preload/api'
 
   let {
     title,
@@ -7,6 +8,7 @@
     sheets,
     saving,
     onsave,
+    onsavepdf,
     onclose
   }: {
     title: string
@@ -14,8 +16,13 @@
     sheets: number
     saving: boolean
     onsave: () => void
+    onsavepdf: (options: PdfOptions) => void
     onclose: () => void
   } = $props()
+
+  let pageSize = $state<PdfOptions['pageSize']>('A4')
+  let margin = $state<PdfOptions['margin']>('normal')
+  let pageNumbers = $state(true)
 
   let saveButton: HTMLButtonElement | undefined
 
@@ -34,6 +41,23 @@
   <div class="dialog" role="dialog" aria-modal="true" aria-label="Export preview">
     <header>
       <span class="name">{title} · {sheets === 1 ? '1 sheet' : `${sheets} sheets`}</span>
+      <label class="pdf">
+        <select bind:value={pageSize} aria-label="Page size">
+          <option value="A4">A4</option>
+          <option value="Letter">Letter</option>
+        </select>
+      </label>
+      <label class="pdf">
+        <select bind:value={margin} aria-label="Margins">
+          <option value="narrow">Narrow margins</option>
+          <option value="normal">Normal margins</option>
+          <option value="wide">Wide margins</option>
+        </select>
+      </label>
+      <label class="pdf"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
+      <button disabled={saving} onclick={() => onsavepdf({ pageSize, margin, pageNumbers })}>
+        Save as PDF…
+      </button>
       <button onclick={onclose}>Close</button>
       <button class="primary" bind:this={saveButton} disabled={saving} onclick={onsave}>
         Save as HTML…
@@ -94,6 +118,21 @@
   }
   button:disabled {
     opacity: 0.6;
+  }
+  .pdf {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  select {
+    font: inherit;
+    color: inherit;
+    background: var(--pane);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 6px;
   }
   iframe {
     flex: 1;

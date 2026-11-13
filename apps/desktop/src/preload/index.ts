@@ -17,6 +17,7 @@ const api: Api = {
   undo: () => ipcRenderer.invoke('op:undo'),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
+  saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

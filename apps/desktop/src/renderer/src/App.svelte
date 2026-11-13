@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
   import { sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
-  import type { LibraryInfo, OpResult } from '../../preload/api'
+  import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
@@ -353,6 +353,22 @@
     exportSaving = true
     try {
       const saved = await window.api.saveExport(exportPaths)
+      if (saved) {
+        exportPreview = null
+        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
+      }
+    } catch (e) {
+      notice = errorMessage(e)
+      exportPreview = null
+    } finally {
+      exportSaving = false
+    }
+  }
+
+  async function saveExportPdf(options: PdfOptions): Promise<void> {
+    exportSaving = true
+    try {
+      const saved = await window.api.saveExportPdf(exportPaths, { ...options })
       if (saved) {
         exportPreview = null
         showInfo('Exported to ' + saved.split(/[\\/]/).pop())
@@ -824,6 +840,7 @@
     sheets={exportPreview.sheets}
     saving={exportSaving}
     onsave={saveExport}
+    onsavepdf={saveExportPdf}
     onclose={() => (exportPreview = null)}
   />
 {/if}

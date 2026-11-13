@@ -19,6 +19,7 @@ import {
 } from '@writingapp/core'
 import type { LibraryInfo, OpResult } from '../preload/api'
 import type { ExportPreview } from '../preload/api'
+import { parsePdfOptions, renderPdf } from './pdf'
 import { createNodeFileSystem } from './nodeFileSystem'
 import { isInside, isSheetInside, toPosix } from './paths'
 import { createSettingsStore } from './settings'
@@ -153,6 +154,23 @@ export function registerLibraryIpc(): void {
       : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
     await fs.writeText(toPosix(result.filePath), built.html)
+    return result.filePath
+  })
+
+  ipcMain.handle('export:savePdf', async (event, paths: unknown, rawOptions: unknown) => {
+    const options = parsePdfOptions(rawOptions)
+    const built = await buildExport(paths)
+    const saveOptions: Electron.SaveDialogOptions = {
+      title: 'Export as PDF',
+      defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.pdf`,
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window
+      ? await dialog.showSaveDialog(window, saveOptions)
+      : await dialog.showSaveDialog(saveOptions)
+    if (result.canceled || !result.filePath) return null
+    await nodeFs.writeFile(result.filePath, await renderPdf(built.html, options))
     return result.filePath
   })
 

@@ -82,7 +82,7 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
-          label: 'Export as HTML…',
+          label: 'Export…',
           accelerator: 'CmdOrCtrl+E',
           click: () => sendCommand('export-html')
         },
