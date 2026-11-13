@@ -7,8 +7,8 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 ## Status
 
 - **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI),
-  4 (editor), 5 (organising) and 6 (sheet operations). Licensed AGPL-3.0.
-- **Next:** milestone 7 (HTML export).
+  4 (editor), 5 (organising), 6 (sheet operations) and 7 (HTML export). Licensed AGPL-3.0.
+- **Next:** milestone 8 (PDF export).
 - The app edits and organises a library, and can split, merge, glue and
   unglue sheets, with a glued run edited as one continuous document. Not in
   the UI yet: deleting, renaming a sheet (its file name comes from its first
@@ -319,12 +319,26 @@ Notes from building it:
 - **Open question:** "Join" (see below) is still unconfirmed; this milestone
   built merge only.
 
-### 7. HTML export
+### 7. HTML export — done
 - Export a sheet, a glued run, a selection, or a whole group as one HTML file.
 - Markdown to HTML in the core package.
 - One built-in stylesheet, embedded in the output so the file stands alone.
 - Preview before saving.
 - **Done when:** a multi-sheet group exports to a single readable HTML file.
+
+Notes from building it:
+
+- **Use it:** File > Export as HTML… (`Cmd/Ctrl+E`). Exports the selected
+  sheets, or the selected group when the tree has focus. A single sheet in a
+  glued run exports the whole run. Shows a preview (sandboxed iframe), then
+  Save as HTML… asks where to write it.
+- **Core:** `export.ts` (`exportRuns`, `exportHtml`, `markdownToHtml`) using
+  the `marked` package. Sheets in library order; glued sheets flow together,
+  other sheets are separated by a `* * *` break. Raw HTML in a sheet is
+  escaped, not passed through. The stylesheet is embedded and has a print
+  rule, which milestone 8 can build on.
+- **Not yet:** no export options (title page, per-sheet headings) and no
+  front matter handling.
 
 ### 8. PDF export
 - Render the exported HTML with a print stylesheet through Electron's
