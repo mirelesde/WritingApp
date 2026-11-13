@@ -68,6 +68,8 @@ export interface ViewSettings {
   /** Leave room below the last line so it can scroll up to the middle. */
   scrollPastEnd: boolean
   textAlign: TextAlign
+  /** Curly quotes, en and em dashes and ellipses as you type. */
+  smartTypography: boolean
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -89,6 +91,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   typewriterPosition: 'centre',
   scrollPastEnd: true,
   textAlign: 'left',
+  smartTypography: false,
 }
 
 /** CSS font stacks, by name. */
@@ -136,6 +139,7 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
     out.lineSpacing = clampLineSpacing(record.lineSpacing)
   }
   if (typeof record.scrollPastEnd === 'boolean') out.scrollPastEnd = record.scrollPastEnd
+  if (typeof record.smartTypography === 'boolean') out.smartTypography = record.smartTypography
   return out
 }
 

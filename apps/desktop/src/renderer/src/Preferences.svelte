@@ -188,6 +188,15 @@
         />
       </label>
       <label class="row">
+        <span>Smart punctuation<small>Curly quotes, – and — dashes, and … as you type</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.smartTypography}
+          onchange={(e) => onchange({ smartTypography: e.currentTarget.checked })}
+        />
+      </label>
+      <label class="row">
         <span>Line numbers<small>Show a number beside each line of a sheet</small></span>
         <input
           type="checkbox"

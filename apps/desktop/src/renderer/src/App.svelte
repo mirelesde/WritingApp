@@ -1147,6 +1147,7 @@
                   {focusMode}
                   {typewriter}
                   {lineNumbers}
+                  smartTypography={prefs?.smartTypography}
                   focusScope={prefs?.focusScope}
                   typewriterAt={prefs?.typewriterPosition}
                   autofocus={focusEditor && part.path === selection[0]}

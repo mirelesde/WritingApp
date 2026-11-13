@@ -508,7 +508,7 @@ asked for directly.
     - Text alignment: left or justified.
     Distraction-free mode and a first-line indent for prose were part of
     this idea and are separate items 60 and 61 below.
-39. **Smart quotes and dashes.** Optional: straight quotes become curly,
+39. ~~**Smart quotes and dashes.**~~ **Done.** Optional: straight quotes become curly,
     `--` becomes an en or em dash, `...` becomes an ellipsis. A setting,
     off by default; never applied inside code or comments. Needs the
     Preferences window (item 37).
@@ -525,6 +525,7 @@ asked for directly.
     Core gets a pure function per block style (toggle line prefix) with
     tests; the editor applies them as a transaction.
    An in-app dialog (Cmd/Ctrl+,) with theme, font, text size, focus mode and typewriter; later settings (items 38, 39, 41, 44) go in it.
+   A "Smart punctuation" switch in Preferences, off by default; skips code, comments and Markdown dashes at the start of a line.
 
 44. ~~**Toggle line numbers (user).**~~ **Done.** A preference (item 37) that shows a
     line-number gutter in the editor. Off by default; remembered with the

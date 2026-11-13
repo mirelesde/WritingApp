@@ -4,6 +4,7 @@
   import { EditorView } from '@codemirror/view'
   import { createEditorState, fromDisk } from './editor'
   import { focusExtensions } from './focusMode'
+  import { smartTypography } from './smartTypography'
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
 
@@ -30,6 +31,8 @@
     focusScope?: 'line' | 'sentence' | 'paragraph'
     /** Where typewriter scrolling holds the line. */
     typewriterAt?: 'centre' | 'upper'
+    /** Curly quotes, dashes and ellipses as you type. */
+    smartTypography?: boolean
     /** Show line numbers in a gutter. */
     lineNumbers?: boolean
     /** Put the cursor in the editor when it opens. */
@@ -43,6 +46,7 @@
     typewriter = false,
     focusScope = 'paragraph',
     typewriterAt = 'centre',
+    smartTypography: smart = false,
     lineNumbers = false,
     autofocus = false
   }: Props = $props()
@@ -105,11 +109,17 @@
   let host: HTMLDivElement
   const focusing = new Compartment()
   const gutter = new Compartment()
+  const typography = new Compartment()
 
   // Focus mode and typewriter scrolling can change while the editor is open.
   $effect(() => {
     const options = { dim: focusMode, typewriter, scope: focusScope, position: typewriterAt }
     view?.dispatch({ effects: focusing.reconfigure(focusExtensions(options)) })
+  })
+
+  $effect(() => {
+    const on = smart
+    view?.dispatch({ effects: typography.reconfigure(on ? smartTypography : []) })
   })
 
   $effect(() => {
@@ -127,7 +137,8 @@
           focusing.of(
             focusExtensions({ dim: focusMode, typewriter, scope: focusScope, position: typewriterAt })
           ),
-          gutter.of(lineNumbers ? lineNumbersExtension() : [])
+          gutter.of(lineNumbers ? lineNumbersExtension() : []),
+          typography.of(smart ? smartTypography : [])
         ]
       )
     })
