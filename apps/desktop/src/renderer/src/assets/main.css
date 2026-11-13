@@ -65,6 +65,11 @@ html.indent-paras .cm-para-first {
 /* Heading hashes hang in the left margin, so heading text lines up with the
    body text. The box has no width and its text overflows to the left (right-
    to-left); the spaces after the hashes collapse. */
+/* Headings are bigger than the body, but their # marks stay body-sized. */
+.cm-hang,
+.cm-hang-gap {
+  font-size: var(--editor-size);
+}
 html.hang-marks .cm-hang {
   display: inline-block;
   width: 0;

@@ -100,9 +100,9 @@ const theme = EditorView.theme({
  * the text but are dimmed, so the cursor never meets hidden characters.
  */
 const markdownStyle = HighlightStyle.define([
-  { tag: tags.heading1, fontSize: '1.7em', fontWeight: '700', lineHeight: '1.3' },
-  { tag: tags.heading2, fontSize: '1.4em', fontWeight: '700', lineHeight: '1.3' },
-  { tag: tags.heading3, fontSize: '1.2em', fontWeight: '700' },
+  { tag: tags.heading1, fontSize: '2.1em', fontWeight: '700', lineHeight: '1.3' },
+  { tag: tags.heading2, fontSize: '1.7em', fontWeight: '700', lineHeight: '1.3' },
+  { tag: tags.heading3, fontSize: '1.35em', fontWeight: '700' },
   { tag: [tags.heading4, tags.heading5, tags.heading6], fontWeight: '700' },
   { tag: tags.strong, fontWeight: '700' },
   { tag: tags.emphasis, fontStyle: 'italic' },
