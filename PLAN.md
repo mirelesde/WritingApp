@@ -697,7 +697,7 @@ asked for directly.
 
 **Hard**
 
-28. **Table editor (user).** Render GFM tables in the editor as editable
+28. ~~**Table editor (user).**~~ **Done.** Render GFM tables in the editor as editable
     grids (CodeMirror block widget): edit cells, Tab to move, add/remove
     rows and columns, column alignment, write back clean Markdown. The
     cursor entering the table shows raw source. Widget focus, undo
@@ -716,6 +716,7 @@ asked for directly.
     Needs a diff view.
 32. **Global quick capture.** A system-wide hotkey that opens a small
     window and appends to an Inbox sheet. Depends on windows (item 29).
+   Edited in a dialog (Format > Table…, command palette) rather than as an inline widget: title caption, add/delete rows and columns, alignment, Tab/Enter navigation; writes clean aligned Markdown
 
 Open decisions for this list: where images
 live (item 23, alternatives written out there), where sheet notes are stored (item 24) and in-app Trash

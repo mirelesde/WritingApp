@@ -247,6 +247,7 @@ function buildMenu(): Menu {
         { label: 'Inline Code', click: () => sendCommand('format-code') },
         { label: 'Link', ...shown('CmdOrCtrl+K'), click: () => sendCommand('format-link') },
         { type: 'separator' },
+        { label: 'Table…', click: () => sendCommand('format-table') },
         { label: 'Code Block', click: () => sendCommand('format-codeblock') },
         { label: 'Comment', ...shown('CmdOrCtrl+/'), click: () => sendCommand('format-comment') },
         { label: 'Horizontal Rule', click: () => sendCommand('format-rule') }
