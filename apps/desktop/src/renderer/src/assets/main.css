@@ -12,6 +12,8 @@
   --selected: #dcd8cf;
   --selection: #cfe3df;
   --marker: #b3aea4;
+  /* Markdown markers and link addresses: present, but out of the way. */
+  --faint: color-mix(in srgb, var(--text) 30%, transparent);
   --accent: #2f6f6a;
   --editor-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --editor-size: 18px;

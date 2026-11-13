@@ -6,6 +6,7 @@ import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/lang
 import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
+import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
@@ -13,11 +14,12 @@ const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 /** Layout and typography: a readable column, generous leading. */
 const theme = EditorView.theme({
   // The editor grows with its text; the run it sits in does the scrolling.
-  '&': { color: 'var(--text)', backgroundColor: 'transparent' },
+  // Slightly softer than the UI text: long reading is easier on the eyes.
+  '&': { color: 'color-mix(in srgb, var(--text) 90%, var(--bg))', backgroundColor: 'transparent' },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': {
     fontFamily: 'var(--editor-font)',
-    fontSize: 'var(--editor-size)', lineHeight: '1.7', overflow: 'visible' },
+    fontSize: 'var(--editor-size)', lineHeight: '1.85', overflow: 'visible' },
   '.cm-content': {
     // A 46rem column with 64px of air each side leaves about 38rem of text.
     maxWidth: '46rem',
@@ -26,6 +28,12 @@ const theme = EditorView.theme({
     caretColor: 'var(--text)'
   },
   '.cm-line': { padding: '0', transition: 'opacity 0.2s' },
+  // One outlined chip around the whole [text](address) link.
+  '.cm-link-chip': {
+    border: '1px solid color-mix(in srgb, var(--accent) 55%, transparent)',
+    borderRadius: '5px',
+    padding: '0 3px'
+  },
   '.cm-line.cm-dim': { opacity: '0.3' },
   '.cm-cursor': { borderLeftColor: 'var(--text)' },
   // Find and replace bar: sticky at the top of the sheet, in the app's own colours.
@@ -70,13 +78,16 @@ const markdownStyle = HighlightStyle.define([
   { tag: tags.strong, fontWeight: '700' },
   { tag: tags.emphasis, fontStyle: 'italic' },
   { tag: tags.strikethrough, textDecoration: 'line-through' },
-  { tag: tags.link, textDecoration: 'underline' },
+  { tag: tags.link, color: 'var(--accent)' },
   // Commented-out text: kept in the file, left out of exports and counts.
   { tag: tags.comment, color: 'var(--marker)', fontStyle: 'italic' },
-  { tag: tags.url, color: 'var(--marker)' },
+  { tag: tags.url, color: 'var(--faint)' },
   { tag: tags.monospace, fontFamily: mono, fontSize: '0.88em' },
   { tag: tags.quote, color: 'var(--muted)', fontStyle: 'italic' },
-  { tag: [tags.processingInstruction, tags.contentSeparator], color: 'var(--marker)' }
+  // Markers (#, *, >, brackets) stay in the text but fade back.
+  { tag: tags.processingInstruction, color: 'var(--faint)' },
+  // A --- rule is drawn as a spaced accent line.
+  { tag: tags.contentSeparator, color: 'var(--accent)', letterSpacing: '0.25em' }
 ])
 
 /** Marks a change that came from the disk, not from typing, so it is not saved back. */
@@ -134,6 +145,7 @@ export function editorExtensions({
     // removes list markers on Backspace.
     markdown({ base: markdownLanguage }),
     ...emphasisPairs,
+    linkChips,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),
     highlightSelectionMatches(),

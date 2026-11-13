@@ -557,7 +557,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 - L2. ~~**Floating word-count pill**~~ **Done.** in the editor's top-right corner instead
   of the bottom status bar; hover or click shows characters, reading time
   and the group total.
-- L3. **Editor typography and Markdown styling.** Line height about 1.85,
+- L3. ~~**Editor typography and Markdown styling.**~~ **Done.** Line height about 1.85,
   slightly softer text contrast, fainter `**` and `#` markers, links drawn
   as rounded outlined chips, a `---` rule drawn as a dashed accent line.
 - L4. **Sheet list as cards.** Rounded, roomy cards with a 3 to 4 line
