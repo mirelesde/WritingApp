@@ -6,8 +6,6 @@
     sheetPreview,
     sheetTitle,
     sortSheets,
-    formatTable,
-    type Table,
     type GroupNode,
     type ColorTheme,
     type SheetNode,
@@ -24,8 +22,6 @@
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
-  import TableEditor from './TableEditor.svelte'
-  import type { TableTarget } from './tableTarget'
   import SearchDialog from './SearchDialog.svelte'
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
@@ -241,27 +237,9 @@
     if (path) editors[path]?.format(kind)
   }
 
-  // --- Table editor ------------------------------------------------------------
-
-  let tableEdit = $state<{ path: string; target: TableTarget } | null>(null)
-
-  function openTableEditor(): void {
+  function insertTable(): void {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
-    const target = path ? editors[path]?.tableAtCursor() : undefined
-    if (path && target) tableEdit = { path, target }
-  }
-
-  function applyTable(table: Table): void {
-    if (!tableEdit) return
-    const { path, target } = tableEdit
-    tableEdit = null
-    editors[path]?.replaceRange(target.from, target.to, target.before + formatTable(table) + target.after)
-  }
-
-  function closeTableEditor(): void {
-    const path = tableEdit?.path
-    tableEdit = null
-    if (path) editors[path]?.focus()
+    if (path) editors[path]?.insertTableAtCursor()
   }
 
   let styleOpen = $state(false)
@@ -1112,7 +1090,7 @@
     else if (command === 'command-palette') openPalette()
     else if (command === 'distraction-free') toggleZen()
     else if (command === 'preferences') preferencesOpen = true
-    else if (command === 'format-table') openTableEditor()
+    else if (command === 'format-table') insertTable()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
     else if (command === 'split') void splitAtCursor()
@@ -1188,7 +1166,7 @@
       menu('Format', 'Bold', 'format-bold', `${keyMod}B`),
       menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
       menu('Format', 'Link', 'format-link', `${keyMod}K`),
-      menu('Format', 'Table…', 'format-table'),
+      menu('Format', 'Insert Table', 'format-table'),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
       { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
@@ -1507,15 +1485,6 @@
 
 {#if palette}
   <CommandPalette commands={paletteCommands} onrun={runPaletteCommand} oncancel={closePalette} />
-{/if}
-
-{#if tableEdit}
-  <TableEditor
-    table={tableEdit.target.table}
-    isNew={tableEdit.target.isNew}
-    onapply={applyTable}
-    oncancel={closeTableEditor}
-  />
 {/if}
 
 {#if conflict}

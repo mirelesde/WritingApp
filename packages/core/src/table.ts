@@ -100,7 +100,8 @@ function delimiterCell(align: Align, width: number): string {
 /** Clean Markdown for a table: columns padded to line up, caption above when titled. */
 export function formatTable(table: Table): string {
   const columns = Math.max(1, table.header.length)
-  const cell = (row: string[], c: number): string => (row[c] ?? '').replace(/\r?\n/g, ' ').trim()
+  const cell = (row: string[], c: number): string =>
+    (row[c] ?? '').replace(/\r?\n/g, ' ').replace(/(?<!\\)\|/g, '\\|').trim()
   const widths = Array.from({ length: columns }, (_, c) =>
     Math.max(3, cell(table.header, c).length, ...table.rows.map((r) => cell(r, c).length))
   )
@@ -130,4 +131,49 @@ export function newTable(columns = 3, rows = 2): Table {
     align: Array.from({ length: columns }, () => null),
     rows: Array.from({ length: rows }, () => Array.from({ length: columns }, () => ''))
   }
+}
+
+/** The table with an empty row inserted at `at` (the end by default). */
+export function addRow(table: Table, at = table.rows.length): Table {
+  const rows = table.rows.map((r) => [...r])
+  rows.splice(at, 0, table.header.map(() => ''))
+  return { ...table, rows }
+}
+
+/** The table with a new column inserted at `at` (the end by default). */
+export function addColumn(table: Table, at = table.header.length): Table {
+  const header = [...table.header]
+  const align = [...table.align]
+  header.splice(at, 0, `Column ${header.length + 1}`)
+  align.splice(at, 0, null)
+  const rows = table.rows.map((r) => {
+    const row = [...r]
+    row.splice(at, 0, '')
+    return row
+  })
+  return { ...table, header, align, rows }
+}
+
+/** The table without row `index`. */
+export function removeRow(table: Table, index: number): Table {
+  return { ...table, rows: table.rows.filter((_, i) => i !== index) }
+}
+
+/** The table without column `index`; the last column is never removed. */
+export function removeColumn(table: Table, index: number): Table {
+  if (table.header.length <= 1) return table
+  const without = <T>(list: T[]): T[] => list.filter((_, i) => i !== index)
+  return {
+    ...table,
+    header: without(table.header),
+    align: without(table.align),
+    rows: table.rows.map(without)
+  }
+}
+
+/** The table with column `index` aligned as given. */
+export function setAlign(table: Table, index: number, align: Align): Table {
+  const next = [...table.align]
+  next[index] = align
+  return { ...table, align: next }
 }

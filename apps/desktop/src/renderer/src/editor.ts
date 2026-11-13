@@ -16,6 +16,7 @@ import { bracketPairs } from './pairs'
 import { linkBehaviour } from './links'
 import { blankLines } from './blankLines'
 import { taskBoxes } from './taskBoxes'
+import { tableWidgets } from './tableWidget'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -175,6 +176,7 @@ export function editorExtensions({
     headingMarks,
     paragraphStarts,
     taskBoxes,
+    tableWidgets,
     EditorView.lineWrapping,
     // GitHub-flavoured base: strikethrough, task lists, tables.
     // The markdown keymap (included) continues lists on Enter and

@@ -57,5 +57,15 @@ export { stripComments } from './comments'
 export { maskComments } from './comments'
 export { extractHeadings } from './outline'
 export type { Heading } from './outline'
-export { findTables, formatTable, newTable, splitRow } from './table'
+export {
+  addColumn,
+  addRow,
+  findTables,
+  formatTable,
+  newTable,
+  removeColumn,
+  removeRow,
+  setAlign,
+  splitRow
+} from './table'
 export type { Align, Table, TableBlock } from './table'

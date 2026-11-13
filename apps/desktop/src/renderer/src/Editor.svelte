@@ -7,8 +7,7 @@
   import { smartTypography } from './smartTypography'
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
-  import { findTables, newTable } from '@writingapp/core'
-  import type { TableTarget } from './tableTarget'
+  import { insertTable } from './tableWidget'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
@@ -100,46 +99,9 @@
     return view ? styleOfLine(view.state.doc.lineAt(view.state.selection.main.head).text) : 'body'
   }
 
-  /**
-   * The table under the cursor, or a fresh one to insert at the cursor. `from`/`to`
-   * are the range to replace; `before`/`after` pad a new table into its own block.
-   */
-  export function tableAtCursor(): TableTarget | undefined {
-    if (!view) return undefined
-    const doc = view.state.doc
-    const lineNo = doc.lineAt(view.state.selection.main.head).number - 1
-    const block = findTables(doc.toString()).find((b) => lineNo >= b.from && lineNo < b.to)
-    if (block) {
-      return {
-        table: block.table,
-        isNew: false,
-        from: doc.line(block.from + 1).from,
-        to: doc.line(block.to).to,
-        before: '',
-        after: ''
-      }
-    }
-    const line = doc.line(lineNo + 1)
-    const blank = line.text.trim() === ''
-    return {
-      table: newTable(),
-      isNew: true,
-      from: blank ? line.from : line.to,
-      to: blank ? line.to : line.to,
-      before: blank ? '' : '\n\n',
-      after: line.number === doc.lines ? '\n' : '\n\n'
-    }
-  }
-
-  /** Swaps a range for new text, as one undoable edit. */
-  export function replaceRange(from: number, to: number, insert: string): void {
-    if (!view) return
-    view.dispatch({
-      changes: { from, to, insert },
-      selection: { anchor: from + insert.length },
-      scrollIntoView: true
-    })
-    view.focus()
+  /** Inserts an empty table at the cursor and moves into it. */
+  export function insertTableAtCursor(): void {
+    if (view) insertTable(view)
   }
 
   /** The text now in the editor. */

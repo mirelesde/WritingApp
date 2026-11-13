@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { findTables, formatTable, newTable, splitRow } from './table'
+import {
+  addColumn,
+  addRow,
+  findTables,
+  formatTable,
+  newTable,
+  removeColumn,
+  removeRow,
+  setAlign,
+  splitRow
+} from './table'
 
 const SAMPLE = 'Intro\n\n| Name | Qty |\n| :--- | ---: |\n| Tea | 2 |\n| Milk | 10 |\n\nAfter'
 
@@ -51,5 +61,43 @@ describe('formatTable', () => {
     const text = formatTable({ ...newTable(1, 0), title: 'Stock' })
     expect(text.startsWith('Table: Stock\n')).toBe(true)
     expect(findTables(text)[0]!.table.title).toBe('Stock')
+  })
+})
+
+describe('formatTable escaping', () => {
+  it('escapes a pipe typed into a cell', () => {
+    const t = { ...newTable(2, 1), header: ['a', 'b'], rows: [['x | y', 'z']] }
+    const text = formatTable(t)
+    expect(text).toContain('x \\| y')
+    expect(findTables(text)[0]!.table.rows[0]).toEqual(['x \\| y', 'z'])
+  })
+})
+
+describe('table edits', () => {
+  const t = { ...newTable(2, 2), header: ['a', 'b'], rows: [['1', '2'], ['3', '4']] }
+
+  it('adds and removes rows', () => {
+    expect(addRow(t, 1).rows).toEqual([['1', '2'], ['', ''], ['3', '4']])
+    expect(addRow(t).rows.length).toBe(3)
+    expect(removeRow(t, 0).rows).toEqual([['3', '4']])
+  })
+
+  it('adds and removes columns, keeping alignment in step', () => {
+    const aligned = setAlign(t, 1, 'right')
+    const wider = addColumn(aligned, 1)
+    expect(wider.header).toEqual(['a', 'Column 3', 'b'])
+    expect(wider.align).toEqual([null, null, 'right'])
+    expect(wider.rows[0]).toEqual(['1', '', '2'])
+    const narrower = removeColumn(aligned, 0)
+    expect(narrower.header).toEqual(['b'])
+    expect(narrower.align).toEqual(['right'])
+    expect(removeColumn(narrower, 0)).toBe(narrower)
+  })
+
+  it('leaves the original alone', () => {
+    addRow(t)
+    removeColumn(t, 0)
+    expect(t.rows.length).toBe(2)
+    expect(t.header.length).toBe(2)
   })
 })
