@@ -15,6 +15,7 @@ import { emphasisPairs } from './emphasis'
 import { bracketPairs } from './pairs'
 import { linkBehaviour } from './links'
 import { blankLines } from './blankLines'
+import { taskBoxes } from './taskBoxes'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -49,6 +50,7 @@ const theme = EditorView.theme({
   '.cm-line.cm-dim': { opacity: 'var(--dim-opacity, 0.3)' },
   '.cm-dim-text': { opacity: 'var(--dim-opacity, 0.3)', transition: 'opacity 0.2s' },
   // The blank line between paragraphs: its height is the paragraph spacing setting.
+  '.cm-task-box': { cursor: 'pointer', color: 'var(--accent)' },
   '.cm-line.cm-blank': { lineHeight: 'calc(var(--editor-line-height, 1.85) * var(--blank-line-scale, 1))' },
   '.cm-activeLine': { backgroundColor: 'var(--active-line, transparent)' },
   '.cm-cursor': { borderLeftColor: 'var(--text)', borderLeftWidth: 'var(--caret-width, 2px)' },
@@ -168,6 +170,7 @@ export function editorExtensions({
     drawSelection(),
     highlightActiveLine(),
     blankLines,
+    taskBoxes,
     EditorView.lineWrapping,
     // GitHub-flavoured base: strikethrough, task lists, tables.
     // The markdown keymap (included) continues lists on Enter and

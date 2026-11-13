@@ -534,7 +534,7 @@ asked for directly.
 45. **Command palette.** Cmd/Ctrl+Shift+P opens a fuzzy list of every
     menu command and setting by name, with its shortcut. Reuses the quick
     open dialog; commands come from one registry shared with the menus.
-46. **Clickable task lists.** `- [ ]` and `- [x]` draw as checkboxes in the
+46. ~~**Clickable task lists.**~~ **Done.** `- [ ]` and `- [x]` draw as checkboxes in the
     editor; clicking one toggles the marker in the text. Cmd/Ctrl+Enter
     toggles the item at the cursor.
 47. **Sheet list sorting and dates.** Sort a group's sheets by manual order
