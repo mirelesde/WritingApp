@@ -432,10 +432,10 @@ asked for directly.
    (Built as an input handler in `emphasis.ts`, not `closeBrackets`, so it also handles `_`, widening `*|*` to `**|**`, a list-bullet exception and Backspace on an empty pair.)
    (Acts on one sheet at a time: in a glued run each sheet has its own bar.)
 
-33. **Auto-pair brackets, backticks and quotes.** Typing `(`, `[`, `` ` ``
+33. ~~**Auto-pair brackets, backticks and quotes.**~~ **Done.** Typing `(`, `[`, `` ` ``
     or `"` inserts the closing character and steps over it when typed;
-    wraps a selection; Backspace removes the empty pair. Reuses the
-    `emphasis.ts` input handler. Not inside fenced code.
+    wraps a selection; Backspace removes the empty pair. Quotes and
+    backticks open only after a non-word character. Lives in `pairs.ts`.
 34. **Paste a URL over selected text to make a link.** The selection
     becomes `[text](url)`. Also Cmd/Ctrl-click on a link opens it in the
     browser.
