@@ -6,13 +6,17 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 
 ## Status
 
-- **Done:** milestone 1 (scaffold). Licensed AGPL-3.0.
-- **Next:** milestone 2 (library core), then milestone 3 (library UI).
-- The app currently opens an empty placeholder window. It cannot open a
-  library yet.
+- **Done:** milestone 1 (scaffold) and milestone 2 (library core). Licensed
+  AGPL-3.0.
+- **Next:** milestone 3 (library UI).
+- The app still opens an empty placeholder window. The core can load and
+  restructure a library (`loadLibrary`, `createSheet`, `createGroup`,
+  `renameGroup`, `deleteNode`, `moveNode`, `reorderNode`), and
+  `apps/desktop/src/main/nodeFileSystem.ts` gives it real disk access, but
+  nothing in the UI calls either yet.
 
 If you are picking this up in a new session, read "Working in this repo"
-below, then start at milestone 2.
+below, then start at milestone 3.
 
 ## Working in this repo
 
@@ -22,9 +26,16 @@ below, then start at milestone 2.
 package.json            npm workspace root; scripts delegate to the packages
 packages/core/          @writingapp/core — library model, operations, export
   src/filesystem.ts     the FileSystem interface (the core's only door to disk)
-  src/sheet.ts          sheetTitle(); tests sit next to sources as *.test.ts
+  src/sheet.ts          sheetTitle(), sheetPreview(); tests sit next to sources as *.test.ts
+  src/sidecar.ts        parse and reconcile .writingapp.json with the folder
+  src/library.ts        loadLibrary() -> tree of group and sheet nodes
+  src/filename.ts       slugify(), sheetFileName()
+  src/operations.ts     create, rename, delete, move, reorder
+  src/path.ts           path helpers
+  src/testing/          MemoryFileSystem, for tests
 apps/desktop/           @writingapp/desktop — Electron + Svelte 5
-  src/main/             Electron main process (Node side)
+  src/main/             Electron main process (Node side);
+                        nodeFileSystem.ts is the disk implementation
   src/preload/          the bridge exposed to the UI as window.api
   src/renderer/src/     Svelte UI
 ```
@@ -35,7 +46,7 @@ apps/desktop/           @writingapp/desktop — Electron + Svelte 5
 | --- | --- |
 | `npm install` | Install everything, including the Electron binary |
 | `npm run dev` | Launch the desktop app with hot reload |
-| `npm test` | Core unit tests (Vitest) |
+| `npm test` | Unit tests for every package (Vitest) |
 | `npm run typecheck` | Type-check both packages |
 | `npm run build` | Type-check, then production build into `apps/desktop/out` |
 
@@ -161,7 +172,7 @@ the "done when" line is true.
   import Electron, Node's `fs`, or anything from the UI.
 - **Done when:** the empty app builds and launches, and the core tests run.
 
-### 2. Library core (TypeScript)
+### 2. Library core (TypeScript) — done
 - Open a library folder and read it into a tree of projects, groups, sheets.
 - Read and write the sidecar; reconcile it with what is actually on disk.
 - Create, rename, delete (to system trash), and move sheets and groups.
