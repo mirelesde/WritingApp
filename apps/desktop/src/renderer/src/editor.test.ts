@@ -1,5 +1,5 @@
 import { insertNewlineContinueMarkup, deleteMarkupBackward } from '@codemirror/lang-markdown'
-import { indentMore } from '@codemirror/commands'
+import { indentLess, indentMore } from '@codemirror/commands'
 import { EditorSelection, type StateCommand, type Transaction } from '@codemirror/state'
 import { describe, expect, it } from 'vitest'
 import { createEditorState } from './editor'
@@ -42,5 +42,17 @@ describe('editor behaviour in lists', () => {
 
   it('nests with Tab using four spaces', () => {
     expect(run('- one\n- two', indentMore)).toBe('- one\n    - two')
+  })
+
+  it('continues a task list with an unchecked box', () => {
+    expect(run('- [x] done', insertNewlineContinueMarkup)).toBe('- [x] done\n- [ ] ')
+  })
+
+  it('moves a nested item back out with Shift-Tab', () => {
+    expect(run('- one\n    - two', indentLess)).toBe('- one\n- two')
+  })
+
+  it('nests an ordered item under its parent', () => {
+    expect(run('1. one\n2. two', indentMore)).toBe('1. one\n    2. two')
   })
 })

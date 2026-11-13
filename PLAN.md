@@ -202,7 +202,7 @@ Suggested order of work, one commit each:
    (`{ kind: 'group' | 'sheet', name, path, children? }`), where top-level
    groups are projects. Sheets carry a title (via `sheetTitle`) and a short
    preview. Reading every file on load is acceptable for now.
-4. **Filename generation** as a pure function: slug of the first line,
+4. ~~**Filename generation**~~ **Done.** as a pure function: slug of the first line,
    `untitled` when empty, numeric suffix on collision.
 5. **Operations:** create sheet, create group, rename group, delete (trash),
    move to another group at an index, reorder within a group. Each one
@@ -212,6 +212,7 @@ Suggested order of work, one commit each:
    `shell.trashItem` for `trash`. Add Vitest to the desktop package and test
    it against a temporary folder, including one edited by hand between
    loads.
+    (Already worked through the Markdown keymap from milestone 4; this added tests for task lists, Shift-Tab and ordered nesting, and a check in the running app.)
 
 ### 3. Library UI — done
 - Three panes: library tree, sheet list (title + first lines), editor area.
