@@ -37,6 +37,7 @@ export type MenuCommand =
   | 'delete'
   | 'toggle-sidebar'
   | 'insert-table'
+  | 'insert-footnote'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 

@@ -1,5 +1,6 @@
 import { Marked } from 'marked'
 import { stripComments } from './comments'
+import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
 import type { FileSystem } from './filesystem'
 import type { GroupNode, SheetNode } from './library'
 
@@ -22,7 +23,32 @@ export function escapeHtml(text: string): string {
 
 /** Converts Markdown to an HTML fragment. */
 export function markdownToHtml(markdown: string): string {
-  return marked.parse(markdown, { async: false })
+  const defs = findFootnoteDefs(markdown)
+  if (defs.length === 0) return marked.parse(markdown, { async: false })
+
+  // Number the notes in the order they are referred to; drop their definition lines.
+  const noted = new Map(defs.map((d) => [d.id, d.text]))
+  const order: string[] = []
+  for (const ref of findFootnoteRefs(markdown)) {
+    if (noted.has(ref.id) && !order.includes(ref.id)) order.push(ref.id)
+  }
+  let body = markdown
+  for (const def of [...defs].reverse()) {
+    const to = body[def.to] === '\n' ? def.to + 1 : def.to
+    body = body.slice(0, def.from) + body.slice(to)
+  }
+  let html = marked.parse(body, { async: false })
+  order.forEach((id, i) => {
+    const n = i + 1
+    const link = `<sup class="footnote-ref"><a href="#fn-${n}" id="fnref-${n}">${n}</a></sup>`
+    html = html.split(`[^${id}]`).join(link)
+  })
+  if (order.length === 0) return html
+  const items = order.map((id, i) => {
+    const note = marked.parseInline(noted.get(id) ?? '', { async: false })
+    return `<li id="fn-${i + 1}">${note} <a href="#fnref-${i + 1}">↩</a></li>`
+  })
+  return `${html}<section class="footnotes"><hr><ol>${items.join('')}</ol></section>\n`
 }
 
 /**

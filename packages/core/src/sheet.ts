@@ -1,4 +1,5 @@
 import { stripComments } from './comments'
+import { stripFootnotes } from './footnotes'
 import { findTables } from './table'
 
 export const UNTITLED = 'Untitled'
@@ -44,7 +45,7 @@ function withoutTables(lines: string[]): string[] {
  * whitespace collapsed and truncated with an ellipsis.
  */
 export function sheetPreview(content: string): string {
-  const lines = stripComments(content).split(/\r?\n/)
+  const lines = stripFootnotes(stripComments(content)).split(/\r?\n/)
   const titleIndex = lines.findIndex((line) => line.replace(/^\s{0,3}#{1,6}\s+/, '').trim() !== '')
   if (titleIndex === -1) return ''
   const rest = withoutTables(lines.slice(titleIndex + 1))

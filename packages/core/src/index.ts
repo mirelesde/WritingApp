@@ -70,3 +70,13 @@ export {
   splitRow
 } from './table'
 export type { Align, Table, TableBlock } from './table'
+export {
+  addFootnoteChanges,
+  findFootnoteDefs,
+  findFootnoteRefs,
+  nextFootnoteId,
+  removeFootnoteChanges,
+  setFootnoteChange,
+  stripFootnotes
+} from './footnotes'
+export type { FootnoteDef, FootnoteRef, TextChange } from './footnotes'

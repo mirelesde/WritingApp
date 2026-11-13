@@ -254,7 +254,10 @@ function buildMenu(): Menu {
     },
     {
       label: 'Insert',
-      submenu: [{ label: 'Table', click: () => sendCommand('insert-table') }]
+      submenu: [
+        { label: 'Table', click: () => sendCommand('insert-table') },
+        { label: 'Footnote', click: () => sendCommand('insert-footnote') }
+      ]
     },
     viewMenu(isMac),
     { role: 'windowMenu' }

@@ -242,6 +242,11 @@
     if (path) editors[path]?.insertTableAtCursor()
   }
 
+  function insertFootnote(): void {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (path) editors[path]?.insertFootnoteAtCursor()
+  }
+
   let styleOpen = $state(false)
   let styleNow = $state<LineStyle>('body')
   function toggleStyleMenu(): void {
@@ -1104,6 +1109,7 @@
     else if (command === 'distraction-free') toggleZen()
     else if (command === 'preferences') preferencesOpen = true
     else if (command === 'insert-table') insertTable()
+    else if (command === 'insert-footnote') insertFootnote()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
     else if (command === 'split') void splitAtCursor()
@@ -1180,6 +1186,7 @@
       menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
       menu('Format', 'Link', 'format-link', `${keyMod}K`),
       menu('Insert', 'Table', 'insert-table'),
+      menu('Insert', 'Footnote', 'insert-footnote'),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
       { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
