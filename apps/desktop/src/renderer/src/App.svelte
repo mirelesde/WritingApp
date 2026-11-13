@@ -1339,9 +1339,9 @@
         </div>
       {/if}
       {#if sheets.length === 0}
-        <p class="hint">No sheets in this group.</p>
+        <p class="placeholder small">No Sheets</p>
       {:else if shown.length === 0}
-        <p class="hint">No sheets match.</p>
+        <p class="placeholder small">No Matches</p>
       {:else}
         <ul>
           {#each shown as sheet (sheet.path)}
@@ -1454,9 +1454,9 @@
           </div>
         {/key}
       {:else if selection.length > 1}
-        <p class="hint">{selection.length} sheets selected.</p>
+        <p class="placeholder">{selection.length} Sheets Selected</p>
       {:else}
-        <p class="hint">Select a sheet to read it.</p>
+        <p class="placeholder">No Sheet Selected</p>
       {/if}
       </div>
       {#if open}
@@ -1606,6 +1606,25 @@
   }
   .sheets {
     background: var(--list);
+    position: relative;
+  }
+  /* Nothing to show: a quiet message in the middle of the pane, under the tool row. */
+  .placeholder {
+    position: absolute;
+    inset: var(--topbar-height) 0 0 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0 24px 10vh;
+    color: var(--faint);
+    font-size: 30px;
+    font-weight: 300;
+    text-align: center;
+    user-select: none;
+    pointer-events: none;
+  }
+  .placeholder.small {
+    font-size: 17px;
   }
   header {
     display: flex;
