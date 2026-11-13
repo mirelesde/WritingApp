@@ -1266,15 +1266,31 @@
       onkeydown={treeKeydown}
       onmousedown={keepFocus(treeEl)}
     >
-      <header>
-        <span class="title" title={library.path}>{library.tree.name}</span>
+      <header class="library-bar">
         <span class="tools">
           <ToolButton icon="new-group" label="New group" hint="{keyMod}{keyShift}N" onclick={() => void newGroup(false)} />
           <ToolButton icon="sidebar" label="Hide sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
         </span>
       </header>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="project"
+        class:selected={selectedGroup === library.tree.path}
+        oncontextmenu={(e) => {
+          e.preventDefault()
+          if (library) void nodeMenu('root', library.tree.path)
+        }}
+      >
+        <button
+          class="project-title"
+          tabindex="-1"
+          title={library.path}
+          onclick={() => library && void selectGroup(library.tree.path)}>{library.tree.name}</button
+        >
+      </div>
       <ul role="none">
         <GroupTree
+          hideRoot
           group={library.tree}
           selected={selectedGroup}
           {expanded}
@@ -1649,6 +1665,33 @@
     position: sticky;
     top: 0;
     background: inherit;
+  }
+  header.library-bar {
+    justify-content: flex-end;
+  }
+  /* The library's name, big and bold above its projects. */
+  .project {
+    padding: 4px 14px 10px;
+  }
+  .project-title {
+    display: block;
+    max-width: 100%;
+    background: none;
+    border: none;
+    padding: 2px 6px;
+    margin-left: -6px;
+    border-radius: 8px;
+    cursor: default;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .project.selected .project-title {
+    background: var(--selected);
   }
   .title {
     font-weight: 600;

@@ -17,6 +17,10 @@
     oncolor: (path: string, color: string | null) => void
     oncontext: (path: string) => void
     dnd: TreeDnd
+    /** Show only the group's subgroups, not the group itself (its name is shown elsewhere). */
+    hideRoot?: boolean
+    /** Depth of the first level shown, so a hidden root does not leave an indent. */
+    base?: number
   }
 
   let {
@@ -32,7 +36,9 @@
     oncancelrename,
     oncolor,
     oncontext,
-    dnd
+    dnd,
+    hideRoot = false,
+    base = 0
   }: Props = $props()
 
   /** Focuses a freshly shown input with its text selected. */
@@ -48,6 +54,34 @@
   const isOpen = $derived(expanded[group.path] === true)
 </script>
 
+{#snippet branch()}
+  {#if (hideRoot || (isOpen)) && subgroups.length > 0}
+    <ul role="group">
+      {#each subgroups as child (child.path)}
+        <GroupTree
+          group={child}
+          depth={depth + 1}
+          base={hideRoot ? 1 : base}
+          {selected}
+          {expanded}
+          {renaming}
+          {onselect}
+          {ontoggle}
+          {onstartrename}
+          {oncommitrename}
+          {oncancelrename}
+          {oncolor}
+          {oncontext}
+          {dnd}
+        />
+      {/each}
+    </ul>
+  {/if}
+{/snippet}
+
+{#if hideRoot}
+  {@render branch()}
+{:else}
 <li role="none">
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
@@ -56,7 +90,7 @@
     class:drop-inside={dnd.hint?.path === group.path && dnd.hint.zone === 'inside'}
     class:drop-before={dnd.hint?.path === group.path && dnd.hint.zone === 'before'}
     class:drop-after={dnd.hint?.path === group.path && dnd.hint.zone === 'after'}
-    style:padding-left="{8 + depth * 14}px"
+    style:padding-left="{8 + (depth - base) * 14}px"
     draggable={depth > 0 && renaming !== group.path}
     ondragstart={(e) => dnd.start(group.path, e)}
     ondragend={() => dnd.end()}
@@ -129,7 +163,7 @@
     {/if}
   </div>
   {#if picking}
-    <div class="swatches" style:padding-left="{30 + depth * 14}px" role="group" aria-label="Colour">
+    <div class="swatches" style:padding-left="{30 + (depth - base) * 14}px" role="group" aria-label="Colour">
       {#each Object.entries(GROUP_COLORS) as [name, hex] (name)}
         <button
           class="swatch"
@@ -156,28 +190,9 @@
       >
     </div>
   {/if}
-  {#if isOpen && subgroups.length > 0}
-    <ul role="group">
-      {#each subgroups as child (child.path)}
-        <GroupTree
-          group={child}
-          depth={depth + 1}
-          {selected}
-          {expanded}
-          {renaming}
-          {onselect}
-          {ontoggle}
-          {onstartrename}
-          {oncommitrename}
-          {oncancelrename}
-          {oncolor}
-          {oncontext}
-          {dnd}
-        />
-      {/each}
-    </ul>
-  {/if}
+  {@render branch()}
 </li>
+{/if}
 
 <style>
   .row {
