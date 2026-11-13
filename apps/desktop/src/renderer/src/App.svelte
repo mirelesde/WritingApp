@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
-  import { sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
+  import { listSheets, sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
   import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
   import { applyView } from './view'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -8,6 +8,7 @@
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
   import SearchDialog from './SearchDialog.svelte'
+  import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
@@ -440,6 +441,20 @@
     }
   }
 
+  // --- Quick open --------------------------------------------------------------
+
+  let quickOpening = $state(false)
+
+  function openQuick(): void {
+    searchReturnFocus = document.activeElement as HTMLElement | null
+    quickOpening = true
+  }
+
+  function closeQuick(): void {
+    quickOpening = false
+    searchReturnFocus?.focus()
+  }
+
   // --- Search ----------------------------------------------------------------
 
   let searching = $state(false)
@@ -459,6 +474,7 @@
   async function revealSheet(path: string): Promise<void> {
     if (!library) return
     searching = false
+    quickOpening = false
     await autosaver.flush()
     const parent = path.slice(0, path.lastIndexOf('/'))
     for (let p = parent; p.length >= library.tree.path.length; p = p.slice(0, p.lastIndexOf('/'))) {
@@ -827,6 +843,7 @@
       else if (command === 'move-to') openMoveTo()
       else if (command === 'export-html') void openExport()
       else if (command === 'search') openSearch()
+      else if (command === 'quick-open') openQuick()
       else if (command === 'delete') void deleteSelected()
       else if (command === 'split') void splitAtCursor()
       else if (command === 'merge') void mergeSelected()
@@ -1006,6 +1023,10 @@
 
 {#if searching}
   <SearchDialog onpick={revealSheet} oncancel={closeSearch} />
+{/if}
+
+{#if quickOpening && library}
+  <QuickOpen items={listSheets(library.tree)} onpick={revealSheet} oncancel={closeQuick} />
 {/if}
 
 {#if exportPreview}

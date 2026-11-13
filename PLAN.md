@@ -442,7 +442,7 @@ asked for directly.
    as an overlay that goes away when the pointer leaves. State is
    remembered. Also a menu item with a shortcut. Layout, hover timing and
    focus are the fiddly parts.
-10. **Quick open (Cmd/Ctrl+P).** Fuzzy jump to a sheet by title or group
+10. ~~**Quick open (Cmd/Ctrl+P).**~~ **Done.** Fuzzy jump to a sheet by title or group
     path. A smaller cousin of Find in Library, same dialog style.
 11. **Top bar (user).** Buttons: search (magnifier), new sheet (sheet with
     pencil), bold, italic, link, export (sheet with up arrow). Editor
@@ -463,6 +463,7 @@ asked for directly.
     centred. A toggle in the View menu.
    (Settings live in the app's settings file; the View menu has Theme, Editor Font, and Larger/Smaller/Default Text Size (Cmd/Ctrl + / - / 0). The theme drives `nativeTheme`, so dialogs agree.)
    (The sidebar is both the library and sheet panes. Toggle with the button at the top left of the editor, View > Toggle Sidebar, or Cmd/Ctrl+\\; the state is remembered. The top bar in item 11 will take over the button.)
+   (File > Quick Open…, Cmd/Ctrl+P. Subsequence matching over the title and the group path, best first.)
 
 **Medium**
 

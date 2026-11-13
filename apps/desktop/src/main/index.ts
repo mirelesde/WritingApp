@@ -92,6 +92,11 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
+          label: 'Quick Open…',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => sendCommand('quick-open')
+        },
+        {
           label: 'Find in Library…',
           accelerator: 'CmdOrCtrl+Shift+F',
           click: () => sendCommand('search')
