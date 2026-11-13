@@ -1,5 +1,5 @@
 import { RangeSetBuilder, type EditorState, type TransactionSpec } from '@codemirror/state'
-import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view'
+import { Decoration, EditorView, keymap, type Command, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view'
 
 const TASK = /^(\s*(?:[-*+]|\d+[.)]) )\[([ xX])\]/
 
@@ -16,10 +16,22 @@ export function toggleTaskAt(state: EditorState, pos: number): TransactionSpec |
   }
 }
 
+/** Ticks or unticks the task item the cursor is on. */
+export const toggleTaskCommand: Command = (view) => {
+  const line = view.state.doc.lineAt(view.state.selection.main.head)
+  const m = TASK.exec(line.text)
+  if (!m) return false
+  const spec = toggleTaskAt(view.state, line.from + m[1].length + 1)
+  if (!spec) return false
+  view.dispatch(spec)
+  return true
+}
+
 const box = Decoration.mark({ class: 'cm-task-box' })
 
 /** Makes the `[ ]` / `[x]` of a task list item clickable. */
 export const taskBoxes = [
+  keymap.of([{ key: 'Mod-Enter', run: toggleTaskCommand }]),
   ViewPlugin.fromClass(
     class {
       decorations: DecorationSet
