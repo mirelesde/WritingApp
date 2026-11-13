@@ -657,9 +657,12 @@ asked for directly.
 26. **Keywords (tags) and filters.** Tags per sheet in the sidecar, a
     filter by tag in the library pane, and tag search. (Moved up from
     "Later".)
-27. **Snapshots / version history.** Automatic copies of a sheet before big
-    edits, merges and deletes, with a browse-and-restore list. Overlaps the
-    trash design, so do it after item 25 and share the storage.
+27. **Version history.** Look at a sheet as it was at a point in time, compare it
+    with now, and restore it. The files are plain Markdown on disk, so the
+    library stays readable without the app; history is extra, kept beside
+    it. Design notes (how other apps do it, the options, what we lean to)
+    are in "Version history: design notes" below. Do it after item 25
+    (Trash), which shares the storage.
 
 59. **Project and group notes (user).** A place to talk to your future self
     ("add more quotes about this"): a note attached to a project or group,
@@ -740,6 +743,129 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 
 Skipped from the Ulysses window: promotional buttons, and its blue accent
 (ours stays teal unless asked otherwise).
+
+## Version history: design notes
+
+The worry: a writer wants to see their work as it was last Tuesday, or
+before a bad merge or a rewrite, and bring it back. Today there is only
+the one-step undo of library operations and the operating-system trash.
+
+**How other apps do it**
+
+- **Ulysses** keeps automatic backups (a snapshot of the whole library
+  at intervals) and, per sheet, "Versions": it saves a version when a
+  sheet is closed or after a pause, shows a list by date, lets you
+  compare against the current text, and restore or copy out of one.
+- **Scrivener** takes manual snapshots of a document (with a title and
+  note), compares them with the current text as a diff, and rolls back.
+  It also makes zipped project backups on close. Snapshots are explicit,
+  not automatic.
+- **Apple apps (Pages, Notes, TextEdit)** use the system's Versions:
+  automatic saves, a browser that shows the document through time, and
+  restore. iCloud Notes keeps recently deleted notes for 30 days.
+- **Google Docs and Notion** keep a continuous revision history grouped
+  by time and author, named versions, and per-change highlighting.
+- **Bear and Obsidian** keep little history by default; Obsidian has a
+  File Recovery core plugin that snapshots a note every few minutes and
+  keeps them for a while. Many people also put the folder in git.
+- **Plain files with git, Time Machine or Dropbox history** is what
+  Markdown-folder users fall back on; none of it is aware of sheets.
+
+What they share: history is automatic (nobody remembers to press save), is
+browsed as a list by time, can be compared with the current text, and
+restoring is itself undoable. Manual, named snapshots are an addition for
+milestones ("first draft").
+
+**What a writer needs from it**
+
+1. Safety net, no effort: it should just be there after a bad edit.
+2. Browse by time ("yesterday evening") and see a preview.
+3. Compare with the current text (what changed), then restore all of it,
+   or copy out one passage.
+4. Restoring never loses the current text: it is saved as a version first.
+5. Deleted sheets, merged sheets and split sheets are covered too.
+6. Named snapshots of a sheet, a group or a whole project, for milestones.
+7. Does not bloat the library, does not sync as clutter, never leaks into
+   export, search, word counts or the sheet list.
+
+**Storage options**
+
+- **A. Files in a hidden folder in the library** (`.history/` at the
+  library root, one folder per sheet, timestamped `.md` files).
+  Pros: plain files, no database, easy to inspect, copy and back up,
+  moves with the library, no new dependency. Cons: lots of small files
+  (some sync services handle that badly), and a moved or renamed sheet
+  needs its history carried along (key history by a stable sheet ID kept
+  in the sidecar, not by path).
+- **B. One history store file per library** (SQLite or an append-only
+  log in `.history/`). Pros: compact, quick to search and prune, can
+  store diffs. Cons: a binary file that sync tools can corrupt or
+  conflict on, needs a dependency, opaque to the user.
+- **C. Git underneath.** Pros: proven, diffs and branches for free.
+  Cons: heavy, confusing for writers, conflicts with users who already
+  keep the library in git, and does not map onto sheets.
+- **D. Rely on the system** (trash, Time Machine). Pros: nothing to build.
+  Cons: not browsable per sheet, not on every platform, no compare.
+
+**Leaning to A**, with whole-text copies at first (writing is small text;
+a million-word library is a few megabytes, and compression is trivial) and
+pruning to keep it small: every save point in the last hour, one per hour
+for the last day, one per day for the last month, then one per week;
+named snapshots are never pruned. Delta storage (B) stays possible
+later because the versions are only read through one module in core.
+
+**When a version is taken**
+
+- On a pause in typing of a few minutes, and on closing or leaving a sheet
+  (not on every autosave, which is every 800 ms).
+- Before any destructive library operation: merge, split, delete, move
+  to Trash, replace in library, restore, and an external change that
+  overwrites unsaved edits (item 49).
+- Before restoring a version (so restoring is undoable).
+- On request: "Save a snapshot…" with a name, from the sheet, group and
+  project menus.
+- Skip it when the text has not changed since the last version.
+
+**The interface**
+
+- A **History** view for the open sheet, from the editor's menu or the
+  inspector tab (L11): a list by time with day groupings, "named" ones
+  marked, and a read-only preview of the chosen version in the editor
+  area.
+- **Compare**: show additions and deletions against the current text
+  inline (word-level diff, since this is prose), with Restore and
+  "Restore selected passage".
+- **Restore** replaces the sheet's text after taking a version of the
+  current text; a notice offers Undo.
+- Deleted and merged sheets appear in the Trash (item 25) with their
+  history, so a sheet can come back with its past.
+- Group and project level: "Browse snapshots" lists named snapshots, and
+  restoring one restores the sheets in it, again saving the present first.
+- Settings (Preferences, item 37): keep history on or off, how long,
+  and a size cap; "Clear history" for a sheet or the library.
+
+**Core pieces** (in `packages/core`, behind the `FileSystem` interface, so
+tested with the in-memory one)
+
+- A stable sheet ID in the sidecar, assigned on first need.
+- `recordVersion`, `listVersions`, `readVersion`, `restoreVersion`,
+  `pruneVersions`, each pure over the file system.
+- A word-level diff function for the compare view.
+- Pruning rules as a tested pure function of the version times.
+
+**Open questions**
+
+- Whole-text copies or deltas; start with copies unless sizes surprise us.
+- Whether history syncs (it is inside the library) or is excluded; the
+  usual advice for iCloud and Dropbox is to let it sync so history
+  follows the user between machines, but conflicts must not corrupt it,
+  which favours one file per version (option A).
+- Whether the app also keeps a rolling whole-library backup (zip on a
+  schedule), as Ulysses and Scrivener do. Probably yes as a separate,
+  simple item: it protects against everything the per-sheet history does
+  not, such as a corrupted library.
+- Interaction with item 49 (external changes): a conflict should create
+  a version of the other copy rather than discard it.
 
 ## Still open
 
