@@ -500,9 +500,19 @@ asked for directly.
 
 **Medium to hard**
 
-23. **Images.** Paste or drag an image into a sheet, render it inline,
-    embed it on export. Blocked on the open question of where images live
-    on disk (next to the sheet, or a per-folder assets directory).
+23. **Images.** Not supported yet. Wanted:
+    - **Insert** an image from a file picker, through a toolbar button, an
+      Insert menu item and a keyboard shortcut.
+    - **Paste** an image from the clipboard (screenshots, copied images).
+    - **Drag and drop** image files, or images dragged from other apps and
+      browsers, into the editor at the drop position.
+    - Each becomes a Markdown image link, `![](assets/name.png)`, copied
+      into the library, rendered inline in the editor and embedded on
+      HTML and PDF export. Unreadable or missing images show a placeholder
+      rather than failing the sheet.
+    - Blocked on the open question of where images live on disk (next to
+      the sheet, or a per-folder assets directory); moves, renames and
+      deletes of sheets must keep their images with them.
 24. **Sheet notes.** A side note per sheet that is never exported, like
     Ulysses' notes. Stored in the sidecar or a companion file; decide which
     when starting.
