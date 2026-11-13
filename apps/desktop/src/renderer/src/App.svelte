@@ -1090,7 +1090,7 @@
     else if (command === 'command-palette') openPalette()
     else if (command === 'distraction-free') toggleZen()
     else if (command === 'preferences') preferencesOpen = true
-    else if (command === 'format-table') insertTable()
+    else if (command === 'insert-table') insertTable()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
     else if (command === 'split') void splitAtCursor()
@@ -1166,7 +1166,7 @@
       menu('Format', 'Bold', 'format-bold', `${keyMod}B`),
       menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
       menu('Format', 'Link', 'format-link', `${keyMod}K`),
-      menu('Format', 'Insert Table', 'format-table'),
+      menu('Insert', 'Table', 'insert-table'),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
       { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },

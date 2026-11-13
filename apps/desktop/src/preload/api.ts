@@ -36,6 +36,7 @@ export type MenuCommand =
   | 'undo-sheet-change'
   | 'delete'
   | 'toggle-sidebar'
+  | 'insert-table'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
