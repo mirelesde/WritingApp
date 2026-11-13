@@ -67,6 +67,9 @@ html.indent-paras .cm-para-first {
    to-left); the spaces after the hashes collapse. */
 /* Headings are bigger than the body, but their # marks stay body-sized. */
 .cm-hang,
+.cm-hang *,
+.cm-hmark,
+.cm-hmark *,
 .cm-hang-gap {
   font-size: var(--editor-size);
 }

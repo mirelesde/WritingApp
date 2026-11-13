@@ -4,6 +4,8 @@ import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate
 
 const hang = Decoration.mark({ class: 'cm-hang' })
 const gap = Decoration.mark({ class: 'cm-hang-gap' })
+/** A heading's marks while they stay in the line: body-sized, not hung. */
+const inline = Decoration.mark({ class: 'cm-hmark' })
 const hangRule = Decoration.mark({ class: 'cm-hang cm-hang-rule' })
 
 /**
@@ -20,7 +22,7 @@ export const headingMarks = ViewPlugin.fromClass(
       this.decorations = this.build(view)
     }
     update(update: ViewUpdate): void {
-      if (update.docChanged || update.viewportChanged || syntaxTree(update.state) !== syntaxTree(update.startState)) {
+      if (update.docChanged || update.viewportChanged || update.selectionSet || syntaxTree(update.state) !== syntaxTree(update.startState)) {
         this.decorations = this.build(update.view)
       }
     }
@@ -42,8 +44,16 @@ export const headingMarks = ViewPlugin.fromClass(
             const line = state.doc.lineAt(node.from)
             let end = node.to
             while (end < line.to && state.sliceDoc(end, end + 1) === ' ') end++
+            // While the cursor is among the marks, or the heading has no text yet, they
+            // stay in the line so typing and moving through them behaves normally.
+            const head = state.selection.main.head
+            const editing = head >= line.from && head < end && head <= line.to
+            if (end === node.to || editing) {
+              builder.add(node.from, node.to, inline)
+              return
+            }
             builder.add(node.from, node.to, hang)
-            if (end > node.to) builder.add(node.to, end, gap)
+            builder.add(node.to, end, gap)
           }
         })
       }
