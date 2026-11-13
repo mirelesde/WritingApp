@@ -20,6 +20,15 @@ function createWindow(): void {
     height: 800,
     show: false,
     ...(process.platform === 'linux' ? { icon } : {}),
+    // macOS: no title bar, traffic lights inside the sidebar, translucent sidebar.
+    ...(process.platform === 'darwin'
+      ? {
+          titleBarStyle: 'hiddenInset' as const,
+          trafficLightPosition: { x: 18, y: 13 },
+          vibrancy: 'sidebar' as const,
+          visualEffectState: 'active' as const
+        }
+      : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,

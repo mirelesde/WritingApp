@@ -568,7 +568,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 
 **Round 2: window and structure**
 
-- L6. **Hidden title bar and vibrancy.** `titleBarStyle: 'hiddenInset'` and
+- L6. ~~**Hidden title bar and vibrancy.**~~ **Done.** `titleBarStyle: 'hiddenInset'` and
   a translucent sidebar on macOS, with the traffic lights inside the
   sidebar header; plain solid tones on Windows and Linux.
 - L7. **Sidebar structure.** Small muted section headers, an icon per kind

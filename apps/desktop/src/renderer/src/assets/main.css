@@ -56,6 +56,31 @@ body {
   font-size: 14px;
 }
 
+/* macOS: the window has no title bar, so the pane headers are what you drag,
+   and the sidebar lets the system's vibrancy show through. */
+.mac header,
+.mac .editor-bar {
+  -webkit-app-region: drag;
+}
+.mac header button,
+.mac .editor-bar button {
+  -webkit-app-region: no-drag;
+}
+.mac .library {
+  background: color-mix(in srgb, var(--sidebar) 55%, transparent);
+}
+.mac .library header {
+  /* Room for the traffic lights. */
+  padding-left: 84px;
+}
+.mac .layout.collapsed .editor-bar {
+  padding-left: 84px;
+}
+.mac .layout.collapsed .sidebar .library {
+  /* Floating over the editor, it needs to be solid. */
+  background: var(--sidebar);
+}
+
 button {
   font: inherit;
   color: inherit;
