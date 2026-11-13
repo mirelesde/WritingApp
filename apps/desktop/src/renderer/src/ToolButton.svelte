@@ -13,6 +13,7 @@
     | 'outline'
     | 'export'
     | 'style'
+    | 'sort'
 
   interface Props {
     icon: Icon
@@ -72,6 +73,8 @@
         <path d="M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9" />
       {:else if icon === 'outline'}
         <path d="M3.5 5h13M6.5 10h10M9.5 15h7" />
+      {:else if icon === 'sort'}
+        <path d="M6 4v12M3.5 13.5L6 16l2.5-2.5M14 16V4M11.5 6.5L14 4l2.5 2.5" />
       {:else if icon === 'export'}
         <path d="M6.5 7H6a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 6 17h8a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 14 7h-.5" />
         <path d="M10 12.5V3M6.8 6.2L10 3l3.2 3.2" />

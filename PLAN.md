@@ -537,7 +537,7 @@ asked for directly.
 46. ~~**Clickable task lists.**~~ **Done.** `- [ ]` and `- [x]` draw as checkboxes in the
     editor; clicking one toggles the marker in the text. Cmd/Ctrl+Enter
     toggles the item at the cursor.
-47. **Sheet list sorting and dates.** Sort a group's sheets by manual order
+47. ~~**Sheet list sorting and dates.**~~ **Done.** Sort a group's sheets by manual order
     (default), title, modified date, created date or word count; the card
     can show the date. Manual order stays in the sidecar, so sorting only
     changes the view until the user reorders.
@@ -555,6 +555,7 @@ asked for directly.
     control and pane, a high-contrast option, honouring reduced motion,
     and full keyboard-only use of every dialog and menu.
    A switch in Preferences and View > Line Numbers; each sheet of a glued run numbers its own lines.
+   Sort menu in the sheet list header; dates shown on cards when sorting by date or words
 
 60. **Distraction-free mode.** Hides both side panes and the header rows so
     only the text remains; they return when the pointer reaches the top or

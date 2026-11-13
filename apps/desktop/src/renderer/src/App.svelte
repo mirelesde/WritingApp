@@ -1,6 +1,15 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
-  import { extractHeadings, listSheets, sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
+  import {
+    extractHeadings,
+    listSheets,
+    sheetPreview,
+    sheetTitle,
+    sortSheets,
+    type GroupNode,
+    type SheetNode,
+    type SheetSort
+  } from '@writingapp/core'
   import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
   import { applyView } from './view'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -99,13 +108,33 @@
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
   const sheets = $derived((group?.children.filter((c) => c.kind === 'sheet') ?? []) as SheetNode[])
   let filter = $state('')
+  let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
+  const sortBy = $derived(prefs?.sheetSort ?? 'manual')
+  let sortOpen = $state(false)
+  const SORTS: [SheetSort, string][] = [
+    ['manual', 'Manual order'],
+    ['title', 'Title'],
+    ['modified', 'Date modified'],
+    ['created', 'Date created'],
+    ['words', 'Word count']
+  ]
+  const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  /** The small line under a card's title when the sort makes a value worth showing. */
+  function sortNote(sheet: SheetNode): string {
+    if (sortBy === 'words') return `${sheet.words.toLocaleString()} words`
+    const time = sortBy === 'created' ? sheet.created : sortBy === 'modified' ? sheet.modified : undefined
+    return time === undefined ? '' : dateFormat.format(time)
+  }
   /** What the list shows: every sheet, or those whose title or preview contain the filter. */
   const shown = $derived.by(() => {
     const needle = filter.trim().toLowerCase()
-    if (!needle) return sheets
-    return sheets.filter((s) => `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
+    const ordered = sortSheets(sheets, sortBy)
+    if (!needle) return ordered
+    return ordered.filter((s) => `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
   })
   const sheetPaths = $derived(sheets.map((s) => s.path))
+  /** The sheets in the order the list shows them, for keyboard and range selection. */
+  const listPaths = $derived(shown.map((s) => s.path))
   // Sheets that follow a glued sheet, so a run can be drawn as one bar.
   const gluedFrom = $derived(
     new Set(
@@ -226,7 +255,6 @@
     void window.api.setView({ sidebarCollapsed: !sidebarCollapsed })
   }
 
-  let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
   let preferencesOpen = $state(false)
 
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
@@ -353,7 +381,7 @@
   }
 
   function clickSheet(path: string, e: MouseEvent): Promise<void> {
-    if (e.shiftKey && anchor) return setSelection(pathRange(sheetPaths, anchor, path), path)
+    if (e.shiftKey && anchor) return setSelection(pathRange(listPaths, anchor, path), path)
     anchor = path
     if (e.metaKey || e.ctrlKey) {
       const next = selection.includes(path)
@@ -912,7 +940,7 @@
       const chosen = [...selection] // a plain array: state proxies cannot cross the bridge
       const slot = moveSlot(
         parent.children.map((c) => c.path),
-        sheetPaths,
+        listPaths,
         chosen,
         e.key === 'ArrowUp' ? -1 : 1
       )
@@ -921,16 +949,16 @@
     }
     if (mod && e.key.toLowerCase() === 'a') {
       e.preventDefault()
-      void setSelection([...sheetPaths], cursor ?? sheetPaths[0] ?? null)
+      void setSelection([...listPaths], cursor ?? listPaths[0] ?? null)
       return
     }
     if (mod || e.altKey) return
 
-    const at = cursor ? sheetPaths.indexOf(cursor) : -1
+    const at = cursor ? listPaths.indexOf(cursor) : -1
     let target: number
     switch (e.key) {
       case 'ArrowDown':
-        target = Math.min(at + 1, sheetPaths.length - 1)
+        target = Math.min(at + 1, listPaths.length - 1)
         break
       case 'ArrowUp':
         target = at < 0 ? 0 : Math.max(at - 1, 0)
@@ -939,7 +967,7 @@
         target = 0
         break
       case 'End':
-        target = sheetPaths.length - 1
+        target = listPaths.length - 1
         break
       case 'Enter':
         e.preventDefault()
@@ -949,10 +977,10 @@
         return
     }
     e.preventDefault()
-    const path = sheetPaths[target]
+    const path = listPaths[target]
     if (path === undefined) return
     if (e.shiftKey && anchor) {
-      void setSelection(pathRange(sheetPaths, anchor, path), path)
+      void setSelection(pathRange(listPaths, anchor, path), path)
     } else {
       anchor = path
       void setSelection([path], path)
@@ -1109,6 +1137,26 @@
       <header>
         <span class="title">{group?.name ?? ''}</span>
         <span class="tools">
+          <span class="sort-wrap">
+            <ToolButton icon="sort" label="Sort sheets" pressed={sortOpen || sortBy !== 'manual'} onclick={() => (sortOpen = !sortOpen)} />
+            {#if sortOpen}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div class="scrim" onmousedown={() => (sortOpen = false)}></div>
+              <div class="style-menu sort-menu" role="menu" tabindex="-1" aria-label="Sort sheets">
+                {#each SORTS as [value, label] (value)}
+                  <button
+                    role="menuitemradio"
+                    aria-checked={sortBy === value}
+                    class:current={sortBy === value}
+                    onclick={() => {
+                      sortOpen = false
+                      void window.api.setView({ sheetSort: value })
+                    }}>{label}</button
+                  >
+                {/each}
+              </div>
+            {/if}
+          </span>
           <ToolButton icon="new-sheet" label="New sheet" hint="{keyMod}N" onclick={() => void newSheet()} />
         </span>
       </header>
@@ -1161,6 +1209,7 @@
                 }}
               >
                 <span class="sheet-title">{sheet.title}</span>
+                {#if sortNote(sheet)}<span class="sheet-note">{sortNote(sheet)}</span>{/if}
                 <span class="sheet-preview">{sheet.preview}</span>
               </button>
             </li>
@@ -1449,6 +1498,20 @@
     background: var(--selected);
   }
   .sheet-title,
+  .sort-wrap {
+    position: relative;
+  }
+  .sort-menu {
+    left: auto;
+    right: 0;
+    transform: none;
+    min-width: 160px;
+  }
+  .sheet-note {
+    font-size: 11px;
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+  }
   .sheet-preview {
     overflow: hidden;
     text-overflow: ellipsis;

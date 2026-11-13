@@ -2,6 +2,15 @@ import type { FileSystem } from './filesystem'
 import { parseSidecar, reconcileFolder, SIDECAR_NAME } from './sidecar'
 import { baseName, joinPath, trimSlashes } from './path'
 import { sheetPreview, sheetTitle } from './sheet'
+import { textStats } from './stats'
+
+async function times(fs: FileSystem, path: string): Promise<{ modified?: number; created?: number }> {
+  try {
+    return (await fs.fileTimes?.(path)) ?? {}
+  } catch {
+    return {}
+  }
+}
 
 export interface SheetNode {
   kind: 'sheet'
@@ -12,6 +21,11 @@ export interface SheetNode {
   preview: string
   /** True if this sheet is glued to the next sibling. */
   glued: boolean
+  /** Words in the sheet. */
+  words: number
+  /** Last change and creation, in ms since 1970, when the file system can say. */
+  modified?: number
+  created?: number
 }
 
 export interface GroupNode {
@@ -58,6 +72,8 @@ async function loadGroup(fs: FileSystem, path: string, name: string): Promise<Gr
         title: sheetTitle(content),
         preview: sheetPreview(content),
         glued: gluedNames.has(child.name),
+        words: textStats(content).words,
+        ...(await times(fs, childPath)),
       })
     }
   }

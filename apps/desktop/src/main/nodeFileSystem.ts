@@ -50,6 +50,11 @@ export function createNodeFileSystem(trashItem: (path: string) => Promise<void>)
 
     exists,
 
+    async fileTimes(path) {
+      const stats = await nodeFs.stat(path)
+      return { modified: stats.mtimeMs, created: stats.birthtimeMs }
+    },
+
     async makeDir(path) {
       await nodeFs.mkdir(path, { recursive: true })
     },

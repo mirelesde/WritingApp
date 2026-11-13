@@ -14,7 +14,8 @@ export const CHOICES = {
   focusScope: ['line', 'sentence', 'paragraph'],
   focusDim: ['light', 'medium', 'strong'],
   typewriterPosition: ['centre', 'upper'],
-  textAlign: ['left', 'justify']
+  textAlign: ['left', 'justify'],
+  sheetSort: ['manual', 'title', 'modified', 'created', 'words']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -25,6 +26,7 @@ export type FocusScope = (typeof CHOICES.focusScope)[number]
 export type FocusDim = (typeof CHOICES.focusDim)[number]
 export type TypewriterPosition = (typeof CHOICES.typewriterPosition)[number]
 export type TextAlign = (typeof CHOICES.textAlign)[number]
+export type SheetSort = (typeof CHOICES.sheetSort)[number]
 
 export const MIN_LINE_SPACING = 1.3
 export const MAX_LINE_SPACING = 2.4
@@ -68,6 +70,8 @@ export interface ViewSettings {
   /** Leave room below the last line so it can scroll up to the middle. */
   scrollPastEnd: boolean
   textAlign: TextAlign
+  /** How the sheet list is ordered; only the view changes, not the saved order. */
+  sheetSort: SheetSort
   /** Curly quotes, en and em dashes and ellipses as you type. */
   smartTypography: boolean
 }
@@ -91,6 +95,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   typewriterPosition: 'centre',
   scrollPastEnd: true,
   textAlign: 'left',
+  sheetSort: 'manual',
   smartTypography: false,
 }
 

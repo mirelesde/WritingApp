@@ -4,6 +4,7 @@ export { MemoryFileSystem } from './testing/memoryFileSystem'
 export { GROUP_COLORS, isVisibleEntry, parseSidecar, reconcileFolder, SIDECAR_NAME } from './sidecar'
 export type { ReconciledFolder, Sidecar } from './sidecar'
 export { loadLibrary } from './library'
+export { sortSheets } from './sheetSort'
 export type { GroupNode, LibraryNode, SheetNode } from './library'
 export { sheetFileName, slugify } from './filename'
 export {
@@ -46,7 +47,7 @@ export {
   resolveView,
   THEMES,
 } from './viewSettings'
-export type { Font, Theme, ViewSettings } from './viewSettings'
+export type { Font, SheetSort, Theme, ViewSettings } from './viewSettings'
 export { fuzzyScore, listSheets, rankSheets } from './quickOpen'
 export type { QuickOpenItem } from './quickOpen'
 export { stripComments } from './comments'

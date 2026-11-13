@@ -29,7 +29,8 @@
     focusScope: { line: 'Line', sentence: 'Sentence', paragraph: 'Paragraph' },
     focusDim: { light: 'Light', medium: 'Medium', strong: 'Strong' },
     typewriterPosition: { centre: 'Middle', upper: 'Upper third' },
-    textAlign: { left: 'Left', justify: 'Justified' }
+    textAlign: { left: 'Left', justify: 'Justified' },
+    sheetSort: {}
   }
 
   const themeNames: Record<(typeof THEMES)[number], string> = {

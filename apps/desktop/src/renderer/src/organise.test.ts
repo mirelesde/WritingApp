@@ -61,7 +61,8 @@ const sheet = (path: string): GroupNode['children'][number] => ({
   path,
   title: '',
   preview: '',
-  glued: false
+  glued: false,
+  words: 0
 })
 
 describe('visibleGroups', () => {
