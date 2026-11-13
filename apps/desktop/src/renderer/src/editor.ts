@@ -3,6 +3,7 @@ import { EditorView, drawSelection, keymap, type KeyBinding } from '@codemirror/
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
+import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
 import { formattingKeymap } from './formatting'
@@ -25,6 +26,32 @@ const theme = EditorView.theme({
   },
   '.cm-line': { padding: '0' },
   '.cm-cursor': { borderLeftColor: 'var(--text)' },
+  // Find and replace bar: sticky at the top of the sheet, in the app's own colours.
+  '.cm-panels': {
+    backgroundColor: 'var(--pane)',
+    color: 'var(--text)',
+    borderBottom: '1px solid var(--border)',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  '.cm-search': { padding: '8px 12px', fontSize: '13px' },
+  '.cm-search input, .cm-search button': { font: 'inherit', fontSize: '13px' },
+  '.cm-search input.cm-textfield': {
+    background: 'var(--bg)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '4px',
+    padding: '3px 6px'
+  },
+  '.cm-search button.cm-button': {
+    background: 'var(--bg)',
+    backgroundImage: 'none',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '4px',
+    padding: '3px 8px'
+  },
+  '.cm-searchMatch': { backgroundColor: 'var(--selection)', outline: '1px solid var(--marker)' },
+  '.cm-searchMatch.cm-searchMatch-selected': { backgroundColor: 'var(--accent)', color: '#fff' },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground':
     { background: 'var(--selection)' }
 })
@@ -103,9 +130,15 @@ export function editorExtensions({
     // removes list markers on Backspace.
     markdown({ base: markdownLanguage }),
     ...emphasisPairs,
+    // Find and replace within this sheet; Find in Library searches all of them.
+    search({ top: true }),
+    highlightSelectionMatches(),
     // Four spaces nests correctly under both "- " and "1. " markers.
     indentUnit.of('    '),
     keymap.of([
+      // Cmd/Ctrl+F and Cmd/Ctrl+Alt+F both open the bar; it always has a replace field.
+      { key: 'Mod-Alt-f', run: openSearchPanel, preventDefault: true },
+      ...searchKeymap,
       { key: 'Escape', run: () => (onescape ? (onescape(), true) : false) },
       ...(onedge
         ? [

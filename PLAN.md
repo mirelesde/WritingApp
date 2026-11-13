@@ -425,11 +425,12 @@ asked for directly.
    selection in `**` / `*` (and unwrap if already wrapped); Cmd/Ctrl+K wraps
    it as `[text](url)` and selects the `url`. These are editor commands that
    the top bar (item 11) reuses.
-7. **Find and replace in the open sheet.** CodeMirror's search panel,
+7. ~~**Find and replace in the open sheet.**~~ **Done.** CodeMirror's search panel,
    styled to match, with Cmd/Ctrl+F and Cmd/Ctrl+Alt+F. Distinct from Find in
    Library.
    (Already worked through the Markdown keymap from milestone 4; this added tests for task lists, Shift-Tab and ordered nesting, and a check in the running app.)
    (Built as an input handler in `emphasis.ts`, not `closeBrackets`, so it also handles `_`, widening `*|*` to `**|**`, a list-bullet exception and Backspace on an empty pair.)
+   (Acts on one sheet at a time: in a glued run each sheet has its own bar.)
 
 **Easy to medium**
 
