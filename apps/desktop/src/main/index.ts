@@ -82,6 +82,12 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
+          label: 'Find in Library…',
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: () => sendCommand('search')
+        },
+        { type: 'separator' },
+        {
           label: 'Export…',
           accelerator: 'CmdOrCtrl+E',
           click: () => sendCommand('export-html')

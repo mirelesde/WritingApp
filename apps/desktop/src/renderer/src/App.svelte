@@ -6,6 +6,7 @@
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
+  import SearchDialog from './SearchDialog.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
@@ -328,6 +329,34 @@
 
   function toggle(path: string): void {
     expanded[path] = !expanded[path]
+  }
+
+  // --- Search ----------------------------------------------------------------
+
+  let searching = $state(false)
+  let searchReturnFocus: HTMLElement | null = null
+
+  function openSearch(): void {
+    searchReturnFocus = document.activeElement as HTMLElement | null
+    searching = true
+  }
+
+  function closeSearch(): void {
+    searching = false
+    searchReturnFocus?.focus()
+  }
+
+  /** Opens a sheet found by search: selects its group, expands the way to it, and shows it. */
+  async function revealSheet(path: string): Promise<void> {
+    if (!library) return
+    searching = false
+    await autosaver.flush()
+    const parent = path.slice(0, path.lastIndexOf('/'))
+    for (let p = parent; p.length >= library.tree.path.length; p = p.slice(0, p.lastIndexOf('/'))) {
+      expanded[p] = true
+    }
+    selectedGroup = parent
+    await setSelection([path], path, true)
   }
 
   // --- Export ----------------------------------------------------------------
@@ -684,6 +713,7 @@
       if (command === 'new-sheet') void newSheet()
       else if (command === 'move-to') openMoveTo()
       else if (command === 'export-html') void openExport()
+      else if (command === 'search') openSearch()
       else if (command === 'split') void splitAtCursor()
       else if (command === 'merge') void mergeSelected()
       else if (command === 'glue') void glueSelected(true)
@@ -831,6 +861,10 @@
       {/if}
     </section>
   </div>
+{/if}
+
+{#if searching}
+  <SearchDialog onpick={revealSheet} oncancel={closeSearch} />
 {/if}
 
 {#if exportPreview}

@@ -1,4 +1,4 @@
-import type { GroupNode } from '@writingapp/core'
+import type { GroupNode, SearchHit } from '@writingapp/core'
 
 /** A loaded library: where it lives and its tree. */
 export interface LibraryInfo {
@@ -24,6 +24,7 @@ export type MenuCommand =
   | 'new-project'
   | 'move-to'
   | 'export-html'
+  | 'search'
   | 'split'
   | 'merge'
   | 'glue'
@@ -72,6 +73,8 @@ export interface Api {
   unglue(paths: string[]): Promise<OpResult>
   /** Reverses the latest split, merge, glue or unglue. Rejects if there is none. */
   undo(): Promise<OpResult>
+  /** Sheets containing `query`, in library order. */
+  search(query: string): Promise<SearchHit[]>
   /** Builds the HTML export of the given sheets and groups, without saving it. */
   previewExport(paths: string[]): Promise<ExportPreview>
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */

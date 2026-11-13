@@ -15,6 +15,7 @@ const api: Api = {
   glue: (paths) => ipcRenderer.invoke('op:glue', paths),
   unglue: (paths) => ipcRenderer.invoke('op:unglue', paths),
   undo: () => ipcRenderer.invoke('op:undo'),
+  search: (query) => ipcRenderer.invoke('search:run', query),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
   saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),

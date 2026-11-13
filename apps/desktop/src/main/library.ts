@@ -8,6 +8,7 @@ import {
   exportHtml,
   glueSheets,
   loadLibrary,
+  searchLibrary,
   mergeSheets,
   moveNodes,
   renameGroup,
@@ -138,6 +139,11 @@ export function registerLibraryIpc(): void {
     const tree = await loadLibrary(fs, currentRoot)
     return exportHtml(fs, tree, chosen)
   }
+
+  ipcMain.handle('search:run', async (_event, query: unknown) => {
+    if (typeof query !== 'string' || !currentRoot) return []
+    return searchLibrary(fs, await loadLibrary(fs, currentRoot), query)
+  })
 
   ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))
 
