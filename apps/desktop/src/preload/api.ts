@@ -103,6 +103,11 @@ export interface Api {
   setView(patch: Partial<ViewSettings>): Promise<ViewSettings>
   /** Called when a view setting changes, from the View menu or elsewhere. */
   onViewChanged(callback: (view: ViewSettings) => void): () => void
+  /** Shows the native right-click menu for a node; resolves with what the renderer must do, or null. */
+  showNodeMenu(
+    kind: 'sheet' | 'group' | 'root',
+    path: string
+  ): Promise<'new-sheet' | 'new-group' | 'rename' | 'move' | 'delete' | null>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when files in the open library change outside the app, with the library as it is now. */

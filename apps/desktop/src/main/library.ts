@@ -168,7 +168,7 @@ function findGroupNode(node: GroupNode, path: string): GroupNode | undefined {
   return undefined
 }
 
-function inside(path: unknown, allowRoot = false): string {
+export function inside(path: unknown, allowRoot = false): string {
   if (typeof path !== 'string' || !currentRoot || !isInside(currentRoot, path, allowRoot)) {
     throw new Error('Not part of the open library')
   }

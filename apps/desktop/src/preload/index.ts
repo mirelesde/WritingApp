@@ -34,6 +34,7 @@ const api: Api = {
       ipcRenderer.removeListener('view:changed', listener)
     }
   },
+  showNodeMenu: (kind, path) => ipcRenderer.invoke('menu:node', kind, path),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

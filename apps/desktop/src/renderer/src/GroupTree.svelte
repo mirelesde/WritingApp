@@ -15,6 +15,7 @@
     oncommitrename: (path: string, name: string) => void
     oncancelrename: () => void
     oncolor: (path: string, color: string | null) => void
+    oncontext: (path: string) => void
     dnd: TreeDnd
   }
 
@@ -30,6 +31,7 @@
     oncommitrename,
     oncancelrename,
     oncolor,
+    oncontext,
     dnd
   }: Props = $props()
 
@@ -58,6 +60,10 @@
     draggable={depth > 0 && renaming !== group.path}
     ondragstart={(e) => dnd.start(group.path, e)}
     ondragend={() => dnd.end()}
+    oncontextmenu={(e) => {
+      e.preventDefault()
+      oncontext(group.path)
+    }}
     ondragover={(e) => {
       const rect = e.currentTarget.getBoundingClientRect()
       dnd.over(group.path, dropZone(e.clientY - rect.top, rect.height), e)
@@ -165,6 +171,7 @@
           {oncommitrename}
           {oncancelrename}
           {oncolor}
+          {oncontext}
           {dnd}
         />
       {/each}

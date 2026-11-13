@@ -470,6 +470,31 @@
     if (result?.label) showInfo(`Undid ${result.label.toLowerCase()}`)
   }
 
+  /** Right-click menu: act on what was clicked, selecting it first if it is not already. */
+  async function nodeMenu(kind: 'sheet' | 'group' | 'root', path: string): Promise<void> {
+    if (!library) return
+    if (kind === 'sheet') {
+      if (!selection.includes(path)) await setSelection([path], path)
+    } else if (selectedGroup !== path) {
+      selectGroup(path)
+      await tick()
+    }
+    const action = await window.api.showNodeMenu(kind, path)
+    if (!action) return
+    if (action === 'new-sheet') await newSheet()
+    else if (action === 'new-group') await newGroup(kind === 'root')
+    else if (action === 'rename') void startRename(path)
+    else if (action === 'move') {
+      if (kind === 'group') treeEl?.focus()
+      else await tick()
+      openMoveTo()
+    } else if (action === 'delete') {
+      if (kind === 'group') treeEl?.focus()
+      await tick()
+      await deleteSelected()
+    }
+  }
+
   async function newSheet(): Promise<void> {
     const parent = group
     if (!parent) return
@@ -1058,6 +1083,7 @@
           oncommitrename={commitRename}
           oncancelrename={finishRename}
           oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
+          oncontext={(path) => void nodeMenu(path === library?.tree.path ? 'root' : 'group', path)}
           dnd={treeDnd}
         />
       </ul>
@@ -1129,6 +1155,10 @@
                 ondragend={endDrag}
                 ondragover={(e) => sheetDragOver(sheet.path, e)}
                 onclick={(e) => clickSheet(sheet.path, e)}
+                oncontextmenu={(e) => {
+                  e.preventDefault()
+                  void nodeMenu('sheet', sheet.path)
+                }}
               >
                 <span class="sheet-title">{sheet.title}</span>
                 <span class="sheet-preview">{sheet.preview}</span>

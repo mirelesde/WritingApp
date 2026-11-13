@@ -449,7 +449,7 @@ asked for directly.
     the previous or next heading; the outline marks the current section.
    Audited and covered by tests; the default keymap already provides each of these, so no code changes were needed. Cmd/Ctrl+Alt+Up/Down (multiple cursors there) are taken over by item 36.
 
-43. **Reveal and open externally.** Reveal in Finder or Explorer, copy the
+43. ~~**Reveal and open externally.**~~ **Done** (reveal and copy path, in the right-click menu; "open in another editor" not added). Reveal in Finder or Explorer, copy the
     file path, and open the sheet in another editor, from the sheet's
     menu once item 17 exists. Electron's `shell` does all of it.
 
@@ -573,7 +573,7 @@ asked for directly.
     renames itself on save); groups rename the folder and keep the sidecar.
     Needs a rename operation with undo. Comes before item 17 so the context
     menu can offer it.
-17. **Right-click menus (user).** On a sheet, a group and the library root:
+17. **Right-click menus (user).** *Partly done:* sheets, groups and the library root have a native menu with new sheet/group, rename, move to…, move to trash, reveal in Finder / file manager and copy path. Still to do: duplicate, cut / copy / paste (below). On a sheet, a group and the library root:
     new sheet/group, rename, move to…, duplicate, cut / copy / paste,
     delete. A native menu from the main process, reusing the existing
     `op:*` handlers. Cut/copy/paste and duplicate need a node clipboard and
