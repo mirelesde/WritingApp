@@ -1,22 +1,17 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
+import type { Api, LibraryInfo } from './api'
 
-// Custom APIs for renderer
-const api = {}
-
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
+const api: Api = {
+  getLibrary: () => ipcRenderer.invoke('library:get'),
+  chooseLibrary: () => ipcRenderer.invoke('library:choose'),
+  readSheet: (path) => ipcRenderer.invoke('sheet:read', path),
+  onLibraryOpened(callback) {
+    const listener = (_event: unknown, library: LibraryInfo): void => callback(library)
+    ipcRenderer.on('library:opened', listener)
+    return () => {
+      ipcRenderer.removeListener('library:opened', listener)
+    }
   }
-} else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI
-  // @ts-ignore (define in dts)
-  window.api = api
 }
+
+contextBridge.exposeInMainWorld('api', api)

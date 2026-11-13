@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { chooseLibrary, registerLibraryIpc } from './library'
 
 function createWindow(): void {
   // Create the browser window.
@@ -12,7 +13,7 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -37,7 +38,36 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+function buildMenu(): Menu {
+  const isMac = process.platform === 'darwin'
+  return Menu.buildFromTemplate([
+    ...(isMac ? [{ role: 'appMenu' as const }] : []),
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Library…',
+          accelerator: 'CmdOrCtrl+O',
+          click: async () => {
+            const target = BrowserWindow.getFocusedWindow() ?? undefined
+            const library = await chooseLibrary(target)
+            if (library && target) target.webContents.send('library:opened', library)
+          }
+        },
+        { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' }
+  ])
+}
+
 app.whenReady().then(() => {
+  registerLibraryIpc()
+  Menu.setApplicationMenu(buildMenu())
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.writingapp.desktop')
 

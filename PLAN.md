@@ -6,14 +6,13 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 
 ## Status
 
-- **Done:** milestone 1 (scaffold) and milestone 2 (library core). Licensed
-  AGPL-3.0.
-- **Next:** milestone 3 (library UI).
-- The app still opens an empty placeholder window. The core can load and
-  restructure a library (`loadLibrary`, `createSheet`, `createGroup`,
-  `renameGroup`, `deleteNode`, `moveNode`, `reorderNode`), and
-  `apps/desktop/src/main/nodeFileSystem.ts` gives it real disk access, but
-  nothing in the UI calls either yet.
+- **Done:** milestones 1 (scaffold), 2 (library core) and 3 (library UI).
+  Licensed AGPL-3.0.
+- **Next:** milestone 4 (editor).
+- The app opens a library folder, remembers it, and shows three panes:
+  groups, sheets (title + preview), and a read-only text view of the
+  selected sheet. File > Open Library (Cmd/Ctrl+O) switches library. Nothing
+  can be edited or saved yet.
 
 If you are picking this up in a new session, read "Working in this repo"
 below, then start at milestone 3.
@@ -35,8 +34,11 @@ packages/core/          @writingapp/core — library model, operations, export
   src/testing/          MemoryFileSystem, for tests
 apps/desktop/           @writingapp/desktop — Electron + Svelte 5
   src/main/             Electron main process (Node side);
-                        nodeFileSystem.ts is the disk implementation
-  src/preload/          the bridge exposed to the UI as window.api
+                        nodeFileSystem.ts is the disk implementation,
+                        library.ts the IPC handlers, settings.ts the
+                        remembered library path (userData/settings.json)
+  src/preload/          the bridge exposed to the UI as window.api;
+                        api.ts holds its types
   src/renderer/src/     Svelte UI
 ```
 
@@ -92,6 +94,11 @@ cd apps/desktop && ../../node_modules/.bin/electron . --remote-debugging-port=93
 `http://127.0.0.1:9333/json/list` then lists the window, and its
 `webSocketDebuggerUrl` accepts `Runtime.evaluate` (for example
 `document.body.innerText`).
+
+To test against a throwaway library without touching your real settings,
+add `--user-data-dir=<dir>` and put `{"libraryPath": "<library>"}` in
+`<dir>/settings.json`. The main process only lets the renderer read `.md`
+files inside the open library (`isSheetInside`).
 
 ### Git
 
@@ -204,7 +211,7 @@ Suggested order of work, one commit each:
    it against a temporary folder, including one edited by hand between
    loads.
 
-### 3. Library UI
+### 3. Library UI — done
 - Three panes: library tree, sheet list (title + first lines), editor area.
 - Pick a library folder; remember it between launches.
 - Select a sheet and see its text in a plain text area.
@@ -221,8 +228,8 @@ Notes for this milestone:
 - **Empty state:** replace the placeholder in `App.svelte` with a real
   "Choose library folder" button.
 - **Menu:** add File > Open Library, with a keyboard shortcut.
-- The template creates the window with `sandbox: false`. Revisit once the
-  bridge exists; the preload only needs `ipcRenderer`.
+- The window now runs with `sandbox: true`; the preload imports only
+  `electron`. Keep it that way (no other npm imports in the preload).
 
 ### 4. Editor
 - CodeMirror 6 with Markdown parsing.
