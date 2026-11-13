@@ -12,6 +12,7 @@
     moveTargets,
     pathRange,
     remapPath,
+    runOf,
     visibleGroups,
     type DropZone,
     type MoveTarget,
@@ -27,8 +28,8 @@
   let selection = $state<string[]>([])
   let cursor = $state<string | null>(null)
   let anchor = $state<string | null>(null)
-  // The sheet being edited. Set only once its text has loaded.
-  let open = $state<{ path: string; text: string } | null>(null)
+  // The sheets being edited: one, or a whole glued run. Set only once their text has loaded.
+  let open = $state<{ parts: { path: string; text: string }[] } | null>(null)
   let error = $state('')
   let readId = 0
   let saveStatus = $state<SaveStatus>('saved')
@@ -39,7 +40,7 @@
   let focusEditor = $state(false)
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
-  let editor = $state<Editor>()
+  let editors = $state<Record<string, Editor | undefined>>({})
   let picker = $state<{ heading: string; paths: string[]; targets: MoveTarget[] } | null>(null)
   let pickerReturnFocus: HTMLElement | null = null
 
@@ -96,12 +97,27 @@
     if (info) showLibrary(info)
   }
 
-  async function loadSheet(path: string): Promise<void> {
+  /** The sheets that read as one with `path`: its glued run, or just itself. */
+  function runPaths(path: string): string[] {
+    return runOf(group?.children ?? [], path)
+  }
+
+  /** True if the editor already shows `path` as part of its current run. */
+  function runIsOpen(path: string): boolean {
+    const shown = open?.parts.map((p) => p.path).join('\n')
+    return (
+      shown !== undefined && runPaths(path).join('\n') === shown && shown.split('\n').includes(path)
+    )
+  }
+
+  /** Loads the glued run that `path` belongs to into the editor. */
+  async function loadRun(path: string): Promise<void> {
     const id = ++readId
+    const paths = runPaths(path)
     try {
-      const content = await window.api.readSheet(path)
+      const texts = await Promise.all(paths.map((p) => window.api.readSheet(p)))
       if (id !== readId) return
-      open = { path, text: content }
+      open = { parts: paths.map((p, i) => ({ path: p, text: texts[i]! })) }
       error = ''
     } catch {
       if (id !== readId) return
@@ -110,21 +126,45 @@
     }
   }
 
-  /** Selects sheets. The editor shows the sheet when exactly one is selected. */
+  /** Brings a sheet's part of the open run into view. */
+  async function scrollToPart(path: string): Promise<void> {
+    await tick()
+    document.querySelector(`[data-path="${CSS.escape(path)}"]`)?.scrollIntoView({ block: 'start' })
+  }
+
+  /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
   async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
     await autosaver.flush()
     selection = paths
     cursor = to
     if (paths.length === 1) {
-      if (open?.path !== paths[0]) {
+      const path = paths[0]!
+      if (!runIsOpen(path)) {
         focusEditor = focus
-        await loadSheet(paths[0]!)
-      }
+        await loadRun(path)
+      } else if (focus) editors[path]?.focus()
+      void scrollToPart(path)
     } else {
       open = null
       error = ''
       readId++
     }
+  }
+
+  /** The cursor moved into another sheet of the open run: the list follows. */
+  function focusedPart(path: string): void {
+    if (selection.length === 1 && selection[0] === path) return
+    selection = [path]
+    cursor = anchor = path
+  }
+
+  /** Arrow keys at the edge of a sheet carry on into its neighbour in the run. */
+  function crossEdge(path: string, direction: 'back' | 'forward'): boolean {
+    const parts = open?.parts ?? []
+    const next = parts[parts.findIndex((p) => p.path === path) + (direction === 'forward' ? 1 : -1)]
+    if (!next) return false
+    editors[next.path]?.focusAt(direction === 'forward' ? 'start' : 'end')
+    return true
   }
 
   function clickSheet(path: string, e: MouseEvent): Promise<void> {
@@ -174,7 +214,7 @@
       }
       return
     }
-    if (force || open?.path !== selection[0]) await loadSheet(selection[0]!)
+    if (force || !runIsOpen(selection[0]!)) await loadRun(selection[0]!)
   }
 
   function showInfo(text: string): void {
@@ -184,12 +224,13 @@
   }
 
   async function splitAtCursor(): Promise<void> {
-    const where = editor?.cursorInfo()
-    if (!open || !where) {
+    const part = open?.parts.find((p) => editors[p.path]?.cursorInfo())
+    const where = part && editors[part.path]?.cursorInfo()
+    if (!part || !where) {
       notice = 'Put the cursor in a sheet to split it there.'
       return
     }
-    const path = open.path
+    const path = part.path
     const result = await runOp(() => window.api.split(path, where.text, where.offset), true)
     if (result?.created) {
       anchor = result.created
@@ -542,7 +583,7 @@
         break
       case 'Enter':
         e.preventDefault()
-        if (open) editor?.focus()
+        if (selection[0]) editors[selection[0]]?.focus()
         return
       default:
         return
@@ -563,7 +604,7 @@
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || !library) return
     if (e.key === '1') treeEl?.focus()
     else if (e.key === '2') sheetsEl?.focus()
-    else if (e.key === '3' && open) editor?.focus()
+    else if (e.key === '3' && selection[0]) editors[selection[0]]?.focus()
     else return
     e.preventDefault()
   }
@@ -708,16 +749,24 @@
       {#if error}
         <p class="hint">{error}</p>
       {:else if open}
-        {#key open.path}
-          {@const path = open.path}
-          <Editor
-            bind:this={editor}
-            text={open.text}
-            onchange={(content) => edited(path, content)}
-            onblur={() => void autosaver.flush()}
-            onescape={() => sheetsEl?.focus()}
-            autofocus={focusEditor}
-          />
+        {#key open.parts.map((p) => p.path).join('\n')}
+          <div class="run">
+            {#each open.parts as part, i (part.path)}
+              {#if i > 0}<hr class="seam" />{/if}
+              <div class="part" data-path={part.path}>
+                <Editor
+                  bind:this={editors[part.path]}
+                  text={part.text}
+                  onchange={(content) => edited(part.path, content)}
+                  onblur={() => void autosaver.flush()}
+                  onescape={() => sheetsEl?.focus()}
+                  onfocus={() => focusedPart(part.path)}
+                  onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
+                  autofocus={focusEditor && part.path === selection[0]}
+                />
+              </div>
+            {/each}
+          </div>
         {/key}
         <span class="status" class:problem={saveStatus === 'error'} aria-live="polite">
           {saveStatus === 'error' ? 'Could not save — retrying' : ''}
@@ -896,14 +945,20 @@
   }
   .editor {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .editor {
     position: relative;
+    overflow-y: auto;
+  }
+  .run {
+    padding: 48px 0 40vh;
+  }
+  .seam {
+    max-width: 40rem;
+    margin: 28px auto;
+    border: none;
+    border-top: 1px dashed var(--border);
   }
   .status {
-    position: absolute;
+    position: fixed;
     right: 16px;
     bottom: 10px;
     font-size: 12px;

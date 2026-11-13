@@ -1,5 +1,5 @@
 import { EditorState, type Extension } from '@codemirror/state'
-import { EditorView, drawSelection, keymap } from '@codemirror/view'
+import { EditorView, drawSelection, keymap, type KeyBinding } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
@@ -10,13 +10,14 @@ const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 
 /** Layout and typography: a readable column, generous leading. */
 const theme = EditorView.theme({
-  '&': { height: '100%', color: 'var(--text)', backgroundColor: 'transparent' },
+  // The editor grows with its text; the run it sits in does the scrolling.
+  '&': { color: 'var(--text)', backgroundColor: 'transparent' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: serif, fontSize: '18px', lineHeight: '1.7', overflow: 'auto' },
+  '.cm-scroller': { fontFamily: serif, fontSize: '18px', lineHeight: '1.7', overflow: 'visible' },
   '.cm-content': {
     maxWidth: '40rem',
     margin: '0 auto',
-    padding: '48px 32px 40vh',
+    padding: '0 32px',
     caretColor: 'var(--text)'
   },
   '.cm-line': { padding: '0' },
@@ -48,10 +49,42 @@ interface Hooks {
   onchange: (text: string) => void
   onblur: () => void
   onescape?: () => void
+  onfocus?: () => void
+  /**
+   * The cursor tried to move past the start or end of the text. Return true
+   * if something else took over (the neighbouring sheet in a run).
+   */
+  onedge?: (direction: 'back' | 'forward') => boolean
+}
+
+/** An arrow key that hands over to the next sheet when the cursor cannot go further. */
+function edgeKey(
+  key: string,
+  forward: boolean,
+  vertical: boolean,
+  onedge: NonNullable<Hooks['onedge']>
+): KeyBinding {
+  return {
+    key,
+    run: (view) => {
+      const range = view.state.selection.main
+      if (!range.empty) return false
+      const stuck = vertical
+        ? view.moveVertically(range, forward).head === range.head
+        : range.head === (forward ? view.state.doc.length : 0)
+      return stuck ? onedge(forward ? 'forward' : 'back') : false
+    }
+  }
 }
 
 /** Everything the sheet editor is made of. */
-export function editorExtensions({ onchange, onblur, onescape }: Hooks): Extension[] {
+export function editorExtensions({
+  onchange,
+  onblur,
+  onescape,
+  onfocus,
+  onedge
+}: Hooks): Extension[] {
   return [
     history(),
     drawSelection(),
@@ -64,6 +97,14 @@ export function editorExtensions({ onchange, onblur, onescape }: Hooks): Extensi
     indentUnit.of('    '),
     keymap.of([
       { key: 'Escape', run: () => (onescape ? (onescape(), true) : false) },
+      ...(onedge
+        ? [
+            edgeKey('ArrowDown', true, true, onedge),
+            edgeKey('ArrowRight', true, false, onedge),
+            edgeKey('ArrowUp', false, true, onedge),
+            edgeKey('ArrowLeft', false, false, onedge)
+          ]
+        : []),
       indentWithTab,
       ...defaultKeymap,
       ...historyKeymap
@@ -77,6 +118,9 @@ export function editorExtensions({ onchange, onblur, onescape }: Hooks): Extensi
     EditorView.domEventHandlers({
       blur: () => {
         onblur()
+      },
+      focus: () => {
+        onfocus?.()
       }
     })
   ]

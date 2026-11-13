@@ -117,3 +117,21 @@ export interface TreeDnd {
   drop(path: string, zone: DropZone, e: DragEvent): void
   end(): void
 }
+
+/**
+ * The glued run a sheet belongs to: the paths of its sheets in order, or just
+ * the sheet itself if it is not glued to anything. `children` is a group's
+ * full order; a glued sheet is always followed directly by the next in its run.
+ */
+export function runOf(
+  children: { kind: string; path: string; glued?: boolean }[],
+  path: string
+): string[] {
+  const at = children.findIndex((c) => c.kind === 'sheet' && c.path === path)
+  if (at < 0) return [path]
+  let start = at
+  while (start > 0 && children[start - 1]?.kind === 'sheet' && children[start - 1]?.glued) start--
+  let end = at
+  while (children[end]?.glued && children[end + 1]?.kind === 'sheet') end++
+  return children.slice(start, end + 1).map((c) => c.path)
+}

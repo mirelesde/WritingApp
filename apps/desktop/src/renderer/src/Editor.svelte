@@ -10,15 +10,29 @@
     onblur: () => void
     /** Escape was pressed: hand focus back to the sheet list. */
     onescape?: () => void
+    /** The editor gained focus. */
+    onfocus?: () => void
+    /** The cursor hit the start or end; return true if focus moved elsewhere. */
+    onedge?: (direction: 'back' | 'forward') => boolean
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
 
-  let { text, onchange, onblur, onescape, autofocus = false }: Props = $props()
+  let { text, onchange, onblur, onescape, onfocus, onedge, autofocus = false }: Props = $props()
   let view: EditorView | undefined
 
   export function focus(): void {
     view?.focus()
+  }
+
+  /** Focuses with the cursor at the start or end of the text. */
+  export function focusAt(where: 'start' | 'end'): void {
+    if (!view) return
+    view.dispatch({
+      selection: { anchor: where === 'start' ? 0 : view.state.doc.length },
+      scrollIntoView: true
+    })
+    view.focus()
   }
 
   /** The text and cursor position, if the cursor is in this editor. */
@@ -31,7 +45,7 @@
   onMount(() => {
     view = new EditorView({
       parent: host,
-      state: createEditorState(text, { onchange, onblur, onescape })
+      state: createEditorState(text, { onchange, onblur, onescape, onfocus, onedge })
     })
     if (autofocus) view.focus()
     return () => view?.destroy()
@@ -42,7 +56,6 @@
 
 <style>
   .host {
-    flex: 1;
-    min-height: 0;
+    min-width: 0;
   }
 </style>

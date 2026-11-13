@@ -8,6 +8,7 @@ import {
   moveTargets,
   pathRange,
   remapPath,
+  runOf,
   visibleGroups
 } from './organise'
 
@@ -188,5 +189,37 @@ describe('dropZone', () => {
 
   it('treats a zero-height row as the middle', () => {
     expect(dropZone(0, 0)).toBe('inside')
+  })
+})
+
+describe('runOf', () => {
+  const sheet = (path: string, glued = false): { kind: string; path: string; glued: boolean } => ({
+    kind: 'sheet',
+    path,
+    glued
+  })
+  const children = [
+    sheet('a', true),
+    sheet('b', true),
+    sheet('c'),
+    sheet('d'),
+    { kind: 'group', path: 'G', glued: false },
+    sheet('e', true),
+    sheet('f')
+  ]
+
+  it('returns the whole run from any member', () => {
+    for (const member of ['a', 'b', 'c']) expect(runOf(children, member)).toEqual(['a', 'b', 'c'])
+    expect(runOf(children, 'e')).toEqual(['e', 'f'])
+    expect(runOf(children, 'f')).toEqual(['e', 'f'])
+  })
+
+  it('returns a lone sheet as a run of one', () => {
+    expect(runOf(children, 'd')).toEqual(['d'])
+  })
+
+  it('does not run across a group, or for unknown paths', () => {
+    expect(runOf([sheet('x', true), { kind: 'group', path: 'G' }, sheet('y')], 'x')).toEqual(['x'])
+    expect(runOf(children, 'nope')).toEqual(['nope'])
   })
 })
