@@ -439,7 +439,7 @@ asked for directly.
 34. ~~**Paste a URL over selected text to make a link.**~~ **Done.** The selection
     becomes `[text](url)`. Also Cmd/Ctrl-click on a link opens it in the
     browser.
-35. **Keyboard behaviour audit.** Check and fix, with tests:
+35. ~~**Keyboard behaviour audit.**~~ **Done.** Check and fix, with tests:
     Tab and Shift-Tab indent and outdent nested list items (and a
     selection of several), Enter inside a blockquote or task list
     continues it, Backspace at the start of an item removes its marker,
@@ -447,6 +447,7 @@ asked for directly.
     and Home/End on wrapped lines.
 36. **Jump between headings.** Cmd/Ctrl+Alt+Up and Down move the cursor to
     the previous or next heading; the outline marks the current section.
+   Audited and covered by tests; the default keymap already provides each of these, so no code changes were needed. Cmd/Ctrl+Alt+Up/Down (multiple cursors there) are taken over by item 36.
 
 43. **Reveal and open externally.** Reveal in Finder or Explorer, copy the
     file path, and open the sheet in another editor, from the sheet's
