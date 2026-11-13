@@ -544,6 +544,49 @@ Open decisions for this list: where images
 live (item 23), where sheet notes are stored (item 24) and in-app Trash
 versus the system trash (item 25).
 
+## Look and feel (modelled on Ulysses)
+
+Requested after comparing the app with a Ulysses screenshot. Worked in this
+order, one commit each, checked off as done. The aim: panes separated by
+tone instead of lines, quiet line icons, little chrome in the editor.
+
+**Round 1: styling and layout**
+
+- L1. **Tonal panes.** Sidebar lightest, sheet list a step darker, editor
+  darkest, no 1px pane borders; the selected row is a rounded accent pill.
+- L2. **Floating word-count pill** in the editor's top-right corner instead
+  of the bottom status bar; hover or click shows characters, reading time
+  and the group total.
+- L3. **Editor typography and Markdown styling.** Line height about 1.85,
+  slightly softer text contrast, fainter `**` and `#` markers, links drawn
+  as rounded outlined chips, a `---` rule drawn as a dashed accent line.
+- L4. **Sheet list as cards.** Rounded, roomy cards with a 3 to 4 line
+  preview; the accent bar for glued runs stays.
+- L5. **Per-pane header rows** in place of the full-width top bar: sidebar
+  (new group, hide sidebar), sheet list (new sheet), editor (search, bold,
+  italic, link, outline, export). Uniform line icons, wide spacing.
+
+**Round 2: window and structure**
+
+- L6. **Hidden title bar and vibrancy.** `titleBarStyle: 'hiddenInset'` and
+  a translucent sidebar on macOS, with the traffic lights inside the
+  sidebar header; plain solid tones on Windows and Linux.
+- L7. **Sidebar structure.** Small muted section headers, an icon per kind
+  of item (project, group), chevrons, and sheet-count badges.
+- L8. **Project colours.** A colour per project, kept in its sidecar and
+  shown on its icon.
+- L9. **Back and forward** arrows that step through the sheets visited.
+- L10. **Filter field** in the sheet list that narrows it by text.
+
+**Waiting on backlog items**
+
+- L11. **Tabbed inspector** on the right (outline now; notes, goals and
+  keywords once items 24, 26 and 21 exist).
+- L12. **Trash entry** in the sidebar, with backlog item 25.
+
+Skipped from the Ulysses window: promotional buttons, and its blue accent
+(ours stays teal unless asked otherwise).
+
 ## Still open
 
 - Get signing certificates (Apple Developer ID, a Windows code-signing
