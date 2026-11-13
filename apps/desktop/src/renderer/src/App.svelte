@@ -1291,20 +1291,18 @@
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
   }
   .scroller {
     grid-column: 1;
+    grid-row: 1;
     position: relative;
     overflow-y: auto;
   }
-  .editor :global(footer.bar) {
-    grid-column: 1;
-  }
   .outline-slot {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1;
     display: flex;
     min-height: 0;
   }
@@ -1333,7 +1331,7 @@
   .status {
     position: fixed;
     right: 16px;
-    bottom: 36px;
+    bottom: 12px;
     font-size: 12px;
     color: var(--muted);
   }

@@ -19,37 +19,57 @@
     `${n(value)} ${word}${value === 1 ? '' : 's'}`
 </script>
 
-<footer class="bar" aria-label="Word count">
-  {#if part}
-    <span>{n(part.words)} of {plural(all.words, 'word')} selected</span>
-    <span>{plural(part.characters, 'character')}</span>
-  {:else}
-    <span>{plural(all.words, 'word')}</span>
-    <span>{plural(all.characters, 'character')}</span>
-    <span>{all.minutes === 0 ? '0 min read' : `${all.minutes} min read`}</span>
-  {/if}
-  {#if groupWords !== null}
-    <span class="group">Group: {plural(groupWords, 'word')}</span>
-  {/if}
-</footer>
+<!-- A small pill in the corner of the editor; hovering it shows the rest of the numbers. -->
+<div class="pill" role="status" aria-label="Word count">
+  <span class="main">
+    {#if part}
+      {n(part.words)} of {plural(all.words, 'word')} selected
+    {:else}
+      {plural(all.words, 'word')}
+    {/if}
+  </span>
+  <span class="more">
+    <span>{plural(part ? part.characters : all.characters, 'character')}</span>
+    {#if !part}
+      <span>{all.minutes === 0 ? '0 min read' : `${all.minutes} min read`}</span>
+    {/if}
+    {#if groupWords !== null}<span>Group: {plural(groupWords, 'word')}</span>{/if}
+  </span>
+</div>
 
 <style>
-  .bar {
+  .pill {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+    margin: 12px 20px 0 0;
+    z-index: 3;
     display: flex;
-    flex-wrap: wrap;
-    gap: 2px 16px;
-    padding: 6px 16px;
-    font-size: 12px;
+    align-items: center;
+    gap: 0;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--muted);
-    border-top: 1px solid var(--border);
-    background: var(--bg);
+    font-size: 12.5px;
     font-variant-numeric: tabular-nums;
-    user-select: none;
-  }
-  .bar span {
     white-space: nowrap;
+    user-select: none;
+    backdrop-filter: blur(8px);
+    outline: none;
   }
-  .group {
-    margin-left: auto;
+  .more {
+    display: none;
+    gap: 14px;
+    margin-left: 14px;
+    padding-left: 14px;
+    border-left: 1px solid var(--border);
+  }
+  .pill:hover .more {
+    display: flex;
+  }
+  .pill:hover {
+    color: var(--text);
   }
 </style>
