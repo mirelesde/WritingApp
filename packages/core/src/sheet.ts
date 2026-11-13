@@ -1,4 +1,5 @@
 import { stripComments } from './comments'
+import { findTables } from './table'
 
 export const UNTITLED = 'Untitled'
 
@@ -25,6 +26,19 @@ function plainText(line: string): string {
     .replace(/(^|\s)_+|_+(?=\s|$)/g, '$1')
 }
 
+/** The lines with each table (and its caption) replaced by a single "(Table)" line. */
+function withoutTables(lines: string[]): string[] {
+  const blocks = findTables(lines.join('\n'))
+  if (blocks.length === 0) return lines
+  const out: string[] = []
+  let at = 0
+  for (const { from, to } of blocks) {
+    out.push(...lines.slice(at, from), '(Table)')
+    at = to
+  }
+  return [...out, ...lines.slice(at)]
+}
+
 /**
  * A short plain-text preview: the text after the title line, with
  * whitespace collapsed and truncated with an ellipsis.
@@ -33,8 +47,7 @@ export function sheetPreview(content: string): string {
   const lines = stripComments(content).split(/\r?\n/)
   const titleIndex = lines.findIndex((line) => line.replace(/^\s{0,3}#{1,6}\s+/, '').trim() !== '')
   if (titleIndex === -1) return ''
-  const rest = lines
-    .slice(titleIndex + 1)
+  const rest = withoutTables(lines.slice(titleIndex + 1))
     .map(plainText)
     .join(' ').replace(/\s+/g, ' ').trim()
   return rest.length > PREVIEW_LENGTH ? rest.slice(0, PREVIEW_LENGTH).trimEnd() + '…' : rest

@@ -51,6 +51,13 @@ describe('sheetPreview', () => {
     expect(sheetPreview('T\nsnake_case and _em_ here')).toBe('snake_case and em here')
   })
 
+  it('shows (Table) in place of a table', () => {
+    expect(sheetPreview('T\nBefore\n\n| a | b |\n| - | - |\n| 1 | 2 |\n\nAfter')).toBe(
+      'Before (Table) After'
+    )
+    expect(sheetPreview('T\n\nTable: Stock\n\n| a |\n| - |\n| 1 |')).toBe('(Table)')
+  })
+
   it('truncates long text with an ellipsis', () => {
     const preview = sheetPreview('T\n' + 'word '.repeat(100))
     expect(preview.endsWith('…')).toBe(true)
