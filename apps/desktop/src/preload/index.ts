@@ -13,6 +13,7 @@ const api: Api = {
   move: (paths, target, index) => ipcRenderer.invoke('op:move', paths, target, index),
   split: (path, text, offset) => ipcRenderer.invoke('op:split', path, text, offset),
   merge: (paths) => ipcRenderer.invoke('op:merge', paths),
+  setColor: (path, color) => ipcRenderer.invoke('op:setColor', path, color),
   glue: (paths) => ipcRenderer.invoke('op:glue', paths),
   unglue: (paths) => ipcRenderer.invoke('op:unglue', paths),
   deleteNodes: (paths) => ipcRenderer.invoke('op:delete', paths),

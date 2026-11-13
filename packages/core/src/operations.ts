@@ -1,7 +1,7 @@
 import type { DirEntry, FileSystem } from './filesystem'
 import { sheetFileName } from './filename'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
-import { parseSidecar, reconcileFolder, SIDECAR_NAME, type Sidecar } from './sidecar'
+import { GROUP_COLORS, parseSidecar, reconcileFolder, SIDECAR_NAME, type Sidecar } from './sidecar'
 import { snapshotSidecar, type UndoAction } from './undo'
 
 /*
@@ -21,14 +21,17 @@ interface Folder {
   glued: Set<string>
   /** Every entry actually on disk, visible or not. */
   entries: DirEntry[]
+  /** The folder's colour name, if it has one. */
+  color?: string
 }
 
 async function readFolder(fs: FileSystem, dir: string): Promise<Folder> {
   const entries = await fs.list(dir)
   const sidecarPath = joinPath(dir, SIDECAR_NAME)
   const text = (await fs.exists(sidecarPath)) ? await fs.readText(sidecarPath) : undefined
-  const { children, glued } = reconcileFolder(parseSidecar(text), entries)
-  return { order: children.map((c) => c.name), glued: new Set(glued), entries }
+  const sidecar = parseSidecar(text)
+  const { children, glued } = reconcileFolder(sidecar, entries)
+  return { order: children.map((c) => c.name), glued: new Set(glued), entries, color: sidecar.color }
 }
 
 async function writeFolder(fs: FileSystem, dir: string, folder: Folder): Promise<void> {
@@ -36,6 +39,7 @@ async function writeFolder(fs: FileSystem, dir: string, folder: Folder): Promise
     version: 1,
     order: folder.order,
     glued: folder.order.filter((name) => folder.glued.has(name)),
+    ...(folder.color ? { color: folder.color } : {}),
   }
   await fs.writeText(joinPath(dir, SIDECAR_NAME), JSON.stringify(sidecar, null, 2) + '\n')
 }
@@ -434,5 +438,20 @@ export async function unglueSheets(fs: FileSystem, paths: string[]): Promise<She
   }
   if (!changed) throw new Error('These sheets are not glued')
   await writeFolder(fs, dir, folder)
+  return { undo: [sidecarBefore] }
+}
+
+/** Gives a project or group a colour from GROUP_COLORS, or clears it with null. */
+export async function setGroupColor(
+  fs: FileSystem,
+  path: string,
+  color: string | null,
+): Promise<SheetChange> {
+  if (color !== null && !Object.hasOwn(GROUP_COLORS, color)) throw new Error('Unknown colour')
+  const folder = await readFolder(fs, path)
+  const sidecarBefore = await snapshotSidecar(fs, path)
+  if (color === null) delete folder.color
+  else folder.color = color
+  await writeFolder(fs, path, folder)
   return { undo: [sidecarBefore] }
 }

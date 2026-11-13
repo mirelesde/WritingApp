@@ -19,6 +19,8 @@ export interface GroupNode {
   /** Folder name. */
   name: string
   path: string
+  /** Colour name from GROUP_COLORS, if one was chosen. */
+  color?: string
   children: LibraryNode[]
 }
 
@@ -38,7 +40,8 @@ async function loadGroup(fs: FileSystem, path: string, name: string): Promise<Gr
   const entries = await fs.list(path)
   const sidecarPath = joinPath(path, SIDECAR_NAME)
   const sidecarText = (await fs.exists(sidecarPath)) ? await fs.readText(sidecarPath) : undefined
-  const { children, glued } = reconcileFolder(parseSidecar(sidecarText), entries)
+  const sidecar = parseSidecar(sidecarText)
+  const { children, glued } = reconcileFolder(sidecar, entries)
   const gluedNames = new Set(glued)
 
   const nodes: LibraryNode[] = []
@@ -58,5 +61,5 @@ async function loadGroup(fs: FileSystem, path: string, name: string): Promise<Gr
       })
     }
   }
-  return { kind: 'group', name, path, children: nodes }
+  return { kind: 'group', name, path, ...(sidecar.color ? { color: sidecar.color } : {}), children: nodes }
 }

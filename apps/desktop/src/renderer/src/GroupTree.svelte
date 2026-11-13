@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GroupNode } from '@writingapp/core'
+  import { GROUP_COLORS, type GroupNode } from '@writingapp/core'
   import GroupTree from './GroupTree.svelte'
   import { dropZone, type TreeDnd } from './organise'
 
@@ -14,6 +14,7 @@
     onstartrename: (path: string) => void
     oncommitrename: (path: string, name: string) => void
     oncancelrename: () => void
+    oncolor: (path: string, color: string | null) => void
     dnd: TreeDnd
   }
 
@@ -28,6 +29,7 @@
     onstartrename,
     oncommitrename,
     oncancelrename,
+    oncolor,
     dnd
   }: Props = $props()
 
@@ -39,6 +41,8 @@
 
   const subgroups = $derived(group.children.filter((c) => c.kind === 'group'))
   const sheetCount = $derived(group.children.filter((c) => c.kind === 'sheet').length)
+  let picking = $state(false)
+  const tint = $derived(group.color ? GROUP_COLORS[group.color] : undefined)
   const isOpen = $derived(expanded[group.path] === true)
 </script>
 
@@ -88,16 +92,23 @@
         onblur={(e) => oncommitrename(group.path, e.currentTarget.value)}
       />
     {:else}
-      {#if depth === 0}
-        <svg class="kind" viewBox="0 0 20 20" aria-hidden="true">
-          <path d="M4 4.5h9.5A1.5 1.5 0 0 1 15 6v10H5.5A1.5 1.5 0 0 1 4 14.5z" />
-          <path d="M4 14.5A1.5 1.5 0 0 1 5.5 13H15" />
+      <button
+        class="kind"
+        tabindex="-1"
+        title="Colour"
+        aria-label="Choose a colour for {group.name}"
+        aria-expanded={picking}
+        onclick={() => (picking = !picking)}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true" style:stroke={tint} style:fill={tint ? `${tint}33` : undefined}>
+          {#if depth === 0}
+            <path d="M4 4.5h9.5A1.5 1.5 0 0 1 15 6v10H5.5A1.5 1.5 0 0 1 4 14.5z" />
+            <path d="M4 14.5A1.5 1.5 0 0 1 5.5 13H15" />
+          {:else}
+            <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3l1.5 1.8h6A1.5 1.5 0 0 1 16.5 8.3V14A1.5 1.5 0 0 1 15 15.5H4.5A1.5 1.5 0 0 1 3 14z" />
+          {/if}
         </svg>
-      {:else}
-        <svg class="kind" viewBox="0 0 20 20" aria-hidden="true">
-          <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3l1.5 1.8h6A1.5 1.5 0 0 1 16.5 8.3V14A1.5 1.5 0 0 1 15 15.5H4.5A1.5 1.5 0 0 1 3 14z" />
-        </svg>
-      {/if}
+      </button>
       <button
         class="name"
         tabindex="-1"
@@ -107,6 +118,34 @@
       {#if sheetCount > 0}<span class="count">{sheetCount}</span>{/if}
     {/if}
   </div>
+  {#if picking}
+    <div class="swatches" style:padding-left="{30 + depth * 14}px" role="group" aria-label="Colour">
+      {#each Object.entries(GROUP_COLORS) as [name, hex] (name)}
+        <button
+          class="swatch"
+          class:on={group.color === name}
+          style:background={hex}
+          title={name}
+          aria-label={name}
+          tabindex="-1"
+          onclick={() => {
+            oncolor(group.path, name)
+            picking = false
+          }}
+        ></button>
+      {/each}
+      <button
+        class="swatch none"
+        title="No colour"
+        aria-label="No colour"
+        tabindex="-1"
+        onclick={() => {
+          oncolor(group.path, null)
+          picking = false
+        }}>×</button
+      >
+    </div>
+  {/if}
   {#if isOpen && subgroups.length > 0}
     <ul role="group">
       {#each subgroups as child (child.path)}
@@ -121,6 +160,7 @@
           {onstartrename}
           {oncommitrename}
           {oncancelrename}
+          {oncolor}
           {dnd}
         />
       {/each}
@@ -176,10 +216,14 @@
     white-space: nowrap;
   }
   .kind {
-    width: 15px;
-    height: 15px;
+    display: grid;
+    place-items: center;
     flex: none;
     margin-right: 7px;
+  }
+  .kind svg {
+    width: 15px;
+    height: 15px;
     fill: none;
     stroke: var(--muted);
     stroke-width: 1.5;
@@ -193,8 +237,29 @@
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
-  :global(.pane:focus) .row.selected .kind {
+  :global(.pane:focus) .row.selected .kind svg:not([style*='stroke']) {
     stroke: currentColor;
+  }
+  .swatches {
+    display: flex;
+    gap: 6px;
+    padding: 4px 8px 6px;
+  }
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    padding: 0;
+    line-height: 1;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .swatch.on {
+    border-color: var(--text);
+  }
+  .swatch.none {
+    border-color: var(--border);
   }
   :global(.pane:focus) .row.selected .count {
     color: inherit;

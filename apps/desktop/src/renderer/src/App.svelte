@@ -959,6 +959,7 @@
           onstartrename={startRename}
           oncommitrename={commitRename}
           oncancelrename={finishRename}
+          oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
           dnd={treeDnd}
         />
       </ul>

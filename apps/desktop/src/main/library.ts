@@ -8,6 +8,7 @@ import {
   deleteNodeUndoable,
   exportHtml,
   glueSheets,
+  setGroupColor,
   groupWordCount,
   loadLibrary,
   searchLibrary,
@@ -358,6 +359,14 @@ export function registerLibraryIpc(): void {
           paths.map((p) => inside(p))
         )
       )
+    })
+  )
+
+  ipcMain.handle('op:setColor', (_event, path: unknown, color: unknown) =>
+    change(async () => {
+      if (typeof path !== 'string') throw new Error('Choose a group')
+      if (color !== null && typeof color !== 'string') throw new Error('Unknown colour')
+      return undoable('Colour', await setGroupColor(fs, inside(path), color))
     })
   )
 

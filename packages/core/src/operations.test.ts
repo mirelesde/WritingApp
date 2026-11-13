@@ -8,6 +8,7 @@ import {
   moveNodes,
   renameGroup,
   reorderNode,
+  setGroupColor,
 } from './operations'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -387,5 +388,25 @@ describe('moveNodes', () => {
 
   it('does nothing for an empty list', async () => {
     expect(await moveNodes(setup(), [], '/Lib')).toEqual([])
+  })
+})
+
+describe('setGroupColor', () => {
+  it('stores a colour that survives other changes, and clears it', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/P/a.md': 'A', '/Lib/P/b.md': 'B' })
+    await setGroupColor(fs, '/Lib/P', 'blue')
+    expect((await loadLibrary(fs, '/Lib')).children[0]).toMatchObject({ color: 'blue' })
+    await createSheet(fs, '/Lib/P')
+    expect((await loadLibrary(fs, '/Lib')).children[0]).toMatchObject({ color: 'blue' })
+    await setGroupColor(fs, '/Lib/P', null)
+    const group = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(group.color).toBeUndefined()
+  })
+
+  it('rejects an unknown colour and returns an undo step', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/P/a.md': 'A' })
+    await expect(setGroupColor(fs, '/Lib/P', 'chartreuse')).rejects.toThrow()
+    const change = await setGroupColor(fs, '/Lib/P', 'red')
+    expect(change.undo).toHaveLength(1)
   })
 })

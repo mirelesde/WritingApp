@@ -10,6 +10,19 @@ export interface Sidecar {
   order: string[]
   /** Sheets glued to the sheet that follows them. */
   glued: string[]
+  /** Optional colour name (a key of GROUP_COLORS) shown on this folder's icon. */
+  color?: string
+}
+
+/** The colours a project or group can take, by the name stored in its sidecar. */
+export const GROUP_COLORS: Record<string, string> = {
+  red: '#e5604d',
+  orange: '#e8944a',
+  yellow: '#d9b83e',
+  green: '#5fa86a',
+  blue: '#4f8fd6',
+  purple: '#9a73c9',
+  pink: '#d9729e'
 }
 
 export interface ReconciledFolder {
@@ -40,8 +53,10 @@ export function parseSidecar(text: string | undefined): Sidecar {
     return empty
   }
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return empty
-  const { order, glued } = data as Record<string, unknown>
-  return { version: 1, order: strings(order), glued: strings(glued) }
+  const { order, glued, color } = data as Record<string, unknown>
+  const result: Sidecar = { version: 1, order: strings(order), glued: strings(glued) }
+  if (typeof color === 'string' && Object.hasOwn(GROUP_COLORS, color)) result.color = color
+  return result
 }
 
 /**

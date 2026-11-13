@@ -116,3 +116,11 @@ describe('reconcileFolder', () => {
     expect(r.glued).toEqual(['a.md'])
   })
 })
+
+describe('colour', () => {
+  it('is kept when valid and dropped when unknown', () => {
+    expect(parseSidecar('{"color":"blue"}').color).toBe('blue')
+    expect(parseSidecar('{"color":"chartreuse"}').color).toBeUndefined()
+    expect(parseSidecar('{"color":5}').color).toBeUndefined()
+  })
+})

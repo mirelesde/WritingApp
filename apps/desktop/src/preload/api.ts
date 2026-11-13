@@ -72,6 +72,8 @@ export interface Api {
   merge(paths: string[]): Promise<OpResult>
   /** Glues sheets so they read as one run. */
   glue(paths: string[]): Promise<OpResult>
+  /** Colours a project or group's icon; null clears it. */
+  setColor(path: string, color: string | null): Promise<OpResult>
   /** Detaches sheets from the runs they are in. */
   unglue(paths: string[]): Promise<OpResult>
   /** Moves sheets or groups to the system trash; undoable. */

@@ -573,7 +573,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
   sidebar header; plain solid tones on Windows and Linux.
 - L7. ~~**Sidebar structure.**~~ **Done.** Small muted section headers, an icon per kind
   of item (project, group), chevrons, and sheet-count badges.
-- L8. **Project colours.** A colour per project, kept in its sidecar and
+- L8. ~~**Project colours.**~~ **Done.** A colour per project, kept in its sidecar and
   shown on its icon.
 - L9. **Back and forward** arrows that step through the sheets visited.
 - L10. **Filter field** in the sheet list that narrows it by text.
