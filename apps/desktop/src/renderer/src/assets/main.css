@@ -295,5 +295,5 @@ button {
 
 .mac .layout.no-library .sidebar.peek .sheets header,
 .mac .layout.no-library .library:focus-within ~ .sheets header {
-  padding-left: 14px;
+  padding-left: 21px;
 }

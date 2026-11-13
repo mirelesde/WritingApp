@@ -1729,6 +1729,10 @@
     top: 0;
     background: inherit;
   }
+  /* The group's name lines up with the sheet titles below it. */
+  .sheets header {
+    padding-left: 21px;
+  }
   header.library-bar {
     justify-content: flex-end;
   }
