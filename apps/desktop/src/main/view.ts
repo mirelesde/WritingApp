@@ -69,6 +69,12 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
           BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', 'toggle-sidebar')
       },
       {
+        label: 'Distraction-Free Mode',
+        accelerator: 'CmdOrCtrl+Shift+D',
+        click: () =>
+          BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', 'distraction-free')
+      },
+      {
         label: 'Show Outline',
         type: 'checkbox',
         accelerator: 'CmdOrCtrl+Alt+O',

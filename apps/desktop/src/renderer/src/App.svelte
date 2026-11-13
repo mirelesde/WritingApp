@@ -68,6 +68,9 @@
   let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
   let sidebarCollapsed = $state(false)
+  /** Distraction-free: only the text, with the panes and tools out of sight until the pointer asks. */
+  let zen = $state(false)
+  const sidebarHidden = $derived(sidebarCollapsed || zen)
   let sidebarPeek = $state(false)
   let outlineOpen = $state(false)
   let focusMode = $state(false)
@@ -220,7 +223,7 @@
   /** Collapsed, the sidebar slides in while the pointer is at the left edge or over it. */
   function peekSidebar(): void {
     clearTimeout(peekTimer)
-    if (sidebarCollapsed) sidebarPeek = true
+    if (sidebarHidden) sidebarPeek = true
   }
 
   function unpeekSidebar(): void {
@@ -313,7 +316,7 @@
     focusMode = view.focusMode
     typewriter = view.typewriter
     lineNumbers = view.lineNumbers
-    if (!sidebarCollapsed) sidebarPeek = false
+    if (!sidebarHidden) sidebarPeek = false
   }
 
   async function chooseLibrary(): Promise<void> {
@@ -1080,6 +1083,7 @@
     else if (command === 'search') openSearch()
     else if (command === 'quick-open') openQuick()
     else if (command === 'command-palette') openPalette()
+    else if (command === 'distraction-free') toggleZen()
     else if (command === 'preferences') preferencesOpen = true
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
@@ -1089,6 +1093,15 @@
     else if (command === 'unglue') void glueSelected(false)
     else if (command === 'undo-sheet-change') void undoSheetChange()
     else void newGroup(command === 'new-project')
+  }
+
+  function toggleZen(): void {
+    zen = !zen
+    sidebarPeek = false
+    if (zen) {
+      const only = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+      if (only) editors[only]?.focus()
+    }
   }
 
   // --- Command palette ---------------------------------------------------------
@@ -1148,6 +1161,7 @@
       menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
       menu('Format', 'Link', 'format-link', `${keyMod}K`),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
+      menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
       { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
       setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }),
       setting('View', `${view?.typewriter ? 'Turn off' : 'Turn on'} Typewriter Scrolling`, { typewriter: !view?.typewriter }),
@@ -1212,8 +1226,8 @@
     <button class="primary" onclick={chooseLibrary}>Choose library folder…</button>
   </main>
 {:else}
-  <div class="layout" class:collapsed={sidebarCollapsed}>
-    {#if sidebarCollapsed}
+  <div class="layout" class:collapsed={sidebarHidden} class:zen>
+    {#if sidebarHidden}
       <div class="edge" role="presentation" onmouseenter={peekSidebar}></div>
     {/if}
     <div
@@ -1415,7 +1429,7 @@
                   text={part.text}
                   onchange={(content) => edited(part.path, content)}
                   onblur={() => void autosaver.flush()}
-                  onescape={() => sheetsEl?.focus()}
+                  onescape={() => (zen ? toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (selectedText = text)}
@@ -1441,7 +1455,7 @@
       {#if open}
         <StatusBar text={runText} selected={selectedText} {groupWords} />
       {/if}
-      {#if outlineOpen}
+      {#if outlineOpen && !zen}
         <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} /></div>
       {/if}
     </section>
@@ -1754,6 +1768,33 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: var(--topbar-height) minmax(0, 1fr);
     overflow: hidden;
+  }
+  /* Distraction-free: the tool row floats over the top edge and appears on hover. */
+  .layout.zen .editor {
+    grid-template-rows: 0 minmax(0, 1fr);
+  }
+  .layout.zen .scroller {
+    padding-top: 2.5rem;
+  }
+  .layout.zen .editor-bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: var(--topbar-height);
+    z-index: 5;
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity 160ms;
+  }
+  .layout.zen .editor-bar:hover,
+  .layout.zen .editor-bar:focus-within {
+    opacity: 1;
+  }
+  .layout.zen :global(.pill) {
+    opacity: 0;
+    transition: opacity 160ms;
+  }
+  .layout.zen :global(.pill:hover) {
+    opacity: 1;
   }
   .editor-bar {
     grid-column: 1;

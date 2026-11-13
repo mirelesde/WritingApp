@@ -27,6 +27,7 @@ export type MenuCommand =
   | 'search'
   | 'quick-open'
   | 'command-palette'
+  | 'distraction-free'
   | 'preferences'
   | 'split'
   | 'merge'

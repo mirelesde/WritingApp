@@ -560,7 +560,7 @@ asked for directly.
    Save guard + conflict dialog; silent reload when no edits of mine in that sheet
    File menu > Command Palette (Cmd/Ctrl+Shift+P); commands built in App.svelte, not one shared registry with the menus
 
-60. **Distraction-free mode.** Hides both side panes and the header rows so
+60. ~~**Distraction-free mode.**~~ **Done.** Hides both side panes and the header rows so
     only the text remains; they return when the pointer reaches the top or
     left edge, and Escape or the shortcut leaves. Builds on the sidebar
     peek (already there) and macOS full screen.
@@ -569,6 +569,7 @@ asked for directly.
     and in export, as printed books do. Headings, lists and quotes are left
     alone. Needs a decision on how it round-trips: it is a display and
     export style, never changes the Markdown.
+   Cmd/Ctrl+Shift+D (View menu and palette); Escape leaves from the editor
 
 **Medium**
 
