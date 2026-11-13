@@ -10,6 +10,7 @@ import {
   type ViewSettings
 } from '@writingapp/core'
 import { appSettings } from './library'
+import { listThemes } from './themes'
 
 let current: ViewSettings = resolveView()
 let onChange: () => void = () => {}
@@ -22,13 +23,21 @@ export function currentView(): ViewSettings {
 export async function loadView(rebuildMenu: () => void): Promise<void> {
   onChange = rebuildMenu
   current = resolveView((await appSettings().load()).view)
-  nativeTheme.themeSource = current.theme
+  await syncNativeTheme()
+}
+
+/** A colour theme that says light or dark decides the native look; otherwise the Theme setting does. */
+async function syncNativeTheme(): Promise<void> {
+  const mode = current.colorTheme
+    ? (await listThemes()).find((t) => t.id === current.colorTheme)?.mode
+    : undefined
+  nativeTheme.themeSource = mode ?? current.theme
 }
 
 async function apply(patch: Partial<ViewSettings>): Promise<ViewSettings> {
   const valid = parseViewSettings({ ...current, ...patch })
   current = resolveView(valid)
-  nativeTheme.themeSource = current.theme
+  await syncNativeTheme()
   await appSettings().update({ view: patch })
   for (const window of BrowserWindow.getAllWindows()) window.webContents.send('view:changed', current)
   onChange()

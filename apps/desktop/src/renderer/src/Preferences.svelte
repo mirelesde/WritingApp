@@ -7,16 +7,29 @@
     MAX_FONT_SIZE,
     MIN_FONT_SIZE,
     THEMES,
+    type ColorTheme,
     type ViewSettings
   } from '@writingapp/core'
 
   interface Props {
     view: ViewSettings
+    themes: ColorTheme[]
+    onrefreshthemes: () => void
     onchange: (patch: Partial<ViewSettings>) => void
     onclose: () => void
   }
 
-  let { view, onchange, onclose }: Props = $props()
+  let { view, themes, onrefreshthemes, onchange, onclose }: Props = $props()
+
+  /** Accent presets; the first keeps the theme's own colour. */
+  const ACCENTS: [string, string][] = [
+    ['Default', ''],
+    ['Blue', '#3d6fd9'],
+    ['Purple', '#8a5cd0'],
+    ['Pink', '#d0488a'],
+    ['Orange', '#d9722b'],
+    ['Green', '#4c9a3f']
+  ]
 
   type Choice = keyof typeof CHOICES
 
@@ -99,6 +112,48 @@
               onclick={() => onchange({ theme })}>{themeNames[theme]}</button
             >
           {/each}
+        </div>
+      </div>
+      <div class="row">
+        <span id="pref-accent">Accent colour</span>
+        <div class="swatches" role="radiogroup" aria-labelledby="pref-accent">
+          {#each ACCENTS as [name, hex] (name)}
+            <button
+              role="radio"
+              class="swatch"
+              style:background={hex || 'var(--accent)'}
+              aria-label={name}
+              title={name}
+              aria-checked={view.accent === hex}
+              onclick={() => onchange({ accent: hex })}
+            ></button>
+          {/each}
+          <input
+            type="color"
+            aria-label="Custom accent colour"
+            value={view.accent || '#2f6f6a'}
+            onchange={(e) => onchange({ accent: e.currentTarget.value })}
+          />
+        </div>
+      </div>
+      <div class="row">
+        <span>Colour theme<small>Theme files live in a folder you can open</small></span>
+        <div class="theme-pick">
+          <select
+            aria-label="Colour theme"
+            value={view.colorTheme}
+            onchange={(e) => onchange({ colorTheme: e.currentTarget.value })}
+          >
+            <option value="">None</option>
+            {#each themes as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
+          </select>
+          <button
+            class="link"
+            onclick={async () => {
+              await window.api.openThemesFolder()
+              onrefreshthemes()
+            }}>Open folder</button
+          >
         </div>
       </div>
       <div class="row">
@@ -211,6 +266,49 @@
 </div>
 
 <style>
+  .swatches,
+  .theme-pick {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .swatch {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    outline: 1px solid var(--border);
+    outline-offset: 1px;
+  }
+  .swatch[aria-checked='true'] {
+    border-color: var(--bg);
+    outline: 2px solid var(--text);
+  }
+  .swatches input[type='color'] {
+    width: 26px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+  .theme-pick select {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--hover);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 6px;
+  }
+  .link {
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    padding: 0;
+  }
   .backdrop {
     position: fixed;
     inset: 0;

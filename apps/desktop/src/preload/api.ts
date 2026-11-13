@@ -1,4 +1,4 @@
-import type { GroupNode, SearchHit, ViewSettings } from '@writingapp/core'
+import type { ColorTheme, GroupNode, SearchHit, ViewSettings } from '@writingapp/core'
 
 /** A loaded library: where it lives and its tree. */
 export interface LibraryInfo {
@@ -103,6 +103,10 @@ export interface Api {
   setView(patch: Partial<ViewSettings>): Promise<ViewSettings>
   /** Called when a view setting changes, from the View menu or elsewhere. */
   onViewChanged(callback: (view: ViewSettings) => void): () => void
+  /** Theme files found in the themes folder. */
+  listThemes(): Promise<ColorTheme[]>
+  /** Opens the themes folder, creating it with an example theme if it is empty. */
+  openThemesFolder(): Promise<void>
   /** Shows the native right-click menu for a node; resolves with what the renderer must do, or null. */
   showNodeMenu(
     kind: 'sheet' | 'group' | 'root',

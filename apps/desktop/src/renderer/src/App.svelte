@@ -7,6 +7,7 @@
     sheetTitle,
     sortSheets,
     type GroupNode,
+    type ColorTheme,
     type SheetNode,
     type SheetSort
   } from '@writingapp/core'
@@ -257,9 +258,14 @@
 
   let preferencesOpen = $state(false)
 
+  let themes = $state<ColorTheme[]>([])
+  const activeTheme = $derived(themes.find((t) => t.id === prefs?.colorTheme))
+  $effect(() => {
+    if (prefs) applyView(prefs, activeTheme)
+  })
+
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
     prefs = view
-    applyView(view)
     sidebarCollapsed = view.sidebarCollapsed
     outlineOpen = view.outline
     focusMode = view.focusMode
@@ -1010,6 +1016,7 @@
   }
 
   onMount(() => {
+    void window.api.listThemes().then((found) => (themes = found))
     void window.api.getView().then(applyViewSettings)
     const unsubscribeView = window.api.onViewChanged(applyViewSettings)
     window.api
@@ -1309,6 +1316,8 @@
 {#if preferencesOpen && prefs}
   <Preferences
     view={prefs}
+    {themes}
+    onrefreshthemes={() => void window.api.listThemes().then((found) => (themes = found))}
     onchange={(patch) => void window.api.setView(patch)}
     onclose={() => (preferencesOpen = false)}
   />

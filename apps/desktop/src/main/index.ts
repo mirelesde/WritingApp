@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { attachEditMenu } from './editMenu'
 import { registerNodeMenuIpc } from './nodeMenu'
+import { registerThemeIpc } from './themes'
 import { loadView, registerViewIpc, viewMenu } from './view'
 import {
   chooseLibrary,
@@ -255,6 +256,7 @@ app.whenReady().then(async () => {
   registerLibraryIpc()
   registerViewIpc()
   registerNodeMenuIpc()
+  registerThemeIpc()
   const rebuild = (): void => Menu.setApplicationMenu(buildMenu())
   await loadView(rebuild)
   await loadRecent(rebuild)

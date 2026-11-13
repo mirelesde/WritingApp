@@ -548,7 +548,7 @@ asked for directly.
     open: reload it silently if it has no unsaved edits, otherwise ask
     whether to keep the editor's version or take the disk's, and show
     both. Check first what the watcher and autosaver do today.
-50. **Custom themes and accent colour.** An accent colour picker, and user
+50. ~~**Custom themes and accent colour.**~~ **Done.** An accent colour picker, and user
     theme files (a small JSON of the colour tokens) dropped in a themes
     folder and listed in Preferences.
 51. **Accessibility pass.** VoiceOver and screen-reader labels on every
@@ -556,6 +556,7 @@ asked for directly.
     and full keyboard-only use of every dialog and menu.
    A switch in Preferences and View > Line Numbers; each sheet of a glued run numbers its own lines.
    Sort menu in the sheet list header; dates shown on cards when sorting by date or words
+   Accent presets and picker; theme files (colours only) in <userData>/themes, opened from Preferences
 
 60. **Distraction-free mode.** Hides both side panes and the header rows so
     only the text remains; they return when the pointer reaches the top or

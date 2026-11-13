@@ -74,6 +74,10 @@ export interface ViewSettings {
   sheetSort: SheetSort
   /** Curly quotes, en and em dashes and ellipses as you type. */
   smartTypography: boolean
+  /** Accent colour as `#rrggbb`; empty keeps the theme's own. */
+  accent: string
+  /** Id of a theme file from the themes folder; empty for none. */
+  colorTheme: string
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -97,6 +101,8 @@ export const DEFAULT_VIEW: ViewSettings = {
   textAlign: 'left',
   sheetSort: 'manual',
   smartTypography: false,
+  accent: '',
+  colorTheme: '',
 }
 
 /** CSS font stacks, by name. */
@@ -112,6 +118,11 @@ export function clampLineSpacing(spacing: number): number {
 
 export function clampFontSize(size: number): number {
   return Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, Math.round(size)))
+}
+
+/** True for `#rrggbb`. */
+export function isHexColour(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value)
 }
 
 /** Keeps only the valid fields of untrusted data (a settings file, an IPC argument). */
@@ -145,6 +156,12 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   }
   if (typeof record.scrollPastEnd === 'boolean') out.scrollPastEnd = record.scrollPastEnd
   if (typeof record.smartTypography === 'boolean') out.smartTypography = record.smartTypography
+  if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
+    out.accent = record.accent.toLowerCase()
+  }
+  if (typeof record.colorTheme === 'string' && /^[\w .-]{0,80}$/.test(record.colorTheme)) {
+    out.colorTheme = record.colorTheme
+  }
   return out
 }
 

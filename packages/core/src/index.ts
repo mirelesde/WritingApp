@@ -5,6 +5,8 @@ export { GROUP_COLORS, isVisibleEntry, parseSidecar, reconcileFolder, SIDECAR_NA
 export type { ReconciledFolder, Sidecar } from './sidecar'
 export { loadLibrary } from './library'
 export { sortSheets } from './sheetSort'
+export { parseColorTheme, THEME_COLORS } from './theme'
+export type { ColorTheme, ThemeColor } from './theme'
 export type { GroupNode, LibraryNode, SheetNode } from './library'
 export { sheetFileName, slugify } from './filename'
 export {
@@ -43,6 +45,7 @@ export {
   MAX_LINE_SPACING,
   MIN_FONT_SIZE,
   MIN_LINE_SPACING,
+  isHexColour,
   parseViewSettings,
   resolveView,
   THEMES,
