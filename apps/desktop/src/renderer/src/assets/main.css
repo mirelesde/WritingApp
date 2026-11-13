@@ -56,6 +56,25 @@ body {
   font-size: 14px;
 }
 
+/* Heading hashes hang in the left margin, so heading text lines up with the
+   body text. The box has no width and its text overflows to the left (right-
+   to-left); the spaces after the hashes collapse. */
+html.hang-marks .cm-hang {
+  display: inline-block;
+  width: 0;
+  overflow: visible;
+  white-space: pre;
+  direction: rtl;
+  unicode-bidi: bidi-override;
+  transform: translateX(-0.35em);
+}
+html.hang-marks .cm-hang-gap {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
 /* macOS: the window has no title bar, so the pane headers are what you drag,
    and the sidebar lets the system's vibrancy show through. */
 .mac header,

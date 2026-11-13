@@ -206,6 +206,15 @@
         </div>
       </div>
       {@render choice('Space between paragraphs', 'paragraphSpacing')}
+      <label class="row">
+        <span>Hang heading marks<small>Keep the # in the margin so headings line up with the text</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.hangHeadings}
+          onchange={(e) => onchange({ hangHeadings: e.currentTarget.checked })}
+        />
+      </label>
       {@render choice('Alignment', 'textAlign')}
       {@render choice('Cursor width', 'caretWidth')}
       {@render choice('Highlight current line', 'currentLine')}

@@ -29,5 +29,6 @@ export function applyView(view: ViewSettings, theme?: ColorTheme): void {
     '--active-line',
     view.currentLine === 'subtle' ? 'color-mix(in srgb, var(--text) 6%, transparent)' : 'transparent'
   )
+  document.documentElement.classList.toggle('hang-marks', view.hangHeadings)
   style.setProperty('--run-end-space', view.scrollPastEnd ? '40vh' : '4rem')
 }

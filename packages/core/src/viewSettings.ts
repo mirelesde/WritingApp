@@ -74,6 +74,8 @@ export interface ViewSettings {
   sheetSort: SheetSort
   /** Curly quotes, en and em dashes and ellipses as you type. */
   smartTypography: boolean
+  /** Hang heading hashes in the left margin so heading text lines up with the body text. */
+  hangHeadings: boolean
   /** Accent colour as `#rrggbb`; empty keeps the theme's own. */
   accent: string
   /** Id of a theme file from the themes folder; empty for none. */
@@ -101,6 +103,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   textAlign: 'left',
   sheetSort: 'manual',
   smartTypography: false,
+  hangHeadings: true,
   accent: '',
   colorTheme: '',
 }
@@ -156,6 +159,7 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   }
   if (typeof record.scrollPastEnd === 'boolean') out.scrollPastEnd = record.scrollPastEnd
   if (typeof record.smartTypography === 'boolean') out.smartTypography = record.smartTypography
+  if (typeof record.hangHeadings === 'boolean') out.hangHeadings = record.hangHeadings
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
     out.accent = record.accent.toLowerCase()
   }
