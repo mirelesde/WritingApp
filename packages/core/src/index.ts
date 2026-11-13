@@ -21,6 +21,7 @@ export {
   moveNodes,
   moveNodesUndoable,
   renameGroup,
+  syncSheetName,
   reorderNode,
   splitSheet,
   unglueSheets,

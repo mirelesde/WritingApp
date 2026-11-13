@@ -1,5 +1,6 @@
 import type { DirEntry, FileSystem } from './filesystem'
-import { sheetFileName } from './filename'
+import { sheetFileName, slugify } from './filename'
+import { sheetTitle } from './sheet'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
 import { GROUP_COLORS, parseSidecar, reconcileFolder, SIDECAR_NAME, type Sidecar } from './sidecar'
 import { snapshotSidecar, type UndoAction } from './undo'
@@ -141,6 +142,34 @@ export async function renameGroup(fs: FileSystem, path: string, newName: string)
   if (clash) throw new Error(`"${name}" already exists in this folder`)
   await fs.rename(from, joinPath(dir, name))
   folder.order[folder.order.indexOf(oldName)] = name
+  await writeFolder(fs, dir, folder)
+  return joinPath(dir, name)
+}
+
+/**
+ * Renames a sheet's file to follow its title (the first line), keeping its
+ * place in the group and any glue. Returns the sheet's path, new or not.
+ * A name that already fits, with or without a "-2" style suffix, is left alone.
+ */
+export async function syncSheetName(fs: FileSystem, path: string): Promise<string> {
+  const from = trimSlashes(path)
+  const dir = parentPath(from)
+  const oldName = baseName(from)
+  if (!oldName.endsWith('.md') || !(await fs.exists(from))) return from
+  const slug = slugify(sheetTitle(await fs.readText(from)))
+  const stem = oldName.slice(0, -'.md'.length)
+  const suffix = stem.startsWith(slug + '-') ? stem.slice(slug.length + 1) : ''
+  if (stem === slug || /^\d+$/.test(suffix)) return from
+  const folder = await readFolder(fs, dir)
+  const others = folder.entries.map((e) => e.name).filter((n) => n !== oldName)
+  const name = sheetFileName(await fs.readText(from), others)
+  if (name === oldName) return from
+  await fs.rename(from, joinPath(dir, name))
+  const i = folder.order.indexOf(oldName)
+  if (i >= 0) {
+    folder.order[i] = name
+    if (folder.glued.delete(oldName)) folder.glued.add(name)
+  }
   await writeFolder(fs, dir, folder)
   return joinPath(dir, name)
 }

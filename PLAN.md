@@ -574,7 +574,7 @@ asked for directly.
 
 **Medium**
 
-16. **Rename sheet and group.** Sheets take their name from the first line,
+16. **Rename sheet and group.** *Sheet files now rename themselves to follow the title when you leave the sheet; groups rename from the tree.* Sheets take their name from the first line,
     so renaming a sheet means moving focus to that line (and the file
     renames itself on save); groups rename the folder and keep the sidecar.
     Needs a rename operation with undo. Comes before item 17 so the context

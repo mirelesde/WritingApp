@@ -9,6 +9,7 @@ import {
   renameGroup,
   reorderNode,
   setGroupColor,
+  syncSheetName,
 } from './operations'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -408,5 +409,40 @@ describe('setGroupColor', () => {
     await expect(setGroupColor(fs, '/Lib/P', 'chartreuse')).rejects.toThrow()
     const change = await setGroupColor(fs, '/Lib/P', 'red')
     expect(change.undo).toHaveLength(1)
+  })
+})
+
+describe('syncSheetName', () => {
+  it('renames the file to follow the title, keeping order and glue', async () => {
+    const fs = new MemoryFileSystem({
+      '/Lib/.writingapp.json': sidecar(['a.md', 'untitled.md', 'c.md'], ['untitled.md']),
+      '/Lib/a.md': 'A',
+      '/Lib/untitled.md': '# The Station\n\ntext',
+      '/Lib/c.md': 'C'
+    })
+    expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/the-station.md')
+    expect(await sidecarOf(fs, '/Lib')).toEqual({
+      order: ['a.md', 'the-station.md', 'c.md'],
+      glued: ['the-station.md']
+    })
+    expect(await fs.exists('/Lib/untitled.md')).toBe(false)
+  })
+
+  it('leaves a name that already fits, including numbered ones', async () => {
+    const fs = new MemoryFileSystem({
+      '/Lib/untitled.md': '',
+      '/Lib/untitled-2.md': '',
+      '/Lib/the-station-3.md': 'The Station'
+    })
+    expect(await syncSheetName(fs, '/Lib/untitled-2.md')).toBe('/Lib/untitled-2.md')
+    expect(await syncSheetName(fs, '/Lib/the-station-3.md')).toBe('/Lib/the-station-3.md')
+  })
+
+  it('numbers the name when another sheet already has it', async () => {
+    const fs = new MemoryFileSystem({
+      '/Lib/the-station.md': 'The Station',
+      '/Lib/untitled.md': 'The Station'
+    })
+    expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/the-station-2.md')
   })
 })

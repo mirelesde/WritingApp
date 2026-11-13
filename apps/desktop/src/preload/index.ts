@@ -10,6 +10,7 @@ const api: Api = {
   createSheet: (group, index) => ipcRenderer.invoke('op:createSheet', group, index),
   createGroup: (parent, name) => ipcRenderer.invoke('op:createGroup', parent, name),
   renameGroup: (path, name) => ipcRenderer.invoke('op:renameGroup', path, name),
+  syncSheetNames: (paths) => ipcRenderer.invoke('op:syncSheetNames', paths),
   move: (paths, target, index) => ipcRenderer.invoke('op:move', paths, target, index),
   split: (path, text, offset) => ipcRenderer.invoke('op:split', path, text, offset),
   merge: (paths) => ipcRenderer.invoke('op:merge', paths),

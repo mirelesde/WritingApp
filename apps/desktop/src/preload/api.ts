@@ -70,6 +70,8 @@ export interface Api {
   createGroup(parent: string, name?: string): Promise<OpResult>
   /** Renames a group. Rejects if a sibling already has the name. */
   renameGroup(path: string, name: string): Promise<OpResult>
+  /** Renames sheet files to follow their titles; `moved` lists the ones that changed. */
+  syncSheetNames(paths: string[]): Promise<OpResult>
   /** Moves sheets or groups sharing one parent into `target` as a block. */
   move(paths: string[], target: string, index?: number): Promise<OpResult>
   /** Splits a sheet, given its current text, at `offset`; the tail becomes the next sheet. */

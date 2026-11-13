@@ -15,6 +15,7 @@ import {
   mergeSheets,
   moveNodesUndoable,
   renameGroup,
+  syncSheetName,
   resolveView,
   splitSheet,
   unglueSheets,
@@ -297,6 +298,19 @@ export function registerLibraryIpc(): void {
       if (typeof name !== 'string') throw new Error('A group needs a name')
       const to = await renameGroup(fs, from, name)
       return { moved: [[from, to]] }
+    })
+  )
+
+  ipcMain.handle('op:syncSheetNames', (_event, paths: unknown) =>
+    change(async () => {
+      if (!Array.isArray(paths)) throw new Error('No sheets given')
+      const moved: [string, string][] = []
+      for (const p of paths) {
+        const from = inside(p)
+        const to = await syncSheetName(fs, from)
+        if (to !== from) moved.push([from, to])
+      }
+      return { moved }
     })
   )
 

@@ -403,6 +403,7 @@
   /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
   async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
     await autosaver.flush()
+    const left = selection.filter((p) => !paths.includes(p))
     selection = paths
     cursor = to
     if (paths.length === 1) {
@@ -417,6 +418,18 @@
       open = null
       error = ''
       readId++
+    }
+    if (left.length > 0) void renameToMatchTitles(left)
+  }
+
+  /** Sheets just left are renamed to follow their titles; the UI follows the new paths. */
+  async function renameToMatchTitles(paths: string[]): Promise<void> {
+    try {
+      const result = await window.api.syncSheetNames(paths)
+      if (result.moved.length === 0) return
+      await runOp(() => Promise.resolve(result))
+    } catch {
+      // A name that cannot change is not worth interrupting anyone for.
     }
   }
 
