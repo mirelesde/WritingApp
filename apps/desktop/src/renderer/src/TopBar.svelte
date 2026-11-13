@@ -7,10 +7,20 @@
     onnew: () => void
     onsearch: () => void
     onformat: (kind: 'bold' | 'italic' | 'link') => void
+    outlineOpen: boolean
+    onoutline: () => void
     onexport: () => void
   }
 
-  let { sidebarCollapsed, canFormat, onsidebar, onnew, onsearch, onformat, onexport }: Props =
+  let { sidebarCollapsed, canFormat,
+    onsidebar,
+    onnew,
+    onsearch,
+    onformat,
+    outlineOpen,
+    onoutline,
+    onexport
+  }: Props =
     $props()
 
   const mod = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+'
@@ -96,6 +106,17 @@
   </div>
 
   <div class="group right">
+    <button
+      title="{outlineOpen ? 'Hide' : 'Show'} outline ({mod}⌥O)"
+      aria-label="{outlineOpen ? 'Hide' : 'Show'} outline"
+      aria-pressed={outlineOpen}
+      onmousedown={keepFocus}
+      onclick={onoutline}
+    >
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M3.5 5h13M6.5 10h10M9.5 15h7" />
+      </svg>
+    </button>
     <button
       title="Export ({mod}E)"
       aria-label="Export"

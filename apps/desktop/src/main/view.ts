@@ -59,6 +59,13 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
         click: () =>
           BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', 'toggle-sidebar')
       },
+      {
+        label: 'Show Outline',
+        type: 'checkbox',
+        accelerator: 'CmdOrCtrl+Alt+O',
+        checked: current.outline,
+        click: () => setView({ outline: !current.outline })
+      },
       { type: 'separator' },
       {
         label: 'Theme',

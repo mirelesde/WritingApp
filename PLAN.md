@@ -456,7 +456,7 @@ asked for directly.
     line with Cmd/Ctrl+/. Dimmed in the editor, left out of HTML/PDF export
     and of word counts (so after item 3). Search still finds it. Needs an
     export change in core.
-14. **Heading outline.** A panel listing the headings of the open sheet;
+14. ~~**Heading outline.**~~ **Done.** A panel listing the headings of the open sheet;
     click to jump. Reads the Markdown syntax tree the editor already has.
 15. **Focus and typewriter mode.** Dim everything except the current
     paragraph or sentence; optionally keep the cursor line vertically
@@ -467,6 +467,7 @@ asked for directly.
    (Sidebar toggle, new sheet and find on the left; bold, italic, link in the middle; export on the right. Buttons keep the editor's focus and selection.)
    (File > Open Recent lists the last ten libraries, drops one that is gone, and has Clear Menu. The open sheet is saved on each selection and reopened, without taking focus, at launch.)
    (Syntax: `<!-- ... -->`, toggled with Cmd/Ctrl+/ on the selection or line. Comments inside fenced code blocks count as code and are kept. Resolved the open decision on comment syntax.)
+   (View > Show Outline, Cmd/Ctrl+Alt+O, or the button at the right of the top bar. Clicking an entry moves the cursor there. Headings in code blocks and comments are skipped; the panel's state is remembered.)
 
 **Medium**
 

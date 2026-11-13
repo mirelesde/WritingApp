@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { stripComments } from './comments'
+import { maskComments, stripComments } from './comments'
 
 describe('stripComments', () => {
   it('removes an inline comment', () => {
@@ -22,5 +22,18 @@ describe('stripComments', () => {
   it('handles several comments and an unclosed one', () => {
     expect(stripComments('<!-- a --> b <!-- c --> d')).toBe(' b  d')
     expect(stripComments('keep <!-- never closed')).toBe('keep <!-- never closed')
+  })
+})
+
+describe('maskComments', () => {
+  it('blanks comments without moving anything', () => {
+    const text = 'a <!-- x\ny --> b\n'
+    const masked = maskComments(text)
+    expect(masked).toHaveLength(text.length)
+    expect(masked).toBe('a       \n      b\n')
+  })
+
+  it('keeps comments in code blocks', () => {
+    expect(maskComments('```\n<!-- c -->\n```\n')).toBe('```\n<!-- c -->\n```\n')
   })
 })

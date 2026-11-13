@@ -41,3 +41,34 @@ export function stripComments(text: string): string {
   flush()
   return out.join('')
 }
+
+/**
+ * The text with every comment blanked out but the same length, so offsets
+ * still point at the same places in the original. Line breaks are kept.
+ */
+export function maskComments(text: string): string {
+  if (!text.includes('<!--')) return text
+  const blank = (match: string): string => match.replace(/[^\r\n]/g, ' ')
+  const out: string[] = []
+  let outside: string[] = []
+  let fence: string | null = null
+  const flush = (): void => {
+    if (outside.length > 0) out.push(outside.join('').replace(INLINE, blank))
+    outside = []
+  }
+  for (const line of text.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
+    const marker = FENCE.exec(line)?.[1]
+    if (fence === null && marker) {
+      flush()
+      fence = marker
+      out.push(line)
+    } else if (fence !== null) {
+      out.push(line)
+      if (marker === fence) fence = null
+    } else {
+      outside.push(line)
+    }
+  }
+  flush()
+  return out.join('')
+}

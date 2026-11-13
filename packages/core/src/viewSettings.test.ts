@@ -4,13 +4,19 @@ import { clampFontSize, DEFAULT_VIEW, parseViewSettings, resolveView } from './v
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
     expect(
-      parseViewSettings({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true })
-    ).toEqual({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true })
+      parseViewSettings({ theme: 'dark', font: 'mono', fontSize: 20, sidebarCollapsed: true, outline: true })
+    ).toEqual({
+      theme: 'dark',
+      font: 'mono',
+      fontSize: 20,
+      sidebarCollapsed: true,
+      outline: true,
+    })
   })
 
   it('drops invalid fields and unknown keys', () => {
     expect(
-      parseViewSettings({ theme: 'neon', font: 3, fontSize: 'big', sidebarCollapsed: 'yes', x: 1 })
+      parseViewSettings({ theme: 'neon', font: 3, fontSize: 'big', sidebarCollapsed: 'yes', outline: 1, x: 1 })
     ).toEqual({})
   })
 

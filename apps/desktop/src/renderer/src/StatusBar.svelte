@@ -36,7 +36,8 @@
 <style>
   .bar {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 2px 16px;
     padding: 6px 16px;
     font-size: 12px;
     color: var(--muted);
@@ -44,6 +45,9 @@
     background: var(--bg);
     font-variant-numeric: tabular-nums;
     user-select: none;
+  }
+  .bar span {
+    white-space: nowrap;
   }
   .group {
     margin-left: auto;

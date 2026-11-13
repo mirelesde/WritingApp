@@ -38,6 +38,17 @@
     view.focus()
   }
 
+  /** Puts the cursor at `offset` and scrolls it to the top of the view. */
+  export function goTo(offset: number): void {
+    if (!view) return
+    const anchor = Math.min(offset, view.state.doc.length)
+    view.dispatch({
+      selection: { anchor },
+      effects: EditorView.scrollIntoView(anchor, { y: 'start', yMargin: 24 })
+    })
+    view.focus()
+  }
+
   /** Applies a formatting command to the selection, as the keyboard shortcuts do. */
   export function format(kind: 'bold' | 'italic' | 'link'): void {
     if (!view) return

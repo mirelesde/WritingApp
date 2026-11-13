@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
-  import { listSheets, sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
+  import { extractHeadings, listSheets, sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
   import type { LibraryInfo, OpResult, PdfOptions } from '../../preload/api'
   import { applyView } from './view'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -11,6 +11,7 @@
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import TopBar from './TopBar.svelte'
+  import Outline, { type Entry } from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
@@ -50,6 +51,7 @@
   let focusEditor = $state(false)
   let sidebarCollapsed = $state(false)
   let sidebarPeek = $state(false)
+  let outlineOpen = $state(false)
   let peekTimer: ReturnType<typeof setTimeout> | undefined
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
@@ -147,6 +149,22 @@
     if (path) editors[path]?.format(kind)
   }
 
+  function toggleOutline(): void {
+    void window.api.setView({ outline: !outlineOpen })
+  }
+
+  const outlineEntries = $derived<Entry[]>(
+    open
+      ? open.parts.flatMap((part) =>
+          extractHeadings(edits[part.path] ?? part.text).map((h) => ({ ...h, path: part.path }))
+        )
+      : []
+  )
+
+  function goToHeading(entry: Entry): void {
+    editors[entry.path]?.goTo(entry.offset)
+  }
+
   function toggleSidebar(): void {
     sidebarPeek = false
     void window.api.setView({ sidebarCollapsed: !sidebarCollapsed })
@@ -155,6 +173,7 @@
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
     applyView(view)
     sidebarCollapsed = view.sidebarCollapsed
+    outlineOpen = view.outline
     if (!sidebarCollapsed) sidebarPeek = false
   }
 
@@ -902,6 +921,8 @@
     onnew={() => void newSheet()}
     onsearch={openSearch}
     onformat={formatActive}
+    outlineOpen={outlineOpen}
+    onoutline={toggleOutline}
     onexport={() => void openExport()}
   />
   <div class="layout" class:collapsed={sidebarCollapsed}>
@@ -1034,6 +1055,9 @@
       </div>
       {#if open}
         <StatusBar text={runText} selected={selectedText} {groupWords} />
+      {/if}
+      {#if outlineOpen}
+        <div class="outline-slot"><Outline entries={outlineEntries} onpick={goToHeading} /></div>
       {/if}
     </section>
   </div>
@@ -1256,12 +1280,23 @@
     min-width: 0;
     position: relative;
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: minmax(0, 1fr) auto;
     overflow: hidden;
   }
   .scroller {
+    grid-column: 1;
     position: relative;
     overflow-y: auto;
+  }
+  .editor :global(footer.bar) {
+    grid-column: 1;
+  }
+  .outline-slot {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    min-height: 0;
   }
   .run {
     padding: 48px 0 40vh;
