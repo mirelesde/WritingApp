@@ -1,5 +1,6 @@
 import type { FileSystem } from './filesystem'
 import { parseSidecar, reconcileFolder, SIDECAR_NAME } from './sidecar'
+import { baseName, joinPath, trimSlashes } from './path'
 import { sheetPreview, sheetTitle } from './sheet'
 
 export interface SheetNode {
@@ -29,7 +30,7 @@ export type LibraryNode = SheetNode | GroupNode
  * folder's sidecar, reconciled with what is really on disk.
  */
 export async function loadLibrary(fs: FileSystem, root: string): Promise<GroupNode> {
-  const path = root.length > 1 ? root.replace(/\/+$/, '') : root
+  const path = trimSlashes(root)
   return loadGroup(fs, path, baseName(path))
 }
 
@@ -58,12 +59,4 @@ async function loadGroup(fs: FileSystem, path: string, name: string): Promise<Gr
     }
   }
   return { kind: 'group', name, path, children: nodes }
-}
-
-function joinPath(dir: string, name: string): string {
-  return dir === '/' ? '/' + name : dir + '/' + name
-}
-
-function baseName(path: string): string {
-  return path.slice(path.lastIndexOf('/') + 1)
 }

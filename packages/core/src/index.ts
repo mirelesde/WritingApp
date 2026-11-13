@@ -6,3 +6,11 @@ export type { ReconciledFolder, Sidecar } from './sidecar'
 export { loadLibrary } from './library'
 export type { GroupNode, LibraryNode, SheetNode } from './library'
 export { sheetFileName, slugify } from './filename'
+export {
+  createGroup,
+  createSheet,
+  deleteNode,
+  moveNode,
+  renameGroup,
+  reorderNode,
+} from './operations'
