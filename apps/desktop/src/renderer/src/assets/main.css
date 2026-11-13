@@ -93,6 +93,14 @@ html.hang-marks .cm-hang {
   letter-spacing: 0;
   color: var(--faint);
 }
+/* Not hanging: the separator reads as a plain rule until the cursor is on it. */
+html:not(.hang-marks) .cm-rule:not(.cm-rule-active) .cm-hang,
+html:not(.hang-marks) .cm-rule:not(.cm-rule-active) .cm-hang * {
+  color: transparent;
+}
+html:not(.hang-marks) .cm-rule:not(.cm-rule-active) .cm-hang {
+  background: none;
+}
 html:not(.hang-marks) .cm-rule .cm-hang {
   position: relative;
   z-index: 1;

@@ -5,6 +5,7 @@ import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate
 const hang = Decoration.mark({ class: 'cm-hang' })
 const gap = Decoration.mark({ class: 'cm-hang-gap' })
 const rule = Decoration.line({ class: 'cm-rule' })
+const activeRule = Decoration.line({ class: 'cm-rule cm-rule-active' })
 
 /**
  * Tags the `#` characters of a heading, and the spaces after them (and the dashes of a
@@ -20,7 +21,7 @@ export const headingMarks = ViewPlugin.fromClass(
       this.decorations = this.build(view)
     }
     update(update: ViewUpdate): void {
-      if (update.docChanged || update.viewportChanged || syntaxTree(update.state) !== syntaxTree(update.startState)) {
+      if (update.docChanged || update.viewportChanged || update.selectionSet || syntaxTree(update.state) !== syntaxTree(update.startState)) {
         this.decorations = this.build(update.view)
       }
     }
@@ -34,7 +35,9 @@ export const headingMarks = ViewPlugin.fromClass(
           enter(node) {
             if (node.name === 'HorizontalRule') {
               // A --- separator: the line is drawn across the page, its dashes hang in the margin.
-              builder.add(state.doc.lineAt(node.from).from, state.doc.lineAt(node.from).from, rule)
+              const line = state.doc.lineAt(node.from)
+              const here = state.doc.lineAt(state.selection.main.head).number === line.number
+              builder.add(line.from, line.from, here ? activeRule : rule)
               builder.add(node.from, node.to, hang)
               return
             }
