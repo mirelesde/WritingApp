@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GroupNode } from '@writingapp/core'
 import {
+  dropZone,
   errorMessage,
   filterTargets,
   moveSlot,
@@ -175,5 +176,17 @@ describe('filterTargets', () => {
 
   it('finds nothing when nothing matches', () => {
     expect(filterTargets(targets, 'zzz')).toEqual([])
+  })
+})
+
+describe('dropZone', () => {
+  it('splits a row into top edge, middle and bottom edge', () => {
+    expect(dropZone(2, 30)).toBe('before')
+    expect(dropZone(15, 30)).toBe('inside')
+    expect(dropZone(28, 30)).toBe('after')
+  })
+
+  it('treats a zero-height row as the middle', () => {
+    expect(dropZone(0, 0)).toBe('inside')
   })
 })

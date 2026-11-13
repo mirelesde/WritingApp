@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GroupNode } from '@writingapp/core'
   import GroupTree from './GroupTree.svelte'
+  import { dropZone, type TreeDnd } from './organise'
 
   interface Props {
     group: GroupNode
@@ -13,6 +14,7 @@
     onstartrename: (path: string) => void
     oncommitrename: (path: string, name: string) => void
     oncancelrename: () => void
+    dnd: TreeDnd
   }
 
   let {
@@ -25,7 +27,8 @@
     ontoggle,
     onstartrename,
     oncommitrename,
-    oncancelrename
+    oncancelrename,
+    dnd
   }: Props = $props()
 
   /** Focuses a freshly shown input with its text selected. */
@@ -39,7 +42,26 @@
 </script>
 
 <li role="none">
-  <div class="row" class:selected={selected === group.path} style:padding-left="{8 + depth * 14}px">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="row"
+    class:selected={selected === group.path}
+    class:drop-inside={dnd.hint?.path === group.path && dnd.hint.zone === 'inside'}
+    class:drop-before={dnd.hint?.path === group.path && dnd.hint.zone === 'before'}
+    class:drop-after={dnd.hint?.path === group.path && dnd.hint.zone === 'after'}
+    style:padding-left="{8 + depth * 14}px"
+    draggable={depth > 0 && renaming !== group.path}
+    ondragstart={(e) => dnd.start(group.path, e)}
+    ondragend={() => dnd.end()}
+    ondragover={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect()
+      dnd.over(group.path, dropZone(e.clientY - rect.top, rect.height), e)
+    }}
+    ondrop={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect()
+      dnd.drop(group.path, dropZone(e.clientY - rect.top, rect.height), e)
+    }}
+  >
     {#if subgroups.length > 0}
       <button
         class="chevron"
@@ -87,6 +109,7 @@
           {onstartrename}
           {oncommitrename}
           {oncancelrename}
+          {dnd}
         />
       {/each}
     </ul>
@@ -102,6 +125,16 @@
   }
   .row:hover {
     background: var(--hover);
+  }
+  .row.drop-inside {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .row.drop-before {
+    box-shadow: 0 -2px 0 var(--accent);
+  }
+  .row.drop-after {
+    box-shadow: 0 2px 0 var(--accent);
   }
   .row.selected {
     background: var(--selected);

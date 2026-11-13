@@ -99,3 +99,21 @@ export function filterTargets(targets: MoveTarget[], query: string): MoveTarget[
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   return targets.filter((t) => words.every((w) => t.label.toLowerCase().includes(w)))
 }
+
+export type DropZone = 'before' | 'inside' | 'after'
+
+/** Which part of a row the pointer is over: the top and bottom quarters are the edges. */
+export function dropZone(offsetY: number, height: number): DropZone {
+  const fraction = height > 0 ? offsetY / height : 0.5
+  return fraction < 0.25 ? 'before' : fraction > 0.75 ? 'after' : 'inside'
+}
+
+/** Drag and drop on the group tree, as the tree sees it. */
+export interface TreeDnd {
+  /** Where a drop would land right now, for drawing the indicator. */
+  hint: { path: string; zone: DropZone } | null
+  start(path: string, e: DragEvent): void
+  over(path: string, zone: DropZone, e: DragEvent): void
+  drop(path: string, zone: DropZone, e: DragEvent): void
+  end(): void
+}

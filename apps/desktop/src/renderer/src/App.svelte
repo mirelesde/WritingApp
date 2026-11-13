@@ -13,7 +13,9 @@
     pathRange,
     remapPath,
     visibleGroups,
-    type MoveTarget
+    type DropZone,
+    type MoveTarget,
+    type TreeDnd
   } from './organise'
 
   let library = $state<LibraryInfo | null>(null)
@@ -258,6 +260,116 @@
     if (movedSheets) clearSheets()
   }
 
+  // --- Drag and drop -------------------------------------------------------
+
+  // What is being dragged: sheets from the list, or one group from the tree.
+  // Plain, not state: nothing draws from it, and its arrays must cross the IPC bridge.
+  let drag: { kind: 'sheets' | 'group'; paths: string[]; parent: string } | null = null
+  let treeHint = $state<{ path: string; zone: DropZone } | null>(null)
+  // Where dragged sheets would land in the list: before or after a row, or at the end.
+  let sheetHint = $state<{ path: string; after: boolean } | 'end' | null>(null)
+
+  function parentOf(path: string): GroupNode | undefined {
+    return library ? findGroup(library.tree, path.slice(0, path.lastIndexOf('/'))) : undefined
+  }
+
+  function endDrag(): void {
+    drag = null
+    treeHint = null
+    sheetHint = null
+  }
+
+  function canDropOnGroup(target: string, zone: DropZone): boolean {
+    if (!drag || !library) return false
+    if (drag.kind === 'sheets') return zone === 'inside'
+    const dragged = drag.paths[0]!
+    if (target === dragged || target.startsWith(dragged + '/')) return false
+    return zone === 'inside' || target !== library.tree.path // the root has no "before" or "after"
+  }
+
+  function sheetDragStart(path: string, e: DragEvent): void {
+    const chosen = selection.includes(path) ? [...selection] : [path]
+    if (!selection.includes(path)) void setSelection([path], path)
+    drag = {
+      kind: 'sheets',
+      paths: sheetPaths.filter((p) => chosen.includes(p)),
+      parent: selectedGroup
+    }
+    e.dataTransfer?.setData('text/plain', drag.paths.join('\n'))
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function sheetsPaneDragOver(e: DragEvent): void {
+    if (drag?.kind !== 'sheets' || drag.parent !== selectedGroup) return
+    e.preventDefault()
+    sheetHint = 'end'
+  }
+
+  function sheetDragOver(path: string, e: DragEvent): void {
+    if (drag?.kind !== 'sheets' || drag.parent !== selectedGroup || drag.paths.includes(path))
+      return
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    sheetHint = { path, after: e.clientY - rect.top > rect.height / 2 }
+  }
+
+  /** Reorders the dragged sheets to the slot the indicator shows. */
+  function dropSheets(e: DragEvent): void {
+    e.preventDefault()
+    const dragged = drag
+    const hint = sheetHint
+    endDrag()
+    const parent = group
+    if (!dragged || !parent || !hint) return
+    let slot: number | undefined
+    if (hint !== 'end') {
+      const rest = parent.children.map((c) => c.path).filter((p) => !dragged.paths.includes(p))
+      slot = rest.indexOf(hint.path) + (hint.after ? 1 : 0)
+    }
+    void runOp(() => window.api.move(dragged.paths, parent.path, slot))
+  }
+
+  const treeDnd: TreeDnd = {
+    get hint() {
+      return treeHint
+    },
+    start(path, e) {
+      drag = { kind: 'group', paths: [path], parent: path.slice(0, path.lastIndexOf('/')) }
+      e.dataTransfer?.setData('text/plain', path)
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+    },
+    over(path, zone, e) {
+      if (!canDropOnGroup(path, zone)) {
+        treeHint = null
+        return
+      }
+      e.preventDefault()
+      treeHint = { path, zone }
+    },
+    drop(path, zone, e) {
+      e.preventDefault()
+      const dragged = drag
+      const ok = canDropOnGroup(path, zone)
+      endDrag()
+      if (!dragged || !ok) return
+      if (zone === 'inside') {
+        void runOp(() => window.api.move(dragged.paths, path)).then((result) => {
+          if (!result) return
+          expanded[path] = true
+          if (dragged.kind === 'sheets') clearSheets()
+        })
+        return
+      }
+      const parent = parentOf(path)
+      if (!parent) return
+      const rest = parent.children.map((c) => c.path).filter((p) => p !== dragged.paths[0])
+      const slot = rest.indexOf(path) + (zone === 'after' ? 1 : 0)
+      void runOp(() => window.api.move(dragged.paths, parent.path, slot))
+    },
+    end: endDrag
+  }
+
   // --- Keyboard -----------------------------------------------------------
 
   function treeKeydown(e: KeyboardEvent): void {
@@ -454,6 +566,7 @@
           onstartrename={startRename}
           oncommitrename={commitRename}
           oncancelrename={finishRename}
+          dnd={treeDnd}
         />
       </ul>
       {#if notice}
@@ -470,6 +583,8 @@
       bind:this={sheetsEl}
       onkeydown={sheetsKeydown}
       onmousedown={keepFocus(sheetsEl)}
+      ondragover={sheetsPaneDragOver}
+      ondrop={dropSheets}
     >
       <header><span class="title">{group?.name ?? ''}</span></header>
       {#if sheets.length === 0}
@@ -481,7 +596,17 @@
               <button
                 class="sheet"
                 class:selected={selection.includes(sheet.path)}
+                class:drop-before={sheetHint !== 'end' &&
+                  sheetHint?.path === sheet.path &&
+                  !sheetHint.after}
+                class:drop-after={sheetHint !== 'end' &&
+                  sheetHint?.path === sheet.path &&
+                  sheetHint.after}
                 tabindex="-1"
+                draggable="true"
+                ondragstart={(e) => sheetDragStart(sheet.path, e)}
+                ondragend={endDrag}
+                ondragover={(e) => sheetDragOver(sheet.path, e)}
                 onclick={(e) => clickSheet(sheet.path, e)}
               >
                 <span class="sheet-title">{sheet.title}</span>
@@ -623,6 +748,12 @@
     border-radius: 6px;
     padding: 8px 10px;
     cursor: default;
+  }
+  .sheet.drop-before {
+    box-shadow: 0 -2px 0 var(--accent);
+  }
+  .sheet.drop-after {
+    box-shadow: 0 2px 0 var(--accent);
   }
   .sheet:hover {
     background: var(--hover);
