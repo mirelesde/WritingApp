@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exportHtml, exportRuns, markdownToHtml } from './export'
+import { exportHtml, exportRuns, htmlDocument, markdownToHtml } from './export'
 import { loadLibrary } from './library'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -79,5 +79,12 @@ describe('exportHtml', () => {
     const fs = setup()
     const tree = await loadLibrary(fs, '/Lib')
     await expect(exportHtml(fs, tree, [])).rejects.toThrow('Nothing to export')
+  })
+})
+
+describe('indented paragraphs', () => {
+  it('adds the book style only when asked', () => {
+    expect(htmlDocument('T', '<p>a</p>')).not.toContain('text-indent')
+    expect(htmlDocument('T', '<p>a</p>', { indentParagraphs: true })).toContain('p + p { text-indent: 1.5em; }')
   })
 })

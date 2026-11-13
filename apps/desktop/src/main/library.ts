@@ -15,6 +15,7 @@ import {
   mergeSheets,
   moveNodesUndoable,
   renameGroup,
+  resolveView,
   splitSheet,
   unglueSheets,
   type FileSystem,
@@ -224,7 +225,8 @@ export function registerLibraryIpc(): void {
     if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
     const chosen = paths.map((p) => inside(p, true))
     const tree = await loadLibrary(fs, currentRoot)
-    return exportHtml(fs, tree, chosen)
+    const view = resolveView((await settings.load()).view)
+    return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent })
   }
 
   ipcMain.handle('search:run', async (_event, query: unknown) => {

@@ -205,7 +205,18 @@
           >
         </div>
       </div>
-      {@render choice('Space between paragraphs', 'paragraphSpacing')}
+      <label class="row">
+        <span>Indent paragraphs<small>Indent each paragraph and close the gaps between them, in the editor and in exports</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.paragraphIndent}
+          onchange={(e) => onchange({ paragraphIndent: e.currentTarget.checked })}
+        />
+      </label>
+      {#if !view.paragraphIndent}
+        {@render choice('Space between paragraphs', 'paragraphSpacing')}
+      {/if}
       <label class="row">
         <span>Hang heading marks<small>Keep the # in the margin so headings line up with the text</small></span>
         <input

@@ -20,6 +20,7 @@ import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
 import { headingMarks } from './headingMarks'
+import { paragraphStarts } from './paragraphs'
 import { currentHeading, nextHeading, previousHeading } from './headingJump'
 
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
@@ -172,6 +173,7 @@ export function editorExtensions({
     highlightActiveLine(),
     blankLines,
     headingMarks,
+    paragraphStarts,
     taskBoxes,
     EditorView.lineWrapping,
     // GitHub-flavoured base: strikethrough, task lists, tables.

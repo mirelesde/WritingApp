@@ -21,7 +21,7 @@ export function applyView(view: ViewSettings, theme?: ColorTheme): void {
   style.setProperty('--editor-size', `${view.fontSize}px`)
   style.setProperty('--editor-width', COLUMN_WIDTH[view.columnWidth])
   style.setProperty('--editor-line-height', String(view.lineSpacing))
-  style.setProperty('--blank-line-scale', BLANK_LINE_SCALE[view.paragraphSpacing])
+  style.setProperty('--blank-line-scale', view.paragraphIndent ? '0' : BLANK_LINE_SCALE[view.paragraphSpacing])
   style.setProperty('--caret-width', CARET_WIDTH[view.caretWidth])
   style.setProperty('--dim-opacity', DIM_OPACITY[view.focusDim])
   style.setProperty('--text-align', view.textAlign)
@@ -30,5 +30,6 @@ export function applyView(view: ViewSettings, theme?: ColorTheme): void {
     view.currentLine === 'subtle' ? 'color-mix(in srgb, var(--text) 6%, transparent)' : 'transparent'
   )
   document.documentElement.classList.toggle('hang-marks', view.hangHeadings)
+  document.documentElement.classList.toggle('indent-paras', view.paragraphIndent)
   style.setProperty('--run-end-space', view.scrollPastEnd ? '40vh' : '4rem')
 }

@@ -92,15 +92,27 @@ hr.break::after { content: '* * *'; letter-spacing: .5em; color: #888; }
 }
 `
 
+/** How an export looks beyond the content itself. */
+export interface ExportStyle {
+  /** Indent each paragraph that follows another and drop the space between them, as in a printed book. */
+  indentParagraphs?: boolean
+}
+
+const INDENT_STYLE = `
+p { margin: 0; }
+p + p { text-indent: 1.5em; }
+ul, ol, blockquote, pre, table { margin-top: 1em; }
+`
+
 /** Wraps rendered body HTML in a complete, self-contained page. */
-export function htmlDocument(title: string, body: string): string {
+export function htmlDocument(title: string, body: string, options: ExportStyle = {}): string {
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
-<style>${STYLE}</style>
+<style>${STYLE}${options.indentParagraphs ? INDENT_STYLE : ''}</style>
 </head>
 <body>
 ${body}
@@ -127,6 +139,7 @@ export async function exportHtml(
   fs: FileSystem,
   root: GroupNode,
   selection: string[],
+  style: ExportStyle = {},
 ): Promise<HtmlExport> {
   const runs = exportRuns(root, selection)
   if (runs.length === 0) throw new Error('Nothing to export: select sheets or a group')
@@ -143,7 +156,7 @@ export async function exportHtml(
   const body = parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n')
   return {
     title,
-    html: htmlDocument(title, body),
+    html: htmlDocument(title, body, style),
     sheets: runs.reduce((n, run) => n + run.length, 0),
   }
 }

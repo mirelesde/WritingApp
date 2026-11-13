@@ -564,12 +564,13 @@ asked for directly.
     only the text remains; they return when the pointer reaches the top or
     left edge, and Escape or the shortcut leaves. Builds on the sidebar
     peek (already there) and macOS full screen.
-61. **First-line indent for prose.** An option to indent the first line of
+61. ~~**First-line indent for prose.**~~ **Done.** An option to indent the first line of
     each paragraph and drop the blank line between paragraphs in the editor
     and in export, as printed books do. Headings, lists and quotes are left
     alone. Needs a decision on how it round-trips: it is a display and
     export style, never changes the Markdown.
    Cmd/Ctrl+Shift+D (View menu and palette); Escape leaves from the editor
+   Preferences switch; display and export style only, the Markdown is untouched; first paragraph after a heading is not indented; export covers HTML preview/save and PDF
 
 **Medium**
 
