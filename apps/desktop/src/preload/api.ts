@@ -12,11 +12,22 @@ export interface OpResult {
   library: LibraryInfo
   /** Everything whose path changed, as [from, to]. A group's contents move with it. */
   moved: [string, string][]
-  /** The path of the sheet or group that was created, if one was. */
+  /** The path of the sheet or group that was created, or of the sheet holding a merge. */
   created?: string
+  /** For an undo: what was undone. */
+  label?: string
 }
 
-export type MenuCommand = 'new-sheet' | 'new-group' | 'new-project' | 'move-to'
+export type MenuCommand =
+  | 'new-sheet'
+  | 'new-group'
+  | 'new-project'
+  | 'move-to'
+  | 'split'
+  | 'merge'
+  | 'glue'
+  | 'unglue'
+  | 'undo-sheet-change'
 
 /** What the main process offers the UI as `window.api`. */
 export interface Api {
@@ -36,6 +47,16 @@ export interface Api {
   renameGroup(path: string, name: string): Promise<OpResult>
   /** Moves sheets or groups sharing one parent into `target` as a block. */
   move(paths: string[], target: string, index?: number): Promise<OpResult>
+  /** Splits a sheet, given its current text, at `offset`; the tail becomes the next sheet. */
+  split(path: string, text: string, offset: number): Promise<OpResult>
+  /** Merges sheets of one group into the first of them. */
+  merge(paths: string[]): Promise<OpResult>
+  /** Glues sheets so they read as one run. */
+  glue(paths: string[]): Promise<OpResult>
+  /** Detaches sheets from the runs they are in. */
+  unglue(paths: string[]): Promise<OpResult>
+  /** Reverses the latest split, merge, glue or unglue. Rejects if there is none. */
+  undo(): Promise<OpResult>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when File > Open Library loads a library. Returns an unsubscribe function. */

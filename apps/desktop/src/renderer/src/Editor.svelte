@@ -20,6 +20,12 @@
   export function focus(): void {
     view?.focus()
   }
+
+  /** The text and cursor position, if the cursor is in this editor. */
+  export function cursorInfo(): { text: string; offset: number } | undefined {
+    if (!view?.hasFocus) return undefined
+    return { text: view.state.doc.toString(), offset: view.state.selection.main.head }
+  }
   let host: HTMLDivElement
 
   onMount(() => {

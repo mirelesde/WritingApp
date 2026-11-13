@@ -10,6 +10,11 @@ const api: Api = {
   createGroup: (parent, name) => ipcRenderer.invoke('op:createGroup', parent, name),
   renameGroup: (path, name) => ipcRenderer.invoke('op:renameGroup', path, name),
   move: (paths, target, index) => ipcRenderer.invoke('op:move', paths, target, index),
+  split: (path, text, offset) => ipcRenderer.invoke('op:split', path, text, offset),
+  merge: (paths) => ipcRenderer.invoke('op:merge', paths),
+  glue: (paths) => ipcRenderer.invoke('op:glue', paths),
+  unglue: (paths) => ipcRenderer.invoke('op:unglue', paths),
+  undo: () => ipcRenderer.invoke('op:undo'),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

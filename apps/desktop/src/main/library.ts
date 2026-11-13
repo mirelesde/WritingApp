@@ -2,12 +2,19 @@ import { promises as nodeFs } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, shell, app } from 'electron'
 import { join } from 'node:path'
 import {
+  applyUndo,
   createGroup,
   createSheet,
+  glueSheets,
   loadLibrary,
+  mergeSheets,
   moveNodes,
   renameGroup,
-  type FileSystem
+  splitSheet,
+  unglueSheets,
+  type FileSystem,
+  type SheetChange,
+  type UndoAction
 } from '@writingapp/core'
 import type { LibraryInfo, OpResult } from '../preload/api'
 import { createNodeFileSystem } from './nodeFileSystem'
@@ -18,9 +25,15 @@ const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
 let settings: ReturnType<typeof createSettingsStore>
 let currentRoot: string | undefined
 
+// How to reverse the latest structural changes, newest last. Held in memory
+// for the open library only.
+const undoStack: { label: string; actions: UndoAction[] }[] = []
+const UNDO_DEPTH = 20
+
 async function open(path: string): Promise<LibraryInfo | null> {
   try {
     const tree = await loadLibrary(fs, path)
+    if (tree.path !== currentRoot) undoStack.length = 0
     currentRoot = tree.path
     return { path: tree.path, tree }
   } catch {
@@ -51,13 +64,30 @@ export async function chooseLibrary(window?: BrowserWindow): Promise<LibraryInfo
 
 /** Runs a change to the library, then reloads it so the UI sees the result. */
 async function change(
-  run: (root: string) => Promise<{ moved?: [string, string][]; created?: string }>
+  run: (root: string) => Promise<{
+    moved?: [string, string][]
+    created?: string
+    /** Set to make the change undoable. */
+    undo?: { label: string; actions: UndoAction[] }
+  }>
 ): Promise<OpResult> {
   if (!currentRoot) throw new Error('No library is open')
   const outcome = await run(currentRoot)
+  if (outcome.undo) {
+    undoStack.push(outcome.undo)
+    if (undoStack.length > UNDO_DEPTH) undoStack.shift()
+  }
   const library = await open(currentRoot)
   if (!library) throw new Error('The library could not be reloaded')
   return { library, moved: outcome.moved ?? [], created: outcome.created }
+}
+
+/** Wraps a sheet change's result so `change` records how to undo it. */
+function undoable(
+  label: string,
+  result: SheetChange
+): { created?: string; undo: { label: string; actions: UndoAction[] } } {
+  return { created: result.path, undo: { label, actions: result.undo } }
 }
 
 function inside(path: unknown, allowRoot = false): string {
@@ -136,4 +166,62 @@ export function registerLibraryIpc(): void {
       return { moved: from.map((p, i): [string, string] => [p, to[i]!]) }
     })
   )
+
+  ipcMain.handle('op:split', (_event, path: unknown, text: unknown, offset: unknown) =>
+    change(async () => {
+      const sheet = inside(path)
+      if (typeof text !== 'string' || typeof offset !== 'number')
+        throw new Error('Nothing to split')
+      return undoable('Split', await splitSheet(fs, sheet, text, offset))
+    })
+  )
+
+  ipcMain.handle('op:merge', (_event, paths: unknown) =>
+    change(async () => {
+      if (!Array.isArray(paths)) throw new Error('Select sheets to merge')
+      return undoable(
+        'Merge',
+        await mergeSheets(
+          fs,
+          paths.map((p) => inside(p))
+        )
+      )
+    })
+  )
+
+  ipcMain.handle('op:glue', (_event, paths: unknown) =>
+    change(async () => {
+      if (!Array.isArray(paths)) throw new Error('Select sheets to glue')
+      return undoable(
+        'Glue',
+        await glueSheets(
+          fs,
+          paths.map((p) => inside(p))
+        )
+      )
+    })
+  )
+
+  ipcMain.handle('op:unglue', (_event, paths: unknown) =>
+    change(async () => {
+      if (!Array.isArray(paths)) throw new Error('Select sheets to unglue')
+      return undoable(
+        'Unglue',
+        await unglueSheets(
+          fs,
+          paths.map((p) => inside(p))
+        )
+      )
+    })
+  )
+
+  ipcMain.handle('op:undo', async () => {
+    const last = undoStack.pop()
+    if (!last) throw new Error('Nothing to undo')
+    const result = await change(async () => {
+      await applyUndo(fs, last.actions)
+      return {}
+    })
+    return { ...result, label: last.label }
+  })
 }

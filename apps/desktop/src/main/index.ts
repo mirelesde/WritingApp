@@ -84,6 +84,38 @@ function buildMenu(): Menu {
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
+    {
+      label: 'Sheet',
+      submenu: [
+        {
+          label: 'Split at Cursor',
+          accelerator: 'CmdOrCtrl+Shift+Enter',
+          click: () => sendCommand('split')
+        },
+        {
+          label: 'Merge Sheets',
+          accelerator: 'CmdOrCtrl+Shift+J',
+          click: () => sendCommand('merge')
+        },
+        { type: 'separator' },
+        {
+          label: 'Glue Sheets',
+          accelerator: 'CmdOrCtrl+Shift+G',
+          click: () => sendCommand('glue')
+        },
+        {
+          label: 'Unglue Sheets',
+          accelerator: 'CmdOrCtrl+Alt+G',
+          click: () => sendCommand('unglue')
+        },
+        { type: 'separator' },
+        {
+          label: 'Undo Split, Merge or Glue',
+          accelerator: 'CmdOrCtrl+Alt+Z',
+          click: () => sendCommand('undo-sheet-change')
+        }
+      ]
+    },
     { role: 'editMenu' },
     { role: 'viewMenu' },
     { role: 'windowMenu' }

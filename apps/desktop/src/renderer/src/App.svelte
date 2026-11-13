@@ -34,6 +34,8 @@
   let saveStatus = $state<SaveStatus>('saved')
   let renaming = $state<string | null>(null)
   let notice = $state('')
+  let info = $state('')
+  let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
@@ -49,6 +51,14 @@
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
   const sheets = $derived((group?.children.filter((c) => c.kind === 'sheet') ?? []) as SheetNode[])
   const sheetPaths = $derived(sheets.map((s) => s.path))
+  // Sheets that follow a glued sheet, so a run can be drawn as one bar.
+  const gluedFrom = $derived(
+    new Set(
+      (group?.children ?? []).flatMap((c, i) =>
+        c.kind === 'sheet' && c.glued ? [group?.children[i + 1]?.path ?? ''] : []
+      )
+    )
+  )
 
   function findGroup(node: GroupNode, path: string): GroupNode | undefined {
     if (node.path === path) return node
@@ -58,6 +68,10 @@
       if (found) return found
     }
     return undefined
+  }
+
+  function sheetExists(node: GroupNode, path: string): boolean {
+    return node.children.some((c) => (c.kind === 'sheet' ? c.path === path : sheetExists(c, path)))
   }
 
   function showLibrary(info: LibraryInfo): void {
@@ -126,11 +140,10 @@
   }
 
   /** Runs a structural change, then brings the UI in line with the result. */
-  async function runOp(op: () => Promise<OpResult>): Promise<OpResult | undefined> {
+  async function runOp(op: () => Promise<OpResult>, reload = false): Promise<OpResult | undefined> {
     await autosaver.flush()
     try {
       const result = await op()
-      const wasOpen = open?.path
       const remap = (path: string): string => remapPath(path, result.moved)
       library = result.library
       selectedGroup = remap(selectedGroup)
@@ -139,13 +152,76 @@
       cursor = cursor && remap(cursor)
       anchor = anchor && remap(anchor)
       expanded = Object.fromEntries(Object.entries(expanded).map(([p, o]) => [remap(p), o]))
-      if (wasOpen && remap(wasOpen) !== wasOpen) await loadSheet(remap(wasOpen))
+      await refreshOpen(reload)
       notice = ''
       return result
     } catch (e) {
       notice = errorMessage(e)
       return undefined
     }
+  }
+
+  /** Makes the editor match the selection: drops sheets that are gone, reloads when told to. */
+  async function refreshOpen(force: boolean): Promise<void> {
+    if (!library) return
+    const tree = library.tree
+    selection = selection.filter((p) => sheetExists(tree, p))
+    if (selection.length === 0) cursor = anchor = null
+    if (selection.length !== 1) {
+      if (open) {
+        open = null
+        readId++
+      }
+      return
+    }
+    if (force || open?.path !== selection[0]) await loadSheet(selection[0]!)
+  }
+
+  function showInfo(text: string): void {
+    info = text
+    clearTimeout(infoTimer)
+    infoTimer = setTimeout(() => (info = ''), 3000)
+  }
+
+  async function splitAtCursor(): Promise<void> {
+    const where = editor?.cursorInfo()
+    if (!open || !where) {
+      notice = 'Put the cursor in a sheet to split it there.'
+      return
+    }
+    const path = open.path
+    const result = await runOp(() => window.api.split(path, where.text, where.offset), true)
+    if (result?.created) {
+      anchor = result.created
+      await setSelection([result.created], result.created, true)
+    }
+  }
+
+  async function mergeSelected(): Promise<void> {
+    if (selection.length < 2) {
+      notice = 'Select two or more sheets to merge.'
+      return
+    }
+    const chosen = [...selection]
+    const result = await runOp(() => window.api.merge(chosen), true)
+    if (result?.created) {
+      anchor = result.created
+      await setSelection([result.created], result.created)
+    }
+  }
+
+  async function glueSelected(glue: boolean): Promise<void> {
+    if (selection.length === 0) {
+      notice = 'Select a sheet first.'
+      return
+    }
+    const chosen = [...selection]
+    await runOp(() => (glue ? window.api.glue(chosen) : window.api.unglue(chosen)))
+  }
+
+  async function undoSheetChange(): Promise<void> {
+    const result = await runOp(() => window.api.undo(), true)
+    if (result?.label) showInfo(`Undid ${result.label.toLowerCase()}`)
   }
 
   async function newSheet(): Promise<void> {
@@ -514,6 +590,11 @@
       if (!library) return
       if (command === 'new-sheet') void newSheet()
       else if (command === 'move-to') openMoveTo()
+      else if (command === 'split') void splitAtCursor()
+      else if (command === 'merge') void mergeSelected()
+      else if (command === 'glue') void glueSelected(true)
+      else if (command === 'unglue') void glueSelected(false)
+      else if (command === 'undo-sheet-change') void undoSheetChange()
       else void newGroup(command === 'new-project')
     })
     // Last chance to save when the window closes.
@@ -571,6 +652,8 @@
       </ul>
       {#if notice}
         <p class="notice" role="alert">{notice}</p>
+      {:else if info}
+        <p class="info" role="status">{info}</p>
       {/if}
     </div>
 
@@ -596,6 +679,9 @@
               <button
                 class="sheet"
                 class:selected={selection.includes(sheet.path)}
+                class:run-start={sheet.glued && !gluedFrom.has(sheet.path)}
+                class:run-middle={sheet.glued && gluedFrom.has(sheet.path)}
+                class:run-end={!sheet.glued && gluedFrom.has(sheet.path)}
                 class:drop-before={sheetHint !== 'end' &&
                   sheetHint?.path === sheet.path &&
                   !sheetHint.after}
@@ -749,6 +835,21 @@
     padding: 8px 10px;
     cursor: default;
   }
+  .sheet.run-start,
+  .sheet.run-middle,
+  .sheet.run-end {
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+  }
+  .sheet.run-start {
+    border-bottom-right-radius: 0;
+  }
+  .sheet.run-middle {
+    border-radius: 0;
+  }
+  .sheet.run-end {
+    border-top-right-radius: 0;
+  }
   .sheet.drop-before {
     box-shadow: 0 -2px 0 var(--accent);
   }
@@ -775,6 +876,12 @@
     color: var(--muted);
     font-size: 12px;
     margin-top: 2px;
+  }
+  .info {
+    margin: 0;
+    padding: 8px 14px;
+    color: var(--muted);
+    font-size: 12px;
   }
   .notice {
     margin: 0;
