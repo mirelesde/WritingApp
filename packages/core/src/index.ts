@@ -11,6 +11,7 @@ export {
   createSheet,
   deleteNode,
   moveNode,
+  moveNodes,
   renameGroup,
   reorderNode,
 } from './operations'

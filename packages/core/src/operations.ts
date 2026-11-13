@@ -151,10 +151,9 @@ export async function deleteNode(fs: FileSystem, path: string): Promise<void> {
 }
 
 /**
- * Moves a sheet or group into `targetGroup` so it ends up at `index` among
- * that group's children (default: the end), and returns its new path. Within
- * the same group this is a reorder. A name clash in the target gets a numeric
- * suffix. Throws when moving a group into itself.
+ * Moves a sheet or group into `targetGroup`, returning its new path. `index`
+ * is its final position among that group's children (default: the end).
+ * Within the same group this is a reorder. See `moveNodes`.
  */
 export async function moveNode(
   fs: FileSystem,
@@ -162,36 +161,75 @@ export async function moveNode(
   targetGroup: string,
   index?: number,
 ): Promise<string> {
-  const from = trimSlashes(path)
+  const [moved] = await moveNodes(fs, [path], targetGroup, index)
+  return moved!
+}
+
+/**
+ * Moves several sheets and groups, which must share one parent, into
+ * `targetGroup` as a block that keeps their current relative order. `index`
+ * is where the block starts among the target's remaining children, that
+ * is, after the moved ones have been taken out (default: the end). Within
+ * the same group this is a reorder. Returns the new paths in the order given.
+ * A name clash in the target gets a numeric suffix. Throws, changing
+ * nothing, when moving a group into itself or its own descendant.
+ */
+export async function moveNodes(
+  fs: FileSystem,
+  paths: string[],
+  targetGroup: string,
+  index?: number,
+): Promise<string[]> {
+  if (paths.length === 0) return []
+  const froms = paths.map(trimSlashes)
   const target = trimSlashes(targetGroup)
-  if (target === from || target.startsWith(from + '/')) {
-    throw new Error('Cannot move a group into itself')
+  const sourceDir = parentPath(froms[0]!)
+  for (const from of froms) {
+    if (parentPath(from) !== sourceDir) throw new Error('Moved items must share one group')
+    if (target === from || target.startsWith(from + '/')) {
+      throw new Error('Cannot move a group into itself')
+    }
   }
-  const sourceDir = parentPath(from)
-  const name = baseName(from)
   const source = await readFolder(fs, sourceDir)
-  const entry = source.entries.find((e) => e.name === name)
-  if (!entry || !source.order.includes(name)) throw new Error(`Not part of the library: ${from}`)
+  for (const from of froms) {
+    const name = baseName(from)
+    if (!source.entries.some((e) => e.name === name) || !source.order.includes(name)) {
+      throw new Error(`Not part of the library: ${from}`)
+    }
+  }
+  // The block keeps the order the items currently have on screen.
+  const ordered = [...froms].sort(
+    (a, b) => source.order.indexOf(baseName(a)) - source.order.indexOf(baseName(b)),
+  )
 
   if (sourceDir === target) {
-    const oldIndex = source.order.indexOf(name)
-    removeName(source, name)
-    const newIndex = clamp(index ?? source.order.length, source.order.length)
-    if (newIndex === oldIndex) return from
-    insertName(source, name, newIndex)
-    await writeFolder(fs, sourceDir, source)
-    return from
+    const before = [...source.order]
+    for (const from of ordered) removeName(source, baseName(from))
+    const start = clamp(index ?? source.order.length, source.order.length)
+    ordered.forEach((from, i) => insertName(source, baseName(from), start + i))
+    if (source.order.join('\0') !== before.join('\0')) await writeFolder(fs, sourceDir, source)
+    return froms
   }
 
   const dest = await readFolder(fs, target)
-  const isSheet = entry.kind === 'file'
-  const newName = uniqueName(name, isSheet ? '.md' : '', isSheet ? '-' : ' ', takenNames(dest))
-  await fs.rename(from, joinPath(target, newName))
-  removeName(source, name)
-  insertName(dest, newName, index)
+  const taken = takenNames(dest)
+  const newNames = new Map<string, string>()
+  for (const from of ordered) {
+    const name = baseName(from)
+    const isSheet = source.entries.find((e) => e.name === name)!.kind === 'file'
+    const newName = uniqueName(name, isSheet ? '.md' : '', isSheet ? '-' : ' ', taken)
+    taken.add(newName.toLowerCase())
+    newNames.set(from, newName)
+  }
+  for (const from of ordered) {
+    await fs.rename(from, joinPath(target, newNames.get(from)!))
+  }
+  for (const from of ordered) removeName(source, baseName(from))
+  const start = clamp(index ?? dest.order.length, dest.order.length)
+  ordered.forEach((from, i) => insertName(dest, newNames.get(from)!, start + i))
   await writeFolder(fs, sourceDir, source)
   await writeFolder(fs, target, dest)
-  return joinPath(target, newName)
+  return froms.map((from) => joinPath(target, newNames.get(from)!))
 }
 
 /** Moves a sheet or group to `index` within its own group. */

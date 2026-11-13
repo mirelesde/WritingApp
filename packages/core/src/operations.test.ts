@@ -5,6 +5,7 @@ import {
   createSheet,
   deleteNode,
   moveNode,
+  moveNodes,
   renameGroup,
   reorderNode,
 } from './operations'
@@ -325,5 +326,66 @@ describe('a full session', () => {
     expect(n.children.map((c) => c.name)).toEqual(['opening.md', 'Act I', 'notes.md'])
     const act = n.children[1] as GroupNode
     expect(act.children.map((c) => c.name)).toEqual(['the-station.md'])
+  })
+})
+
+describe('moveNodes', () => {
+  const setup = () =>
+    new MemoryFileSystem({
+      '/Lib/.writingapp.json': sidecar(['a.md', 'b.md', 'c.md', 'd.md', 'G']),
+      '/Lib/a.md': 'A',
+      '/Lib/b.md': 'B',
+      '/Lib/c.md': 'C',
+      '/Lib/d.md': 'D',
+      '/Lib/G/.writingapp.json': sidecar(['x.md']),
+      '/Lib/G/x.md': 'X',
+    })
+
+  it('reorders a block, keeping its internal order whatever order the paths are given in', async () => {
+    const fs = setup()
+    await moveNodes(fs, ['/Lib/d.md', '/Lib/b.md'], '/Lib', 0)
+    expect((await sidecarOf(fs, '/Lib')).order).toEqual(['b.md', 'd.md', 'a.md', 'c.md', 'G'])
+  })
+
+  it('treats the index as a slot among the items that stay put', async () => {
+    const fs = setup()
+    // Remaining: a, c, G. Slot 2 is just before G.
+    await moveNodes(fs, ['/Lib/b.md', '/Lib/d.md'], '/Lib', 2)
+    expect((await sidecarOf(fs, '/Lib')).order).toEqual(['a.md', 'c.md', 'b.md', 'd.md', 'G'])
+  })
+
+  it('moves a block to the end by default and clamps big indexes', async () => {
+    const fs = setup()
+    await moveNodes(fs, ['/Lib/a.md', '/Lib/b.md'], '/Lib')
+    expect((await sidecarOf(fs, '/Lib')).order).toEqual(['c.md', 'd.md', 'G', 'a.md', 'b.md'])
+    await moveNodes(fs, ['/Lib/c.md'], '/Lib', 99)
+    expect((await sidecarOf(fs, '/Lib')).order).toEqual(['d.md', 'G', 'a.md', 'b.md', 'c.md'])
+  })
+
+  it('moves a block into another group, in order, de-duplicating names', async () => {
+    const fs = setup()
+    await fs.writeText('/Lib/G/b.md', 'existing')
+    const paths = await moveNodes(fs, ['/Lib/c.md', '/Lib/b.md'], '/Lib/G', 0)
+    expect(paths).toEqual(['/Lib/G/c.md', '/Lib/G/b-2.md'])
+    expect((await sidecarOf(fs, '/Lib/G')).order).toEqual(['b-2.md', 'c.md', 'x.md', 'b.md'])
+    expect((await sidecarOf(fs, '/Lib')).order).toEqual(['a.md', 'd.md', 'G'])
+    expect(await fs.readText('/Lib/G/b.md')).toBe('existing')
+  })
+
+  it('does not write anything when the order is unchanged', async () => {
+    const fs = setup()
+    await moveNodes(fs, ['/Lib/a.md', '/Lib/b.md'], '/Lib', 0)
+    expect(await sidecarOf(fs, '/Lib')).toEqual({ order: ['a.md', 'b.md', 'c.md', 'd.md', 'G'], glued: [] })
+  })
+
+  it('rejects mixed parents or a group moved into itself, changing nothing', async () => {
+    const fs = setup()
+    await expect(moveNodes(fs, ['/Lib/a.md', '/Lib/G/x.md'], '/Lib')).rejects.toThrow(/share/)
+    await expect(moveNodes(fs, ['/Lib/a.md', '/Lib/G'], '/Lib/G')).rejects.toThrow(/itself/)
+    expect(await fs.exists('/Lib/a.md')).toBe(true)
+  })
+
+  it('does nothing for an empty list', async () => {
+    expect(await moveNodes(setup(), [], '/Lib')).toEqual([])
   })
 })
