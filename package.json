@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "npm run dev -w @writingapp/desktop",
     "build": "npm run build -w @writingapp/desktop",
-    "test": "npm test -w @writingapp/core",
+    "test": "npm test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }
