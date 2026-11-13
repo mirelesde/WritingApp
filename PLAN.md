@@ -495,18 +495,19 @@ asked for directly.
     Cmd/Ctrl+, so settings stop being menu-only. Holds the existing theme,
     font and size, plus the writing comfort options (item 38), smart
     quotes (item 39) and hide markers (item 41) as they arrive.
-38. **Writing comfort settings.** All stored with the view settings:
+38. ~~**Writing comfort settings.**~~ **Done.** All in Preferences, stored with the view
+    settings, applied through CSS variables so they change live:
     - Text column width: narrow, medium, wide, or full window.
-    - Line spacing and paragraph spacing, as separate controls.
-    - Caret: highlight the current line (off, subtle), caret width.
-    - Focus mode scope: dim all but the current line, sentence or
-      paragraph, and how strongly.
-    - Typewriter position: centre, or upper third.
+    - Line spacing (1.3 to 2.4) and paragraph spacing (the height of the
+      blank line between paragraphs: compact, normal, airy).
+    - Cursor width, and a subtle highlight on the current line.
+    - Focus mode scope (line, sentence or paragraph) and how strongly the
+      rest fades.
+    - Typewriter position: the middle, or the upper third.
     - Scroll past the end of the text, on or off.
-    - Distraction-free mode: hides both side panes and the header rows,
-      which return when the pointer reaches the top or left edge.
-    - Text alignment (left, justified) and an optional first-line indent
-      for prose.
+    - Text alignment: left or justified.
+    Distraction-free mode and a first-line indent for prose were part of
+    this idea and are separate items 60 and 61 below.
 39. **Smart quotes and dashes.** Optional: straight quotes become curly,
     `--` becomes an en or em dash, `...` becomes an ellipsis. A setting,
     off by default; never applied inside code or comments. Needs the
@@ -552,6 +553,16 @@ asked for directly.
     control and pane, a high-contrast option, honouring reduced motion,
     and full keyboard-only use of every dialog and menu.
    A switch in Preferences and View > Line Numbers; each sheet of a glued run numbers its own lines.
+
+60. **Distraction-free mode.** Hides both side panes and the header rows so
+    only the text remains; they return when the pointer reaches the top or
+    left edge, and Escape or the shortcut leaves. Builds on the sidebar
+    peek (already there) and macOS full screen.
+61. **First-line indent for prose.** An option to indent the first line of
+    each paragraph and drop the blank line between paragraphs in the editor
+    and in export, as printed books do. Headings, lists and quotes are left
+    alone. Needs a decision on how it round-trips: it is a display and
+    export style, never changes the Markdown.
 
 **Medium**
 

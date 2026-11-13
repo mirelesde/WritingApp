@@ -1147,6 +1147,8 @@
                   {focusMode}
                   {typewriter}
                   {lineNumbers}
+                  focusScope={prefs?.focusScope}
+                  typewriterAt={prefs?.typewriterPosition}
                   autofocus={focusEditor && part.path === selection[0]}
                 />
               </div>
@@ -1459,7 +1461,7 @@
     min-height: 0;
   }
   .run {
-    padding: 48px 0 40vh;
+    padding: 48px 0 var(--run-end-space, 40vh);
   }
   /* Typewriter scrolling needs room above the first line to centre it. */
   .run.typewriter {
@@ -1467,7 +1469,7 @@
   }
   /* Focus mode: the parts of a run that do not have the cursor fade out too. */
   .run.focus-mode:focus-within .part:not(:focus-within) {
-    opacity: 0.3;
+    opacity: var(--dim-opacity, 0.3);
   }
   .part {
     transition: opacity 0.2s;
@@ -1475,7 +1477,7 @@
   .seam {
     /* Lines up with the text column of the editors above and below. */
     width: calc(100% - 128px);
-    max-width: calc(46rem - 128px);
+    max-width: calc(var(--editor-width, 46rem) - 128px);
     margin: 28px auto;
     border: none;
     border-top: 1px dashed var(--border);

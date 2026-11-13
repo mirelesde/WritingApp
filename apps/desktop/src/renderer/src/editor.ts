@@ -1,5 +1,11 @@
 import { Annotation, EditorState, type Extension } from '@codemirror/state'
-import { EditorView, drawSelection, keymap, type KeyBinding } from '@codemirror/view'
+import {
+  EditorView,
+  drawSelection,
+  highlightActiveLine,
+  keymap,
+  type KeyBinding
+} from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
@@ -8,6 +14,7 @@ import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
 import { bracketPairs } from './pairs'
 import { linkBehaviour } from './links'
+import { blankLines } from './blankLines'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 import { currentHeading, nextHeading, previousHeading } from './headingJump'
@@ -22,10 +29,11 @@ const theme = EditorView.theme({
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': {
     fontFamily: 'var(--editor-font)',
-    fontSize: 'var(--editor-size)', lineHeight: '1.85', overflow: 'visible' },
+    fontSize: 'var(--editor-size)', lineHeight: 'var(--editor-line-height, 1.85)', overflow: 'visible' },
   '.cm-content': {
     // A 46rem column with 64px of air each side leaves about 38rem of text.
-    maxWidth: '46rem',
+    maxWidth: 'var(--editor-width, 46rem)',
+    textAlign: 'var(--text-align, left)',
     margin: '0 auto',
     padding: '0 64px',
     caretColor: 'var(--text)'
@@ -37,8 +45,12 @@ const theme = EditorView.theme({
     borderRadius: '5px',
     padding: '0 3px'
   },
-  '.cm-line.cm-dim': { opacity: '0.3' },
-  '.cm-cursor': { borderLeftColor: 'var(--text)' },
+  '.cm-line.cm-dim': { opacity: 'var(--dim-opacity, 0.3)' },
+  '.cm-dim-text': { opacity: 'var(--dim-opacity, 0.3)', transition: 'opacity 0.2s' },
+  // The blank line between paragraphs: its height is the paragraph spacing setting.
+  '.cm-line.cm-blank': { lineHeight: 'calc(var(--editor-line-height, 1.85) * var(--blank-line-scale, 1))' },
+  '.cm-activeLine': { backgroundColor: 'var(--active-line, transparent)' },
+  '.cm-cursor': { borderLeftColor: 'var(--text)', borderLeftWidth: 'var(--caret-width, 2px)' },
   '.cm-gutters': {
     backgroundColor: 'transparent',
     color: 'var(--faint)',
@@ -153,6 +165,8 @@ export function editorExtensions({
   return [
     history(),
     drawSelection(),
+    highlightActiveLine(),
+    blankLines,
     EditorView.lineWrapping,
     // GitHub-flavoured base: strikethrough, task lists, tables.
     // The markdown keymap (included) continues lists on Enter and

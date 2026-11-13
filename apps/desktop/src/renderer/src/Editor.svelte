@@ -26,6 +26,10 @@
     focusMode?: boolean
     /** Keep the cursor line in the middle of the window. */
     typewriter?: boolean
+    /** What focus mode keeps bright. */
+    focusScope?: 'line' | 'sentence' | 'paragraph'
+    /** Where typewriter scrolling holds the line. */
+    typewriterAt?: 'centre' | 'upper'
     /** Show line numbers in a gutter. */
     lineNumbers?: boolean
     /** Put the cursor in the editor when it opens. */
@@ -37,6 +41,8 @@
     onsection,
     focusMode = false,
     typewriter = false,
+    focusScope = 'paragraph',
+    typewriterAt = 'centre',
     lineNumbers = false,
     autofocus = false
   }: Props = $props()
@@ -102,7 +108,7 @@
 
   // Focus mode and typewriter scrolling can change while the editor is open.
   $effect(() => {
-    const options = { dim: focusMode, typewriter }
+    const options = { dim: focusMode, typewriter, scope: focusScope, position: typewriterAt }
     view?.dispatch({ effects: focusing.reconfigure(focusExtensions(options)) })
   })
 
@@ -118,7 +124,9 @@
         text,
         { onchange, onblur, onescape, onfocus, onedge, onselection, onsection },
         [
-          focusing.of(focusExtensions({ dim: focusMode, typewriter })),
+          focusing.of(
+            focusExtensions({ dim: focusMode, typewriter, scope: focusScope, position: typewriterAt })
+          ),
           gutter.of(lineNumbers ? lineNumbersExtension() : [])
         ]
       )

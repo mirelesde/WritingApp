@@ -1,6 +1,9 @@
 <script lang="ts">
   import {
+    CHOICES,
     FONTS,
+    MAX_LINE_SPACING,
+    MIN_LINE_SPACING,
     MAX_FONT_SIZE,
     MIN_FONT_SIZE,
     THEMES,
@@ -14,6 +17,20 @@
   }
 
   let { view, onchange, onclose }: Props = $props()
+
+  type Choice = keyof typeof CHOICES
+
+  /** Display names for the named choices. */
+  const names: Record<Choice, Record<string, string>> = {
+    columnWidth: { narrow: 'Narrow', medium: 'Medium', wide: 'Wide', full: 'Full' },
+    paragraphSpacing: { compact: 'Compact', normal: 'Normal', airy: 'Airy' },
+    currentLine: { off: 'Off', subtle: 'Subtle' },
+    caretWidth: { thin: 'Thin', normal: 'Normal', thick: 'Thick' },
+    focusScope: { line: 'Line', sentence: 'Sentence', paragraph: 'Paragraph' },
+    focusDim: { light: 'Light', medium: 'Medium', strong: 'Strong' },
+    typewriterPosition: { centre: 'Middle', upper: 'Upper third' },
+    textAlign: { left: 'Left', justify: 'Justified' }
+  }
 
   const themeNames: Record<(typeof THEMES)[number], string> = {
     system: 'Match system',
@@ -37,6 +54,21 @@
     node.focus()
   }
 </script>
+
+{#snippet choice(label: string, key: Choice)}
+  <div class="row">
+    <span id="pref-{key}">{label}</span>
+    <div class="segments" role="radiogroup" aria-labelledby="pref-{key}">
+      {#each CHOICES[key] as value (value)}
+        <button
+          role="radio"
+          aria-checked={view[key] === value}
+          onclick={() => onchange({ [key]: value })}>{names[key][value]}</button
+        >
+      {/each}
+    </div>
+  </div>
+{/snippet}
 
 <div class="backdrop" role="presentation" onmousedown={onclose}>
   <div
@@ -99,6 +131,31 @@
     </section>
 
     <section>
+      <h3>Page</h3>
+      {@render choice('Text column', 'columnWidth')}
+      <div class="row">
+        <span id="pref-spacing">Line spacing</span>
+        <div class="stepper" role="group" aria-labelledby="pref-spacing">
+          <button
+            aria-label="Tighter"
+            disabled={view.lineSpacing <= MIN_LINE_SPACING}
+            onclick={() => onchange({ lineSpacing: view.lineSpacing - 0.1 })}>−</button
+          >
+          <output>{view.lineSpacing.toFixed(2)}</output>
+          <button
+            aria-label="Looser"
+            disabled={view.lineSpacing >= MAX_LINE_SPACING}
+            onclick={() => onchange({ lineSpacing: view.lineSpacing + 0.1 })}>+</button
+          >
+        </div>
+      </div>
+      {@render choice('Space between paragraphs', 'paragraphSpacing')}
+      {@render choice('Alignment', 'textAlign')}
+      {@render choice('Cursor width', 'caretWidth')}
+      {@render choice('Highlight current line', 'currentLine')}
+    </section>
+
+    <section>
       <h3>Writing</h3>
       <label class="row">
         <span>Focus mode<small>Dim everything but the paragraph being written</small></span>
@@ -109,6 +166,8 @@
           onchange={(e) => onchange({ focusMode: e.currentTarget.checked })}
         />
       </label>
+      {@render choice('Focus on', 'focusScope')}
+      {@render choice('Fade the rest', 'focusDim')}
       <label class="row">
         <span>Typewriter scrolling<small>Keep the line being written in the middle</small></span>
         <input
@@ -116,6 +175,16 @@
           class="switch"
           checked={view.typewriter}
           onchange={(e) => onchange({ typewriter: e.currentTarget.checked })}
+        />
+      </label>
+      {@render choice('Typewriter line sits', 'typewriterPosition')}
+      <label class="row">
+        <span>Scroll past the end<small>Leave room below the last line</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.scrollPastEnd}
+          onchange={(e) => onchange({ scrollPastEnd: e.currentTarget.checked })}
         />
       </label>
       <label class="row">
@@ -144,7 +213,7 @@
   }
   .dialog {
     width: min(520px, calc(100vw - 32px));
-    max-height: 80vh;
+    max-height: 84vh;
     overflow-y: auto;
     background: var(--bg);
     border: 1px solid var(--border);

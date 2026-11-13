@@ -32,12 +32,16 @@ export type { SearchHit } from './search'
 export { countWords, groupWordCount, textStats, WORDS_PER_MINUTE } from './stats'
 export type { TextStats } from './stats'
 export {
+  CHOICES,
   clampFontSize,
+  clampLineSpacing,
   DEFAULT_VIEW,
   FONT_STACKS,
   FONTS,
   MAX_FONT_SIZE,
+  MAX_LINE_SPACING,
   MIN_FONT_SIZE,
+  MIN_LINE_SPACING,
   parseViewSettings,
   resolveView,
   THEMES,

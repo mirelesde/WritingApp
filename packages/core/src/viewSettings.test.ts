@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampFontSize, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
+import { clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
 
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
@@ -40,5 +40,45 @@ describe('resolveView', () => {
   it('fills in the defaults', () => {
     expect(resolveView()).toEqual(DEFAULT_VIEW)
     expect(resolveView({ theme: 'light' })).toEqual({ ...DEFAULT_VIEW, theme: 'light' })
+  })
+})
+
+describe('writing comfort settings', () => {
+  it('keeps valid choices and drops unknown ones', () => {
+    expect(
+      parseViewSettings({
+        columnWidth: 'wide',
+        paragraphSpacing: 'airy',
+        currentLine: 'subtle',
+        caretWidth: 'thick',
+        focusScope: 'sentence',
+        focusDim: 'strong',
+        typewriterPosition: 'upper',
+        textAlign: 'justify',
+        scrollPastEnd: false,
+        lineSpacing: 2
+      })
+    ).toEqual({
+      columnWidth: 'wide',
+      paragraphSpacing: 'airy',
+      currentLine: 'subtle',
+      caretWidth: 'thick',
+      focusScope: 'sentence',
+      focusDim: 'strong',
+      typewriterPosition: 'upper',
+      textAlign: 'justify',
+      scrollPastEnd: false,
+      lineSpacing: 2
+    })
+    expect(
+      parseViewSettings({ columnWidth: 'huge', focusScope: 3, textAlign: 'right', scrollPastEnd: 'no' })
+    ).toEqual({})
+  })
+
+  it('clamps and rounds the line spacing to steps of 0.05', () => {
+    expect(clampLineSpacing(0.5)).toBe(1.3)
+    expect(clampLineSpacing(9)).toBe(2.4)
+    expect(clampLineSpacing(1.87)).toBe(1.85)
+    expect(parseViewSettings({ lineSpacing: Infinity })).toEqual({})
   })
 })
