@@ -15,6 +15,8 @@ const api: Api = {
   glue: (paths) => ipcRenderer.invoke('op:glue', paths),
   unglue: (paths) => ipcRenderer.invoke('op:unglue', paths),
   undo: () => ipcRenderer.invoke('op:undo'),
+  previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
+  saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

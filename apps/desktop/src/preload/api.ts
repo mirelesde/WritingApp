@@ -23,11 +23,19 @@ export type MenuCommand =
   | 'new-group'
   | 'new-project'
   | 'move-to'
+  | 'export-html'
   | 'split'
   | 'merge'
   | 'glue'
   | 'unglue'
   | 'undo-sheet-change'
+
+/** A preview of an HTML export. */
+export interface ExportPreview {
+  title: string
+  html: string
+  sheets: number
+}
 
 /** What the main process offers the UI as `window.api`. */
 export interface Api {
@@ -57,6 +65,10 @@ export interface Api {
   unglue(paths: string[]): Promise<OpResult>
   /** Reverses the latest split, merge, glue or unglue. Rejects if there is none. */
   undo(): Promise<OpResult>
+  /** Builds the HTML export of the given sheets and groups, without saving it. */
+  previewExport(paths: string[]): Promise<ExportPreview>
+  /** Asks where to save, then writes the export. Null if the dialog was cancelled. */
+  saveExport(paths: string[]): Promise<string | null>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when File > Open Library loads a library. Returns an unsubscribe function. */

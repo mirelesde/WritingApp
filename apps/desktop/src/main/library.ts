@@ -5,6 +5,7 @@ import {
   applyUndo,
   createGroup,
   createSheet,
+  exportHtml,
   glueSheets,
   loadLibrary,
   mergeSheets,
@@ -17,6 +18,7 @@ import {
   type UndoAction
 } from '@writingapp/core'
 import type { LibraryInfo, OpResult } from '../preload/api'
+import type { ExportPreview } from '../preload/api'
 import { createNodeFileSystem } from './nodeFileSystem'
 import { isInside, isSheetInside, toPosix } from './paths'
 import { createSettingsStore } from './settings'
@@ -129,6 +131,31 @@ export function registerLibraryIpc(): void {
     if (!(await fs.exists(path))) throw new Error('The sheet no longer exists')
     await fs.writeText(path, text)
   })
+  async function buildExport(paths: unknown): Promise<ExportPreview> {
+    if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
+    const chosen = paths.map((p) => inside(p, true))
+    const tree = await loadLibrary(fs, currentRoot)
+    return exportHtml(fs, tree, chosen)
+  }
+
+  ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))
+
+  ipcMain.handle('export:save', async (event, paths: unknown) => {
+    const built = await buildExport(paths)
+    const options: Electron.SaveDialogOptions = {
+      title: 'Export as HTML',
+      defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.html`,
+      filters: [{ name: 'HTML', extensions: ['html'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window
+      ? await dialog.showSaveDialog(window, options)
+      : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) return null
+    await fs.writeText(toPosix(result.filePath), built.html)
+    return result.filePath
+  })
+
   ipcMain.handle('op:createSheet', (_event, group: unknown, index: unknown) =>
     change(async () => {
       const parent = inside(group, true)

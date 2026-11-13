@@ -6,6 +6,7 @@
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
+  import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
     moveSlot,
@@ -329,6 +330,41 @@
     expanded[path] = !expanded[path]
   }
 
+  // --- Export ----------------------------------------------------------------
+
+  let exportPreview = $state<{ title: string; html: string; sheets: number } | null>(null)
+  let exportPaths: string[] = [] // plain, so it can cross the bridge
+  let exportSaving = $state(false)
+
+  /** Previews the HTML export of the selected sheets, or of the group when the tree has focus. */
+  async function openExport(): Promise<void> {
+    if (!library) return
+    const inTree = treeEl?.contains(document.activeElement) ?? false
+    exportPaths = !inTree && selection.length > 0 ? [...selection] : [selectedGroup]
+    try {
+      exportPreview = await window.api.previewExport(exportPaths)
+      notice = ''
+    } catch (e) {
+      notice = errorMessage(e)
+    }
+  }
+
+  async function saveExport(): Promise<void> {
+    exportSaving = true
+    try {
+      const saved = await window.api.saveExport(exportPaths)
+      if (saved) {
+        exportPreview = null
+        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
+      }
+    } catch (e) {
+      notice = errorMessage(e)
+      exportPreview = null
+    } finally {
+      exportSaving = false
+    }
+  }
+
   // --- Move to… ------------------------------------------------------------
 
   /** Opens the group picker for the selected group (tree focused) or sheets. */
@@ -631,6 +667,7 @@
       if (!library) return
       if (command === 'new-sheet') void newSheet()
       else if (command === 'move-to') openMoveTo()
+      else if (command === 'export-html') void openExport()
       else if (command === 'split') void splitAtCursor()
       else if (command === 'merge') void mergeSelected()
       else if (command === 'glue') void glueSelected(true)
@@ -778,6 +815,17 @@
       {/if}
     </section>
   </div>
+{/if}
+
+{#if exportPreview}
+  <ExportPreview
+    title={exportPreview.title}
+    html={exportPreview.html}
+    sheets={exportPreview.sheets}
+    saving={exportSaving}
+    onsave={saveExport}
+    onclose={() => (exportPreview = null)}
+  />
 {/if}
 
 {#if picker}

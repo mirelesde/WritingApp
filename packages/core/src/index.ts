@@ -22,3 +22,5 @@ export {
 export type { SheetChange } from './operations'
 export { applyUndo } from './undo'
 export type { UndoAction } from './undo'
+export { escapeHtml, exportHtml, exportRuns, htmlDocument, markdownToHtml } from './export'
+export type { HtmlExport } from './export'

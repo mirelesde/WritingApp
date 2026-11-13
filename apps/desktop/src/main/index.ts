@@ -81,6 +81,12 @@ function buildMenu(): Menu {
           click: () => sendCommand('move-to')
         },
         { type: 'separator' },
+        {
+          label: 'Export as HTML…',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => sendCommand('export-html')
+        },
+        { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
