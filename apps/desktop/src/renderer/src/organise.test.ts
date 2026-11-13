@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { errorMessage, remapPath } from './organise'
+import type { GroupNode } from '@writingapp/core'
+import { errorMessage, moveSlot, pathRange, remapPath, visibleGroups } from './organise'
 
 describe('remapPath', () => {
   const moved: [string, string][] = [['/Lib/Old', '/Lib/New']]
@@ -35,5 +36,94 @@ describe('errorMessage', () => {
   it('passes other errors through', () => {
     expect(errorMessage(new Error('plain'))).toBe('plain')
     expect(errorMessage('text')).toBe('text')
+  })
+})
+
+const group = (path: string, ...children: GroupNode['children']): GroupNode => ({
+  kind: 'group',
+  name: path.split('/').pop()!,
+  path,
+  children
+})
+const sheet = (path: string): GroupNode['children'][number] => ({
+  kind: 'sheet',
+  name: path.split('/').pop()!,
+  path,
+  title: '',
+  preview: '',
+  glued: false
+})
+
+describe('visibleGroups', () => {
+  const tree = group(
+    '/L',
+    sheet('/L/a.md'),
+    group('/L/A', group('/L/A/x'), group('/L/A/y')),
+    group('/L/B')
+  )
+
+  it('lists only the root when nothing is expanded', () => {
+    expect(visibleGroups(tree, {}).map((v) => v.group.path)).toEqual(['/L'])
+  })
+
+  it('lists children of expanded groups in order, with their parents', () => {
+    const list = visibleGroups(tree, { '/L': true, '/L/A': true })
+    expect(list.map((v) => v.group.path)).toEqual(['/L', '/L/A', '/L/A/x', '/L/A/y', '/L/B'])
+    expect(list[0]!.parent).toBeNull()
+    expect(list[2]!.parent!.path).toBe('/L/A')
+  })
+
+  it('skips the children of a collapsed group', () => {
+    const list = visibleGroups(tree, { '/L': true })
+    expect(list.map((v) => v.group.path)).toEqual(['/L', '/L/A', '/L/B'])
+  })
+})
+
+describe('moveSlot', () => {
+  // The parent's order mixes sheets and groups; only sheets are shown.
+  const children = ['a', 'G', 'b', 'c', 'H', 'd']
+  const shown = ['a', 'b', 'c', 'd']
+
+  it('moves up to just before the previous shown sibling', () => {
+    expect(moveSlot(children, shown, ['c'], -1)).toBe(2) // rest: a G b H d; before b
+  })
+
+  it('moves down to just after the next shown sibling', () => {
+    expect(moveSlot(children, shown, ['b'], 1)).toBe(3) // rest: a G c H d; after c
+  })
+
+  it('steps over hidden siblings in a single move', () => {
+    expect(moveSlot(children, shown, ['d'], -1)).toBe(3) // rest: a G b H; before c, hopping over nothing hidden
+  })
+
+  it('moves a contiguous block as one', () => {
+    expect(moveSlot(children, shown, ['b', 'c'], -1)).toBe(0) // before a
+    expect(moveSlot(children, shown, ['b', 'c'], 1)).toBe(4) // rest: a G H d; after d
+  })
+
+  it('gathers a scattered selection when moving', () => {
+    expect(moveSlot(children, shown, ['a', 'c'], 1)).toBe(4) // rest: G b H d; after d, the next shown sibling
+  })
+
+  it('reports nothing to do at either end', () => {
+    expect(moveSlot(children, shown, ['a'], -1)).toBeUndefined()
+    expect(moveSlot(children, shown, ['d'], 1)).toBeUndefined()
+    expect(moveSlot(children, shown, ['a', 'd'], 1)).toBeUndefined()
+  })
+
+  it('does nothing for an empty selection', () => {
+    expect(moveSlot(children, shown, [], 1)).toBeUndefined()
+  })
+})
+
+describe('pathRange', () => {
+  const list = ['a', 'b', 'c', 'd']
+  it('includes both ends in list order', () => {
+    expect(pathRange(list, 'b', 'd')).toEqual(['b', 'c', 'd'])
+    expect(pathRange(list, 'd', 'b')).toEqual(['b', 'c', 'd'])
+    expect(pathRange(list, 'c', 'c')).toEqual(['c'])
+  })
+  it('is empty for unknown paths', () => {
+    expect(pathRange(list, 'x', 'b')).toEqual([])
   })
 })

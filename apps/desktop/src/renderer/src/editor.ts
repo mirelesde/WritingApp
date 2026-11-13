@@ -47,10 +47,11 @@ const markdownStyle = HighlightStyle.define([
 interface Hooks {
   onchange: (text: string) => void
   onblur: () => void
+  onescape?: () => void
 }
 
 /** Everything the sheet editor is made of. */
-export function editorExtensions({ onchange, onblur }: Hooks): Extension[] {
+export function editorExtensions({ onchange, onblur, onescape }: Hooks): Extension[] {
   return [
     history(),
     drawSelection(),
@@ -61,7 +62,12 @@ export function editorExtensions({ onchange, onblur }: Hooks): Extension[] {
     markdown({ base: markdownLanguage }),
     // Four spaces nests correctly under both "- " and "1. " markers.
     indentUnit.of('    '),
-    keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+    keymap.of([
+      { key: 'Escape', run: () => (onescape ? (onescape(), true) : false) },
+      indentWithTab,
+      ...defaultKeymap,
+      ...historyKeymap
+    ]),
     theme,
     syntaxHighlighting(markdownStyle),
     EditorView.contentAttributes.of({ spellcheck: 'true', autocapitalize: 'sentences' }),

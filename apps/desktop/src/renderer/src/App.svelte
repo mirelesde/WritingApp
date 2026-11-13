@@ -1,17 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import { sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
   import type { LibraryInfo, OpResult } from '../../preload/api'
   import { createAutosaver, type SaveStatus } from './autosave'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
-  import { errorMessage, remapPath } from './organise'
+  import { errorMessage, moveSlot, pathRange, remapPath, visibleGroups } from './organise'
 
   let library = $state<LibraryInfo | null>(null)
   let loading = $state(true)
   let selectedGroup = $state('')
-  let selectedSheet = $state<string | null>(null)
   let expanded = $state<Record<string, boolean>>({})
+  // Sheet selection: any number of sheets; `cursor` is the one that arrow
+  // keys move from, `anchor` the fixed end of a Shift-extended range.
+  let selection = $state<string[]>([])
+  let cursor = $state<string | null>(null)
+  let anchor = $state<string | null>(null)
   // The sheet being edited. Set only once its text has loaded.
   let open = $state<{ path: string; text: string } | null>(null)
   let error = $state('')
@@ -20,6 +24,9 @@
   let renaming = $state<string | null>(null)
   let notice = $state('')
   let focusEditor = $state(false)
+  let treeEl = $state<HTMLElement>()
+  let sheetsEl = $state<HTMLElement>()
+  let editor = $state<Editor>()
 
   const autosaver = createAutosaver({
     save: (path, content) => window.api.writeSheet(path, content),
@@ -28,6 +35,7 @@
 
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
   const sheets = $derived((group?.children.filter((c) => c.kind === 'sheet') ?? []) as SheetNode[])
+  const sheetPaths = $derived(sheets.map((s) => s.path))
 
   function findGroup(node: GroupNode, path: string): GroupNode | undefined {
     if (node.path === path) return node
@@ -43,7 +51,13 @@
     library = info
     expanded = { [info.tree.path]: true }
     selectedGroup = info.tree.path
-    selectedSheet = null
+    clearSheets()
+  }
+
+  function clearSheets(): void {
+    selection = []
+    cursor = null
+    anchor = null
     open = null
     error = ''
     readId++
@@ -69,12 +83,33 @@
     }
   }
 
-  async function selectSheet(path: string, focus = false): Promise<void> {
-    if (path === selectedSheet) return
+  /** Selects sheets. The editor shows the sheet when exactly one is selected. */
+  async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
     await autosaver.flush()
-    selectedSheet = path
-    focusEditor = focus
-    await loadSheet(path)
+    selection = paths
+    cursor = to
+    if (paths.length === 1) {
+      if (open?.path !== paths[0]) {
+        focusEditor = focus
+        await loadSheet(paths[0]!)
+      }
+    } else {
+      open = null
+      error = ''
+      readId++
+    }
+  }
+
+  function clickSheet(path: string, e: MouseEvent): Promise<void> {
+    if (e.shiftKey && anchor) return setSelection(pathRange(sheetPaths, anchor, path), path)
+    anchor = path
+    if (e.metaKey || e.ctrlKey) {
+      const next = selection.includes(path)
+        ? selection.filter((p) => p !== path)
+        : [...selection, path]
+      return setSelection(next, path)
+    }
+    return setSelection([path], path)
   }
 
   /** Runs a structural change, then brings the UI in line with the result. */
@@ -83,16 +118,15 @@
     try {
       const result = await op()
       const wasOpen = open?.path
+      const remap = (path: string): string => remapPath(path, result.moved)
       library = result.library
-      selectedGroup = remapPath(selectedGroup, result.moved)
+      selectedGroup = remap(selectedGroup)
       if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = result.library.tree.path
-      if (selectedSheet) selectedSheet = remapPath(selectedSheet, result.moved)
-      expanded = Object.fromEntries(
-        Object.entries(expanded).map(([path, isOpen]) => [remapPath(path, result.moved), isOpen])
-      )
-      if (wasOpen && remapPath(wasOpen, result.moved) !== wasOpen) {
-        await loadSheet(remapPath(wasOpen, result.moved))
-      }
+      selection = selection.map(remap)
+      cursor = cursor && remap(cursor)
+      anchor = anchor && remap(anchor)
+      expanded = Object.fromEntries(Object.entries(expanded).map(([p, o]) => [remap(p), o]))
+      if (wasOpen && remap(wasOpen) !== wasOpen) await loadSheet(remap(wasOpen))
       notice = ''
       return result
     } catch (e) {
@@ -104,11 +138,14 @@
   async function newSheet(): Promise<void> {
     const parent = group
     if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === selectedSheet)
+    const at = parent.children.findIndex((c) => c.path === cursor)
     const result = await runOp(() =>
       window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
     )
-    if (result?.created) await selectSheet(result.created, true)
+    if (result?.created) {
+      anchor = result.created
+      await setSelection([result.created], result.created, true)
+    }
   }
 
   async function newGroup(inRoot: boolean): Promise<void> {
@@ -120,15 +157,24 @@
     if (!result?.created) return
     expanded[parent] = true
     selectedGroup = result.created
-    selectedSheet = null
-    open = null
+    clearSheets()
     renaming = result.created
+  }
+
+  async function startRename(path: string): Promise<void> {
+    if (library && path !== library.tree.path) renaming = path
+  }
+
+  async function finishRename(): Promise<void> {
+    renaming = null
+    await tick()
+    treeEl?.focus()
   }
 
   async function commitRename(path: string, name: string): Promise<void> {
     if (renaming !== path) return
-    renaming = null
     const trimmed = name.trim()
+    await finishRename()
     if (trimmed === '' || trimmed === path.slice(path.lastIndexOf('/') + 1)) return
     await runOp(() => window.api.renameGroup(path, trimmed))
   }
@@ -146,14 +192,143 @@
   async function selectGroup(path: string): Promise<void> {
     await autosaver.flush()
     selectedGroup = path
-    selectedSheet = null
-    open = null
-    error = ''
-    readId++
+    clearSheets()
   }
 
   function toggle(path: string): void {
     expanded[path] = !expanded[path]
+  }
+
+  // --- Keyboard -----------------------------------------------------------
+
+  function treeKeydown(e: KeyboardEvent): void {
+    if (!library || renaming) return
+    const mod = e.metaKey || e.ctrlKey
+    const flat = visibleGroups(library.tree, expanded)
+    const i = flat.findIndex((v) => v.group.path === selectedGroup)
+    const current = flat[i]
+    if (!current) return
+    const go = (v: { group: GroupNode } | undefined): void => {
+      if (v) void selectGroup(v.group.path)
+    }
+
+    if (mod && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      const parent = current.parent
+      if (!parent) return
+      const delta = e.key === 'ArrowUp' ? -1 : 1
+      const slot = moveSlot(
+        parent.children.map((c) => c.path),
+        parent.children.filter((c) => c.kind === 'group').map((c) => c.path),
+        [current.group.path],
+        delta
+      )
+      if (slot !== undefined)
+        void runOp(() => window.api.move([current.group.path], parent.path, slot))
+      return
+    }
+    if (mod || e.altKey) return
+
+    const subgroups = current.group.children.some((c) => c.kind === 'group')
+    switch (e.key) {
+      case 'ArrowDown':
+        go(flat[i + 1])
+        break
+      case 'ArrowUp':
+        go(flat[i - 1])
+        break
+      case 'ArrowRight':
+        if (subgroups && !expanded[current.group.path]) expanded[current.group.path] = true
+        else go(flat[i + 1]?.parent === current.group ? flat[i + 1] : undefined)
+        break
+      case 'ArrowLeft':
+        if (subgroups && expanded[current.group.path]) expanded[current.group.path] = false
+        else go(current.parent ? { group: current.parent } : undefined)
+        break
+      case 'Enter':
+      case 'F2':
+        void startRename(current.group.path)
+        break
+      default:
+        return
+    }
+    e.preventDefault()
+  }
+
+  function sheetsKeydown(e: KeyboardEvent): void {
+    const mod = e.metaKey || e.ctrlKey
+    if (mod && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      const parent = group
+      if (!parent || selection.length === 0) return
+      const chosen = [...selection] // a plain array: state proxies cannot cross the bridge
+      const slot = moveSlot(
+        parent.children.map((c) => c.path),
+        sheetPaths,
+        chosen,
+        e.key === 'ArrowUp' ? -1 : 1
+      )
+      if (slot !== undefined) void runOp(() => window.api.move(chosen, parent.path, slot))
+      return
+    }
+    if (mod && e.key.toLowerCase() === 'a') {
+      e.preventDefault()
+      void setSelection([...sheetPaths], cursor ?? sheetPaths[0] ?? null)
+      return
+    }
+    if (mod || e.altKey) return
+
+    const at = cursor ? sheetPaths.indexOf(cursor) : -1
+    let target: number
+    switch (e.key) {
+      case 'ArrowDown':
+        target = Math.min(at + 1, sheetPaths.length - 1)
+        break
+      case 'ArrowUp':
+        target = at < 0 ? 0 : Math.max(at - 1, 0)
+        break
+      case 'Home':
+        target = 0
+        break
+      case 'End':
+        target = sheetPaths.length - 1
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (open) editor?.focus()
+        return
+      default:
+        return
+    }
+    e.preventDefault()
+    const path = sheetPaths[target]
+    if (path === undefined) return
+    if (e.shiftKey && anchor) {
+      void setSelection(pathRange(sheetPaths, anchor, path), path)
+    } else {
+      anchor = path
+      void setSelection([path], path)
+    }
+  }
+
+  function windowKeydown(e: KeyboardEvent): void {
+    // Cmd/Ctrl+1, 2, 3 jump between the panes.
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || !library) return
+    if (e.key === '1') treeEl?.focus()
+    else if (e.key === '2') sheetsEl?.focus()
+    else if (e.key === '3' && open) editor?.focus()
+    else return
+    e.preventDefault()
+  }
+
+  /** Clicking a row selects it but keeps focus on the pane, so keys keep working. */
+  function keepFocus(pane: HTMLElement | undefined) {
+    return (e: MouseEvent): void => {
+      if (!(e.target as HTMLElement).closest('input')) {
+        e.preventDefault()
+        pane?.focus()
+      }
+    }
   }
 
   onMount(() => {
@@ -180,6 +355,8 @@
   })
 </script>
 
+<svelte:window onkeydown={windowKeydown} />
+
 {#if loading}
   <main class="empty"></main>
 {:else if !library}
@@ -193,12 +370,20 @@
   </main>
 {:else}
   <div class="layout">
-    <nav class="pane library" aria-label="Library">
+    <div
+      class="pane library"
+      role="tree"
+      aria-label="Library"
+      tabindex="0"
+      bind:this={treeEl}
+      onkeydown={treeKeydown}
+      onmousedown={keepFocus(treeEl)}
+    >
       <header>
         <span class="title" title={library.path}>{library.tree.name}</span>
-        <button class="link" onclick={chooseLibrary}>Open…</button>
+        <button class="link" tabindex="-1" onclick={chooseLibrary}>Open…</button>
       </header>
-      <ul role="tree">
+      <ul role="none">
         <GroupTree
           group={library.tree}
           selected={selectedGroup}
@@ -206,17 +391,26 @@
           {renaming}
           onselect={selectGroup}
           ontoggle={toggle}
-          onstartrename={(path) => (renaming = path)}
+          onstartrename={startRename}
           oncommitrename={commitRename}
-          oncancelrename={() => (renaming = null)}
+          oncancelrename={finishRename}
         />
       </ul>
       {#if notice}
         <p class="notice" role="alert">{notice}</p>
       {/if}
-    </nav>
+    </div>
 
-    <section class="pane sheets" aria-label="Sheets">
+    <div
+      class="pane sheets"
+      role="listbox"
+      aria-multiselectable="true"
+      aria-label="Sheets"
+      tabindex="0"
+      bind:this={sheetsEl}
+      onkeydown={sheetsKeydown}
+      onmousedown={keepFocus(sheetsEl)}
+    >
       <header><span class="title">{group?.name ?? ''}</span></header>
       {#if sheets.length === 0}
         <p class="hint">No sheets in this group.</p>
@@ -226,8 +420,9 @@
             <li>
               <button
                 class="sheet"
-                class:selected={selectedSheet === sheet.path}
-                onclick={() => selectSheet(sheet.path)}
+                class:selected={selection.includes(sheet.path)}
+                tabindex="-1"
+                onclick={(e) => clickSheet(sheet.path, e)}
               >
                 <span class="sheet-title">{sheet.title}</span>
                 <span class="sheet-preview">{sheet.preview}</span>
@@ -236,7 +431,7 @@
           {/each}
         </ul>
       {/if}
-    </section>
+    </div>
 
     <section class="editor" aria-label="Editor">
       {#if error}
@@ -245,15 +440,19 @@
         {#key open.path}
           {@const path = open.path}
           <Editor
+            bind:this={editor}
             text={open.text}
             onchange={(content) => edited(path, content)}
             onblur={() => void autosaver.flush()}
+            onescape={() => sheetsEl?.focus()}
             autofocus={focusEditor}
           />
         {/key}
         <span class="status" class:problem={saveStatus === 'error'} aria-live="polite">
           {saveStatus === 'error' ? 'Could not save — retrying' : ''}
         </span>
+      {:else if selection.length > 1}
+        <p class="hint">{selection.length} sheets selected.</p>
       {:else}
         <p class="hint">Select a sheet to read it.</p>
       {/if}
@@ -294,6 +493,17 @@
     height: 100%;
     display: grid;
     grid-template-columns: 240px 300px 1fr;
+  }
+  .pane:focus {
+    outline: none;
+  }
+  .pane:focus .sheet.selected {
+    background: var(--accent);
+    color: #fff;
+  }
+  .pane:focus .sheet.selected .sheet-preview {
+    color: inherit;
+    opacity: 0.8;
   }
   .pane {
     background: var(--pane);

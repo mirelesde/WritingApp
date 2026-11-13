@@ -8,20 +8,27 @@
     text: string
     onchange: (text: string) => void
     onblur: () => void
+    /** Escape was pressed: hand focus back to the sheet list. */
+    onescape?: () => void
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
 
-  let { text, onchange, onblur, autofocus = false }: Props = $props()
+  let { text, onchange, onblur, onescape, autofocus = false }: Props = $props()
+  let view: EditorView | undefined
+
+  export function focus(): void {
+    view?.focus()
+  }
   let host: HTMLDivElement
 
   onMount(() => {
-    const view = new EditorView({
+    view = new EditorView({
       parent: host,
-      state: createEditorState(text, { onchange, onblur })
+      state: createEditorState(text, { onchange, onblur, onescape })
     })
     if (autofocus) view.focus()
-    return () => view.destroy()
+    return () => view?.destroy()
   })
 </script>
 

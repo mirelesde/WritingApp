@@ -43,6 +43,7 @@
     {#if subgroups.length > 0}
       <button
         class="chevron"
+        tabindex="-1"
         aria-label={isOpen ? `Collapse ${group.name}` : `Expand ${group.name}`}
         aria-expanded={isOpen}
         onclick={() => ontoggle(group.path)}>{isOpen ? '▾' : '▸'}</button
@@ -66,6 +67,7 @@
     {:else}
       <button
         class="name"
+        tabindex="-1"
         onclick={() => onselect(group.path)}
         ondblclick={() => depth > 0 && onstartrename(group.path)}>{group.name}</button
       >
@@ -103,6 +105,10 @@
   }
   .row.selected {
     background: var(--selected);
+  }
+  :global(.pane:focus) .row.selected {
+    background: var(--accent);
+    color: #fff;
   }
   button {
     background: none;
