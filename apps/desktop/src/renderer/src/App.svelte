@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import type { GroupNode, SheetNode } from '@writingapp/core'
+  import { sheetPreview, sheetTitle, type GroupNode, type SheetNode } from '@writingapp/core'
   import type { LibraryInfo } from '../../preload/api'
+  import { createAutosaver, type SaveStatus } from './autosave'
+  import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
 
   let library = $state<LibraryInfo | null>(null)
@@ -9,9 +11,16 @@
   let selectedGroup = $state('')
   let selectedSheet = $state<string | null>(null)
   let expanded = $state<Record<string, boolean>>({})
-  let text = $state('')
+  // The sheet being edited. Set only once its text has loaded.
+  let open = $state<{ path: string; text: string } | null>(null)
   let error = $state('')
   let readId = 0
+  let saveStatus = $state<SaveStatus>('saved')
+
+  const autosaver = createAutosaver({
+    save: (path, content) => window.api.writeSheet(path, content),
+    onStatus: (status) => (saveStatus = status)
+  })
 
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
   const sheets = $derived((group?.children.filter((c) => c.kind === 'sheet') ?? []) as SheetNode[])
@@ -31,35 +40,49 @@
     expanded = { [info.tree.path]: true }
     selectedGroup = info.tree.path
     selectedSheet = null
-    text = ''
+    open = null
     error = ''
     readId++
   }
 
   async function chooseLibrary(): Promise<void> {
+    await autosaver.flush()
     const info = await window.api.chooseLibrary()
     if (info) showLibrary(info)
   }
 
   async function selectSheet(path: string): Promise<void> {
+    if (path === selectedSheet) return
+    await autosaver.flush()
     selectedSheet = path
     const id = ++readId
     try {
       const content = await window.api.readSheet(path)
       if (id !== readId) return
-      text = content
+      open = { path, text: content }
       error = ''
     } catch {
       if (id !== readId) return
-      text = ''
+      open = null
       error = 'This sheet could not be read.'
     }
   }
 
-  function selectGroup(path: string): void {
+  function edited(path: string, content: string): void {
+    autosaver.change(path, content)
+    // Keep the sheet list's title and preview in step with what is typed.
+    const sheet = sheets.find((s) => s.path === path)
+    if (sheet) {
+      sheet.title = sheetTitle(content)
+      sheet.preview = sheetPreview(content)
+    }
+  }
+
+  async function selectGroup(path: string): Promise<void> {
+    await autosaver.flush()
     selectedGroup = path
     selectedSheet = null
-    text = ''
+    open = null
     error = ''
     readId++
   }
@@ -75,7 +98,14 @@
         if (info) showLibrary(info)
       })
       .finally(() => (loading = false))
-    return window.api.onLibraryOpened(showLibrary)
+    const unsubscribe = window.api.onLibraryOpened(showLibrary)
+    // Last chance to save when the window closes.
+    const saveOnClose = (): void => void autosaver.flush()
+    window.addEventListener('beforeunload', saveOnClose)
+    return () => {
+      unsubscribe()
+      window.removeEventListener('beforeunload', saveOnClose)
+    }
   })
 </script>
 
@@ -133,8 +163,18 @@
     <section class="editor" aria-label="Editor">
       {#if error}
         <p class="hint">{error}</p>
-      {:else if selectedSheet}
-        <textarea readonly spellcheck="false" value={text}></textarea>
+      {:else if open}
+        {#key open.path}
+          {@const path = open.path}
+          <Editor
+            text={open.text}
+            onchange={(content) => edited(path, content)}
+            onblur={() => void autosaver.flush()}
+          />
+        {/key}
+        <span class="status" class:problem={saveStatus === 'error'} aria-live="polite">
+          {saveStatus === 'error' ? 'Could not save — retrying' : ''}
+        </span>
       {:else}
         <p class="hint">Select a sheet to read it.</p>
       {/if}
@@ -257,16 +297,17 @@
     display: flex;
     flex-direction: column;
   }
-  textarea {
-    flex: 1;
-    resize: none;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 16px;
-    line-height: 1.6;
-    padding: 32px 48px;
+  .editor {
+    position: relative;
+  }
+  .status {
+    position: absolute;
+    right: 16px;
+    bottom: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .status.problem {
+    color: #c0392b;
   }
 </style>

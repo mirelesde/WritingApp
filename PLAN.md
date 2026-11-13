@@ -6,13 +6,14 @@ export. Cross-platform on desktop first, iPad and iPhone later.
 
 ## Status
 
-- **Done:** milestones 1 (scaffold), 2 (library core) and 3 (library UI).
-  Licensed AGPL-3.0.
-- **Next:** milestone 4 (editor).
+- **Done:** milestones 1 (scaffold), 2 (library core), 3 (library UI) and
+  4 (editor). Licensed AGPL-3.0.
+- **Next:** milestone 5 (organising).
 - The app opens a library folder, remembers it, and shows three panes:
-  groups, sheets (title + preview), and a read-only text view of the
-  selected sheet. File > Open Library (Cmd/Ctrl+O) switches library. Nothing
-  can be edited or saved yet.
+  groups, sheets (title + preview), and a CodeMirror Markdown editor for the
+  selected sheet. Edits autosave; File > Open Library (Cmd/Ctrl+O) switches
+  library. There is no way yet to create, move or delete anything from the
+  UI, and outside edits to an open sheet are not picked up (milestone 9).
 
 If you are picking this up in a new session, read "Working in this repo"
 below, then start at milestone 3.
@@ -231,13 +232,29 @@ Notes for this milestone:
 - The window now runs with `sandbox: true`; the preload imports only
   `electron`. Keep it that way (no other npm imports in the preload).
 
-### 4. Editor
+### 4. Editor — done
 - CodeMirror 6 with Markdown parsing.
 - Styled headings, emphasis, lists, links, code; markers dimmed, not hidden.
 - Autosave on pause and on blur. No save button.
 - Writing typography: readable column width, line height, light and dark.
 - List continuation on Enter, sensible Tab and Backspace in lists.
 - **Done when:** writing a full sheet in it feels unremarkable.
+
+Notes from building it:
+
+- `renderer/src/editor.ts` builds the CodeMirror extensions (theme,
+  Markdown styling, keymap); `Editor.svelte` mounts it. A new editor is
+  created per sheet, so undo history is per sheet and does not survive
+  switching.
+- `renderer/src/autosave.ts` is the debounced, serialised saver (800 ms
+  pause, flush on blur, on switching sheet or group, and on window close,
+  retry after a failure). The main process side is `sheet:write`, which
+  only overwrites existing `.md` files inside the open library.
+- Markers stay visible but use `--marker`. Tab indents four spaces, which
+  nests under both `- ` and `1. `. Pressing Enter on an empty second list
+  item first loosens the list; a further Enter ends it (CodeMirror's
+  behaviour, tested in `editor.test.ts`).
+- The sheet list's title and preview update as you type.
 
 ### 5. Organising
 - New sheet, new group, new project, from menu and keyboard.

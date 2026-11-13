@@ -60,4 +60,18 @@ export function registerLibraryIpc(): void {
     }
     return nodeFs.readFile(path, 'utf8')
   })
+
+  ipcMain.handle('sheet:write', async (_event, path: unknown, text: unknown) => {
+    if (
+      typeof path !== 'string' ||
+      typeof text !== 'string' ||
+      !currentRoot ||
+      !isSheetInside(currentRoot, path)
+    ) {
+      throw new Error('Not a sheet in the open library')
+    }
+    // Saving edits an existing sheet; creating sheets is a separate operation.
+    if (!(await fs.exists(path))) throw new Error('The sheet no longer exists')
+    await fs.writeText(path, text)
+  })
 }

@@ -14,6 +14,8 @@ export interface Api {
   chooseLibrary(): Promise<LibraryInfo | null>
   /** The text of a sheet in the open library. */
   readSheet(path: string): Promise<string>
+  /** Replaces the text of an existing sheet in the open library. */
+  writeSheet(path: string, text: string): Promise<void>
   /** Called when File > Open Library loads a library. Returns an unsubscribe function. */
   onLibraryOpened(callback: (library: LibraryInfo) => void): () => void
 }
