@@ -26,6 +26,7 @@ export type MenuCommand =
   | 'export-html'
   | 'search'
   | 'quick-open'
+  | 'preferences'
   | 'split'
   | 'merge'
   | 'glue'

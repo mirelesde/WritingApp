@@ -491,7 +491,7 @@ asked for directly.
    (View > Show Outline, Cmd/Ctrl+Alt+O, or the button at the right of the top bar. Clicking an entry moves the cursor there. Headings in code blocks and comments are skipped; the panel's state is remembered.)
    (View > Focus Mode (Cmd/Ctrl+Shift+L) dims all but the current paragraph, and other sheets of a glued run fade too; View > Typewriter Scrolling keeps the cursor line in the middle. Both are remembered.)
 
-37. **Preferences window.** A real settings window, opened with
+37. ~~**Preferences window.**~~ **Done.** A real settings window, opened with
     Cmd/Ctrl+, so settings stop being menu-only. Holds the existing theme,
     font and size, plus the writing comfort options (item 38), smart
     quotes (item 39) and hide markers (item 41) as they arrive.
@@ -523,6 +523,7 @@ asked for directly.
     - The same list as a Format submenu in the right-click menu (item 17).
     Core gets a pure function per block style (toggle line prefix) with
     tests; the editor applies them as a transaction.
+   An in-app dialog (Cmd/Ctrl+,) with theme, font, text size, focus mode and typewriter; later settings (items 38, 39, 41, 44) go in it.
 
 44. **Toggle line numbers (user).** A preference (item 37) that shows a
     line-number gutter in the editor. Off by default; remembered with the

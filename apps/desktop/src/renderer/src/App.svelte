@@ -11,6 +11,7 @@
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import ToolButton from './ToolButton.svelte'
+  import Preferences from './Preferences.svelte'
   import Outline, { type Entry } from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
@@ -187,7 +188,11 @@
     void window.api.setView({ sidebarCollapsed: !sidebarCollapsed })
   }
 
+  let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
+  let preferencesOpen = $state(false)
+
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
+    prefs = view
     applyView(view)
     sidebarCollapsed = view.sidebarCollapsed
     outlineOpen = view.outline
@@ -935,6 +940,7 @@
       else if (command === 'export-html') void openExport()
       else if (command === 'search') openSearch()
       else if (command === 'quick-open') openQuick()
+      else if (command === 'preferences') preferencesOpen = true
       else if (command === 'delete') void deleteSelected()
       else if (command === 'split') void splitAtCursor()
       else if (command === 'merge') void mergeSelected()
@@ -1159,6 +1165,14 @@
       {/if}
     </section>
   </div>
+{/if}
+
+{#if preferencesOpen && prefs}
+  <Preferences
+    view={prefs}
+    onchange={(patch) => void window.api.setView(patch)}
+    onclose={() => (preferencesOpen = false)}
+  />
 {/if}
 
 {#if searching}

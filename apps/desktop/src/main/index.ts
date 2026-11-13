@@ -67,7 +67,30 @@ function sendCommand(command: string): void {
 function buildMenu(): Menu {
   const isMac = process.platform === 'darwin'
   return Menu.buildFromTemplate([
-    ...(isMac ? [{ role: 'appMenu' as const }] : []),
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              {
+                label: 'Preferences…',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => sendCommand('preferences')
+              },
+              { type: 'separator' as const },
+              { role: 'services' as const },
+              { type: 'separator' as const },
+              { role: 'hide' as const },
+              { role: 'hideOthers' as const },
+              { role: 'unhide' as const },
+              { type: 'separator' as const },
+              { role: 'quit' as const }
+            ]
+          }
+        ]
+      : []),
     {
       label: 'File',
       submenu: [
@@ -144,6 +167,16 @@ function buildMenu(): Menu {
           click: () => sendCommand('export-html')
         },
         { type: 'separator' },
+        ...(isMac
+          ? []
+          : [
+              {
+                label: 'Preferences…',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => sendCommand('preferences')
+              },
+              { type: 'separator' as const }
+            ]),
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
