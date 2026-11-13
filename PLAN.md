@@ -552,7 +552,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 
 **Round 1: styling and layout**
 
-- L1. **Tonal panes.** Sidebar lightest, sheet list a step darker, editor
+- L1. ~~**Tonal panes.**~~ **Done.** Sidebar lightest, sheet list a step darker, editor
   darkest, no 1px pane borders; the selected row is a rounded accent pill.
 - L2. **Floating word-count pill** in the editor's top-right corner instead
   of the bottom status bar; hover or click shows characters, reading time

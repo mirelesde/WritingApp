@@ -1174,10 +1174,14 @@
     opacity: 0.8;
   }
   .pane {
-    background: var(--pane);
-    border-right: 1px solid var(--border);
     overflow-y: auto;
     min-width: 0;
+  }
+  .library {
+    background: var(--sidebar);
+  }
+  .sheets {
+    background: var(--list);
   }
   header {
     display: flex;
@@ -1187,7 +1191,7 @@
     padding: 14px 14px 8px;
     position: sticky;
     top: 0;
-    background: var(--pane);
+    background: inherit;
   }
   .title {
     font-weight: 600;
@@ -1219,7 +1223,7 @@
     text-align: left;
     background: none;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 8px 10px;
     cursor: default;
   }

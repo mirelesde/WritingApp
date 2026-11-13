@@ -120,8 +120,8 @@
   .row {
     display: flex;
     align-items: center;
-    border-radius: 6px;
-    margin: 1px 6px;
+    border-radius: 8px;
+    margin: 1px 8px;
   }
   .row:hover {
     background: var(--hover);

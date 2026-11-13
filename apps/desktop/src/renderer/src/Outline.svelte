@@ -31,8 +31,7 @@
   .outline {
     width: 240px;
     overflow-y: auto;
-    background: var(--pane);
-    border-left: 1px solid var(--border);
+    background: var(--list);
     padding: 12px 6px;
   }
   h2 {
