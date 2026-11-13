@@ -10,6 +10,7 @@ import { bracketPairs } from './pairs'
 import { linkBehaviour } from './links'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
+import { currentHeading, nextHeading, previousHeading } from './headingJump'
 
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 
@@ -107,6 +108,8 @@ interface Hooks {
   onedge?: (direction: 'back' | 'forward') => boolean
   /** The selected text changed; empty when nothing is selected. */
   onselection?: (selected: string) => void
+  /** The section the cursor is in changed: the index of its heading, or -1 before the first. */
+  onsection?: (heading: number) => void
 }
 
 /** An arrow key that hands over to the next sheet when the cursor cannot go further. */
@@ -136,7 +139,8 @@ export function editorExtensions({
   onescape,
   onfocus,
   onedge,
-  onselection
+  onselection,
+  onsection
 }: Hooks): Extension[] {
   return [
     history(),
@@ -170,6 +174,9 @@ export function editorExtensions({
         : []),
       // Before the default keymap, which uses Mod-i to select the parent syntax node.
       ...formattingKeymap,
+      // Before the default keymap, which uses these for multiple cursors.
+      { key: 'Mod-Alt-ArrowUp', run: previousHeading },
+      { key: 'Mod-Alt-ArrowDown', run: nextHeading },
       indentWithTab,
       ...defaultKeymap,
       ...historyKeymap
@@ -180,6 +187,9 @@ export function editorExtensions({
     EditorView.updateListener.of((update) => {
       if (update.docChanged && !update.transactions.some((t) => t.annotation(fromDisk))) {
         onchange(update.state.doc.toString())
+      }
+      if (onsection && (update.selectionSet || update.docChanged)) {
+        onsection(currentHeading(update.state.doc.toString(), update.state.selection.main.head))
       }
       if (onselection && (update.selectionSet || update.docChanged)) {
         const { from, to } = update.state.selection.main

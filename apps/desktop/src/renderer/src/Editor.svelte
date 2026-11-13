@@ -19,6 +19,8 @@
     onedge?: (direction: 'back' | 'forward') => boolean
     /** The selected text changed; empty when the selection is. */
     onselection?: (selected: string) => void
+    /** The cursor moved into another section: the index of its heading, -1 before the first. */
+    onsection?: (heading: number) => void
     /** Dim everything but the current paragraph. */
     focusMode?: boolean
     /** Keep the cursor line in the middle of the window. */
@@ -29,6 +31,7 @@
 
   let { text, onchange, onblur, onescape, onfocus, onedge,
     onselection,
+    onsection,
     focusMode = false,
     typewriter = false,
     autofocus = false
@@ -103,7 +106,7 @@
       parent: host,
       state: createEditorState(
         text,
-        { onchange, onblur, onescape, onfocus, onedge, onselection },
+        { onchange, onblur, onescape, onfocus, onedge, onselection, onsection },
         focusing.of(focusExtensions({ dim: focusMode, typewriter }))
       )
     })

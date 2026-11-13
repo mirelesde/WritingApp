@@ -445,7 +445,7 @@ asked for directly.
     continues it, Backspace at the start of an item removes its marker,
     move line up and down (Alt+Up/Down), duplicate line, select line,
     and Home/End on wrapped lines.
-36. **Jump between headings.** Cmd/Ctrl+Alt+Up and Down move the cursor to
+36. ~~**Jump between headings.**~~ **Done.** Cmd/Ctrl+Alt+Up and Down move the cursor to
     the previous or next heading; the outline marks the current section.
    Audited and covered by tests; the default keymap already provides each of these, so no code changes were needed. Cmd/Ctrl+Alt+Up/Down (multiple cursors there) are taken over by item 36.
 

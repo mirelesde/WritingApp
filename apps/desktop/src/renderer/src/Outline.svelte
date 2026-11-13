@@ -6,7 +6,11 @@
     path: string
   }
 
-  let { entries, onpick }: { entries: Entry[]; onpick: (entry: Entry) => void } = $props()
+  let {
+    entries,
+    current = null,
+    onpick
+  }: { entries: Entry[]; current?: Entry | null; onpick: (entry: Entry) => void } = $props()
   const shallowest = $derived(entries.reduce((min, e) => Math.min(min, e.level), 6))
 </script>
 
@@ -18,7 +22,12 @@
     <ul>
       {#each entries as entry (entry.path + ':' + entry.offset)}
         <li style:padding-left="{(entry.level - shallowest) * 14 + 8}px">
-          <button class:top={entry.level === shallowest} onclick={() => onpick(entry)}>
+          <button
+            class:top={entry.level === shallowest}
+            class:current={current?.path === entry.path && current?.offset === entry.offset}
+            aria-current={current?.path === entry.path && current?.offset === entry.offset}
+            onclick={() => onpick(entry)}
+          >
             {entry.text}
           </button>
         </li>
@@ -66,6 +75,10 @@
   button.top {
     color: var(--text);
     font-weight: 600;
+  }
+  button.current {
+    background: var(--hover);
+    color: var(--accent);
   }
   button:hover {
     background: var(--hover);

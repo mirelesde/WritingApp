@@ -170,6 +170,14 @@
       : []
   )
 
+  /** Which section the cursor is in: its part of the run and the heading index within it. */
+  let currentSection = $state<{ path: string; heading: number } | null>(null)
+  const currentEntry = $derived.by(() => {
+    if (!currentSection) return null
+    const own = outlineEntries.filter((e) => e.path === currentSection!.path)
+    return own[currentSection.heading] ?? null
+  })
+
   function goToHeading(entry: Entry): void {
     editors[entry.path]?.goTo(entry.offset)
   }
@@ -1125,6 +1133,7 @@
                   onfocus={() => focusedPart(part.path)}
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (selectedText = text)}
+                  onsection={(heading) => (currentSection = { path: part.path, heading })}
                   {focusMode}
                   {typewriter}
                   autofocus={focusEditor && part.path === selection[0]}
@@ -1146,7 +1155,7 @@
         <StatusBar text={runText} selected={selectedText} {groupWords} />
       {/if}
       {#if outlineOpen}
-        <div class="outline-slot"><Outline entries={outlineEntries} onpick={goToHeading} /></div>
+        <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} /></div>
       {/if}
     </section>
   </div>
