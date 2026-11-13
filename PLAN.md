@@ -111,9 +111,9 @@ typecheck, build) before committing.
 
 Three things, and nothing else until they are good enough to write in daily:
 
-1. ~~**Organisation**~~ **Done.** — project > group > sheets, manually ordered.
-2. ~~**Sheet operations**~~ **Done.** — split, merge, glue, move, all from the keyboard.
-3. ~~**Export**~~ **Done.** — HTML and PDF of any sheet, glued run, or group.
+1. **Organisation** — project > group > sheets, manually ordered.
+2. **Sheet operations** — split, merge, glue, move, all from the keyboard.
+3. **Export** — HTML and PDF of any sheet, glued run, or group.
 
 ## Decisions already made
 
@@ -202,7 +202,7 @@ Suggested order of work, one commit each:
    (`{ kind: 'group' | 'sheet', name, path, children? }`), where top-level
    groups are projects. Sheets carry a title (via `sheetTitle`) and a short
    preview. Reading every file on load is acceptable for now.
-4. ~~**Filename generation**~~ **Done.** as a pure function: slug of the first line,
+4. **Filename generation** as a pure function: slug of the first line,
    `untitled` when empty, numeric suffix on collision.
 5. **Operations:** create sheet, create group, rename group, delete (trash),
    move to another group at an index, reorder within a group. Each one
@@ -212,7 +212,6 @@ Suggested order of work, one commit each:
    `shell.trashItem` for `trash`. Add Vitest to the desktop package and test
    it against a temporary folder, including one edited by hand between
    loads.
-    (Already worked through the Markdown keymap from milestone 4; this added tests for task lists, Shift-Tab and ordered nesting, and a check in the running app.)
 
 ### 3. Library UI — done
 - Three panes: library tree, sheet list (title + first lines), editor area.
@@ -407,14 +406,14 @@ asked for directly.
 
 **Easy**
 
-1. **More side margins in the editor (user).** CSS only: wider horizontal
+1. ~~**More side margins in the editor (user).**~~ **Done.** CSS only: wider horizontal
    padding and a centred, max-width text column.
-2. **Spell check.** Turn on Electron's built-in checker and add suggestions
+2. ~~**Spell check.**~~ **Done.** Turn on Electron's built-in checker and add suggestions
    to the editor's context menu. Language follows the system.
-3. **Word and character count, reading time.** A status bar showing the
+3. ~~**Word and character count, reading time.**~~ **Done.** A status bar showing the
    open sheet, the selection, and the group total. Computed from text core
    already has.
-4. **Smart list continuation.** Enter continues a bullet or number, Tab
+4. ~~**Smart list continuation.**~~ **Done.** Enter continues a bullet or number, Tab
    indents, Enter on an empty item ends the list. CodeMirror's Markdown
    commands cover most of it; mostly configuration.
 5. **Auto-close emphasis markers (user).** Typing `*` or `**` inserts the
@@ -429,6 +428,7 @@ asked for directly.
 7. **Find and replace in the open sheet.** CodeMirror's search panel,
    styled to match, with Cmd/Ctrl+F and Cmd/Ctrl+Alt+F. Distinct from Find in
    Library.
+   (Already worked through the Markdown keymap from milestone 4; this added tests for task lists, Shift-Tab and ordered nesting, and a check in the running app.)
 
 **Easy to medium**
 
