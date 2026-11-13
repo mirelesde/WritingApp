@@ -38,9 +38,22 @@ describe('sheetPreview', () => {
     expect(sheetPreview('\n\nTitle\nBody')).toBe('Body')
   })
 
+  it('drops Markdown markers and comments', () => {
+    expect(sheetPreview('T\n**Bold** and *it* with [a link](http://x.org) and `code`.')).toBe(
+      'Bold and it with a link and code.'
+    )
+    expect(sheetPreview('T\n> quoted\n- [x] item\n1. first\n<!-- hidden -->\nend')).toBe(
+      'quoted item first end'
+    )
+  })
+
+  it('keeps underscores inside words', () => {
+    expect(sheetPreview('T\nsnake_case and _em_ here')).toBe('snake_case and em here')
+  })
+
   it('truncates long text with an ellipsis', () => {
     const preview = sheetPreview('T\n' + 'word '.repeat(100))
     expect(preview.endsWith('…')).toBe(true)
-    expect(preview.length).toBeLessThanOrEqual(121)
+    expect(preview.length).toBeLessThanOrEqual(201)
   })
 })

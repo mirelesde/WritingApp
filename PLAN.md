@@ -560,7 +560,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 - L3. ~~**Editor typography and Markdown styling.**~~ **Done.** Line height about 1.85,
   slightly softer text contrast, fainter `**` and `#` markers, links drawn
   as rounded outlined chips, a `---` rule drawn as a dashed accent line.
-- L4. **Sheet list as cards.** Rounded, roomy cards with a 3 to 4 line
+- L4. ~~**Sheet list as cards.**~~ **Done.** Rounded, roomy cards with a 3 to 4 line
   preview; the accent bar for glued runs stays.
 - L5. **Per-pane header rows** in place of the full-width top bar: sidebar
   (new group, hide sidebar), sheet list (new sheet), editor (search, bold,

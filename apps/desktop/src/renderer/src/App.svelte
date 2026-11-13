@@ -1223,8 +1223,9 @@
     text-align: left;
     background: none;
     border: none;
-    border-radius: 8px;
-    padding: 8px 10px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 4px;
     cursor: default;
   }
   .sheet.run-start,
@@ -1233,11 +1234,14 @@
     border-left: 3px solid var(--accent);
     border-radius: 0 6px 6px 0;
   }
+  /* The members of a glued run touch, so they read as one card. */
   .sheet.run-start {
     border-bottom-right-radius: 0;
+    margin-bottom: 0;
   }
   .sheet.run-middle {
     border-radius: 0;
+    margin-bottom: 0;
   }
   .sheet.run-end {
     border-top-right-radius: 0;
@@ -1256,9 +1260,11 @@
   }
   .sheet-title,
   .sheet-preview {
-    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .sheet-title {
+    display: block;
     white-space: nowrap;
   }
   .sheet-title {
@@ -1266,8 +1272,15 @@
   }
   .sheet-preview {
     color: var(--muted);
-    font-size: 12px;
-    margin-top: 2px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    margin-top: 3px;
+    /* Up to three lines, like a card in Ulysses. */
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
   }
   .info {
     margin: 0;
