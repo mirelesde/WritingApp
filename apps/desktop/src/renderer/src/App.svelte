@@ -11,6 +11,7 @@
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import ToolButton from './ToolButton.svelte'
+  import type { FormatKind, LineStyle } from './blockStyle'
   import Preferences from './Preferences.svelte'
   import SaveIndicator from './SaveIndicator.svelte'
   import Outline, { type Entry } from './Outline.svelte'
@@ -156,10 +157,45 @@
   }
 
   /** Applies bold, italic or link to the sheet being typed in (the last one focused in a run). */
-  function formatActive(kind: 'bold' | 'italic' | 'link'): void {
+  function formatActive(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (path) editors[path]?.format(kind)
   }
+
+  let styleOpen = $state(false)
+  let styleNow = $state<LineStyle>('body')
+  function toggleStyleMenu(): void {
+    if (!styleOpen) {
+      const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+      styleNow = (path && editors[path]?.lineStyle()) || 'body'
+    }
+    styleOpen = !styleOpen
+  }
+  function applyStyle(kind: FormatKind): void {
+    styleOpen = false
+    formatActive(kind)
+  }
+  const STYLES: { kind: FormatKind; label: string; hint?: string }[][] = [
+    [
+      { kind: 'h1', label: 'Heading 1', hint: '1' },
+      { kind: 'h2', label: 'Heading 2', hint: '2' },
+      { kind: 'h3', label: 'Heading 3', hint: '3' },
+      { kind: 'body', label: 'Body text', hint: '4' }
+    ],
+    [
+      { kind: 'quote', label: 'Quote' },
+      { kind: 'bullet', label: 'Bulleted list' },
+      { kind: 'numbered', label: 'Numbered list' },
+      { kind: 'task', label: 'Task list' }
+    ],
+    [
+      { kind: 'strike', label: 'Strikethrough' },
+      { kind: 'code', label: 'Inline code' },
+      { kind: 'codeblock', label: 'Code block' },
+      { kind: 'comment', label: 'Comment' },
+      { kind: 'rule', label: 'Horizontal rule' }
+    ]
+  ]
 
   function toggleOutline(): void {
     void window.api.setView({ outline: !outlineOpen })
@@ -944,6 +980,7 @@
       else if (command === 'search') openSearch()
       else if (command === 'quick-open') openQuick()
       else if (command === 'preferences') preferencesOpen = true
+      else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
       else if (command === 'delete') void deleteSelected()
       else if (command === 'split') void splitAtCursor()
       else if (command === 'merge') void mergeSelected()
@@ -1118,6 +1155,24 @@
           <ToolButton icon="bold" label="Bold" hint="{keyMod}B" disabled={open === null} onclick={() => formatActive('bold')} />
           <ToolButton icon="italic" label="Italic" hint="{keyMod}I" disabled={open === null} onclick={() => formatActive('italic')} />
           <ToolButton icon="link" label="Link" hint="{keyMod}K" disabled={open === null} onclick={() => formatActive('link')} />
+          <span class="style-wrap">
+            <ToolButton icon="style" label="Styles" pressed={styleOpen} disabled={open === null} onclick={toggleStyleMenu} />
+            {#if styleOpen}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div class="scrim" onmousedown={() => (styleOpen = false)}></div>
+              <div class="style-menu" role="menu" tabindex="-1" aria-label="Styles" onmousedown={(e) => e.preventDefault()}>
+                {#each STYLES as group, i (i)}
+                  {#if i > 0}<hr />{/if}
+                  {#each group as item (item.kind)}
+                    <button role="menuitem" class:current={item.kind === styleNow} onclick={() => applyStyle(item.kind)}>
+                      <span>{item.label}</span>
+                      {#if item.hint}<kbd>{keyMod}⌥{item.hint}</kbd>{/if}
+                    </button>
+                  {/each}
+                {/each}
+              </div>
+            {/if}
+          </span>
         </span>
         <span class="tools right">
           {#if open}<SaveIndicator status={saveStatus} />{/if}
@@ -1445,6 +1500,60 @@
     display: flex;
     gap: 4px;
     flex-shrink: 0;
+  }
+  .style-wrap {
+    position: relative;
+  }
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+  }
+  .style-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 6px;
+    z-index: 21;
+    min-width: 200px;
+    padding: 5px;
+    border-radius: 9px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  }
+  .style-menu hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 4px 2px;
+  }
+  .style-menu button {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    width: 100%;
+    padding: 5px 9px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: default;
+  }
+  .style-menu button:hover {
+    background: var(--hover);
+  }
+  .style-menu button.current {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .style-menu kbd {
+    font: inherit;
+    font-size: 12px;
+    color: var(--muted);
   }
   .tools.right {
     justify-content: flex-end;

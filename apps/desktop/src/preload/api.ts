@@ -34,6 +34,8 @@ export type MenuCommand =
   | 'undo-sheet-change'
   | 'delete'
   | 'toggle-sidebar'
+  /** A Format menu item, e.g. `format-h1`. */
+  | `format-${string}`
 
 /** A preview of an HTML export. */
 export interface ExportPreview {

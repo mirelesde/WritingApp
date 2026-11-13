@@ -64,6 +64,14 @@ function sendCommand(command: string): void {
   BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', command)
 }
 
+/**
+ * A shortcut the editor handles itself. macOS can show it in the menu without
+ * registering it; elsewhere it is left out, or the key would fire twice.
+ */
+function shown(accelerator: string): { accelerator?: string; registerAccelerator?: boolean } {
+  return process.platform === 'darwin' ? { accelerator, registerAccelerator: false } : {}
+}
+
 function buildMenu(): Menu {
   const isMac = process.platform === 'darwin'
   return Menu.buildFromTemplate([
@@ -213,6 +221,30 @@ function buildMenu(): Menu {
       ]
     },
     { role: 'editMenu' },
+    {
+      label: 'Format',
+      submenu: [
+        { label: 'Heading 1', ...shown('CmdOrCtrl+Alt+1'), click: () => sendCommand('format-h1') },
+        { label: 'Heading 2', ...shown('CmdOrCtrl+Alt+2'), click: () => sendCommand('format-h2') },
+        { label: 'Heading 3', ...shown('CmdOrCtrl+Alt+3'), click: () => sendCommand('format-h3') },
+        { label: 'Body Text', ...shown('CmdOrCtrl+Alt+4'), click: () => sendCommand('format-body') },
+        { type: 'separator' },
+        { label: 'Quote', click: () => sendCommand('format-quote') },
+        { label: 'Bulleted List', click: () => sendCommand('format-bullet') },
+        { label: 'Numbered List', click: () => sendCommand('format-numbered') },
+        { label: 'Task List', click: () => sendCommand('format-task') },
+        { type: 'separator' },
+        { label: 'Bold', ...shown('CmdOrCtrl+B'), click: () => sendCommand('format-bold') },
+        { label: 'Italic', ...shown('CmdOrCtrl+I'), click: () => sendCommand('format-italic') },
+        { label: 'Strikethrough', click: () => sendCommand('format-strike') },
+        { label: 'Inline Code', click: () => sendCommand('format-code') },
+        { label: 'Link', ...shown('CmdOrCtrl+K'), click: () => sendCommand('format-link') },
+        { type: 'separator' },
+        { label: 'Code Block', click: () => sendCommand('format-codeblock') },
+        { label: 'Comment', ...shown('CmdOrCtrl+/'), click: () => sendCommand('format-comment') },
+        { label: 'Horizontal Rule', click: () => sendCommand('format-rule') }
+      ]
+    },
     viewMenu(isMac),
     { role: 'windowMenu' }
   ])

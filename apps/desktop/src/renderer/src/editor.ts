@@ -17,6 +17,7 @@ import { linkBehaviour } from './links'
 import { blankLines } from './blankLines'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
+import { blockKeymap } from './blockStyle'
 import { currentHeading, nextHeading, previousHeading } from './headingJump'
 
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
@@ -196,6 +197,7 @@ export function editorExtensions({
         : []),
       // Before the default keymap, which uses Mod-i to select the parent syntax node.
       ...formattingKeymap,
+      ...blockKeymap,
       // Before the default keymap, which uses these for multiple cursors.
       { key: 'Mod-Alt-ArrowUp', run: previousHeading },
       { key: 'Mod-Alt-ArrowDown', run: nextHeading },

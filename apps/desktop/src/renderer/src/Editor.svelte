@@ -7,6 +7,7 @@
   import { smartTypography } from './smartTypography'
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
+  import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
     /** The text to start from. Edits are reported through `onchange`. */
@@ -78,11 +79,23 @@
   }
 
   /** Applies a formatting command to the selection, as the keyboard shortcuts do. */
-  export function format(kind: 'bold' | 'italic' | 'link'): void {
+  export function format(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
     if (!view) return
-    const command = { bold: toggleBold, italic: toggleItalic, link: linkCommand }[kind]
+    const command =
+      kind === 'bold'
+        ? toggleBold
+        : kind === 'italic'
+          ? toggleItalic
+          : kind === 'link'
+            ? linkCommand
+            : formatCommand(kind)
     command(view)
     view.focus()
+  }
+
+  /** The block style of the line the cursor is on. */
+  export function lineStyle(): LineStyle {
+    return view ? styleOfLine(view.state.doc.lineAt(view.state.selection.main.head).text) : 'body'
   }
 
   /** The text now in the editor. */

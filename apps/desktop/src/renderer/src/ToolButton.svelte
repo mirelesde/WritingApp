@@ -12,6 +12,7 @@
     | 'link'
     | 'outline'
     | 'export'
+    | 'style'
 
   interface Props {
     icon: Icon
@@ -41,7 +42,9 @@
   onmousedown={keepFocus}
   {onclick}
 >
-  {#if icon === 'bold' || icon === 'italic'}
+  {#if icon === 'style'}
+    <span class="letter aa">Aa</span>
+  {:else if icon === 'bold' || icon === 'italic'}
     <span class="letter" class:bold={icon === 'bold'} class:italic={icon === 'italic'}>
       {icon === 'bold' ? 'B' : 'I'}
     </span>
@@ -117,6 +120,10 @@
     font-family: Georgia, serif;
     font-size: 16px;
     line-height: 1;
+  }
+  .aa {
+    font-size: 14px;
+    letter-spacing: -0.02em;
   }
   .bold {
     font-weight: 700;

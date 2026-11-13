@@ -512,7 +512,7 @@ asked for directly.
     `--` becomes an en or em dash, `...` becomes an ellipsis. A setting,
     off by default; never applied inside code or comments. Needs the
     Preferences window (item 37).
-40. **Format menu and style popover.** Keep the editor header uncluttered:
+40. ~~**Format menu and style popover.**~~ **Done.** Keep the editor header uncluttered:
     it keeps only Bold, Italic and Link. Everything else lives in:
     - A **Format** menu in the menu bar, with shortcuts: Heading 1 to 3
       and Body (Cmd/Ctrl+Alt+1 to 4), Quote, Bullet list, Numbered list,
@@ -526,6 +526,7 @@ asked for directly.
     tests; the editor applies them as a transaction.
    An in-app dialog (Cmd/Ctrl+,) with theme, font, text size, focus mode and typewriter; later settings (items 38, 39, 41, 44) go in it.
    A "Smart punctuation" switch in Preferences, off by default; skips code, comments and Markdown dashes at the start of a line.
+   Format menu and Aa popover; menu check marks not done (shown in popover only)
 
 44. ~~**Toggle line numbers (user).**~~ **Done.** A preference (item 37) that shows a
     line-number gutter in the editor. Off by default; remembered with the
