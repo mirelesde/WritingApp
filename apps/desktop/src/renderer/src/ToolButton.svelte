@@ -2,6 +2,8 @@
   /** A quiet line-icon button for the pane headers. */
   export type Icon =
     | 'sidebar'
+    | 'back'
+    | 'forward'
     | 'new-sheet'
     | 'new-group'
     | 'search'
@@ -48,6 +50,10 @@
       {#if icon === 'sidebar'}
         <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
         <path d="M8 3.5v13" />
+      {:else if icon === 'back'}
+        <path d="M12 4.5L6.5 10l5.5 5.5" />
+      {:else if icon === 'forward'}
+        <path d="M8 4.5L13.5 10 8 15.5" />
       {:else if icon === 'new-sheet'}
         <path d="M11 3H6a1.5 1.5 0 0 0-1.5 1.5v11A1.5 1.5 0 0 0 6 17h8a1.5 1.5 0 0 0 1.5-1.5V8" />
         <path d="M11 3l4.5 4.5" />

@@ -575,7 +575,7 @@ tone instead of lines, quiet line icons, little chrome in the editor.
   of item (project, group), chevrons, and sheet-count badges.
 - L8. ~~**Project colours.**~~ **Done.** A colour per project, kept in its sidecar and
   shown on its icon.
-- L9. **Back and forward** arrows that step through the sheets visited.
+- L9. ~~**Back and forward**~~ **Done.** arrows that step through the sheets visited.
 - L10. **Filter field** in the sheet list that narrows it by text.
 
 **Waiting on backlog items**

@@ -224,6 +224,38 @@
     document.querySelector(`[data-path="${CSS.escape(path)}"]`)?.scrollIntoView({ block: 'start' })
   }
 
+  // --- Back and forward ---------------------------------------------------
+
+  const TRAIL_LIMIT = 100
+  let trail = $state<string[]>([])
+  let trailAt = $state(-1)
+  let navigating = false
+
+  /** Remembers a sheet the user opened, dropping whatever lay ahead of the current one. */
+  function visit(path: string): void {
+    if (navigating || trail[trailAt] === path) return
+    trail = [...trail.slice(0, trailAt + 1), path].slice(-TRAIL_LIMIT)
+    trailAt = trail.length - 1
+  }
+
+  /** Steps through the visited sheets, skipping any that no longer exist. */
+  async function step(delta: -1 | 1): Promise<void> {
+    if (!library) return
+    let at = trailAt + delta
+    while (trail[at] !== undefined && !sheetExists(library.tree, trail[at]!)) at += delta
+    const path = trail[at]
+    if (path === undefined) return
+    trailAt = at
+    navigating = true
+    try {
+      await revealSheet(path, false)
+    } finally {
+      navigating = false
+    }
+  }
+  const canBack = $derived(trailAt > 0)
+  const canForward = $derived(trailAt >= 0 && trailAt < trail.length - 1)
+
   /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
   async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
     await autosaver.flush()
@@ -231,6 +263,7 @@
     cursor = to
     if (paths.length === 1) {
       const path = paths[0]!
+      visit(path)
       if (!runIsOpen(path)) {
         focusEditor = focus
         await loadRun(path)
@@ -248,6 +281,7 @@
     if (selection.length === 1 && selection[0] === path) return
     selection = [path]
     cursor = anchor = path
+    visit(path)
   }
 
   /** Arrow keys at the edge of a sheet carry on into its neighbour in the run. */
@@ -841,9 +875,11 @@
   }
 
   function windowKeydown(e: KeyboardEvent): void {
-    // Cmd/Ctrl+1, 2, 3 jump between the panes.
+    // Cmd/Ctrl+1, 2, 3 jump between the panes; Cmd/Ctrl+[ and ] go back and forward.
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || !library) return
-    if (e.key === '1') treeEl?.focus()
+    if (e.key === '[') void step(-1)
+    else if (e.key === ']') void step(1)
+    else if (e.key === '1') treeEl?.focus()
     else if (e.key === '2') sheetsEl?.focus()
     else if (e.key === '3' && selection[0]) editors[selection[0]]?.focus()
     else return
@@ -1030,6 +1066,8 @@
           {#if sidebarCollapsed}
             <ToolButton icon="sidebar" label="Show sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
           {/if}
+          <ToolButton icon="back" label="Back" hint="{keyMod}[" disabled={!canBack} onclick={() => void step(-1)} />
+          <ToolButton icon="forward" label="Forward" hint="{keyMod}]" disabled={!canForward} onclick={() => void step(1)} />
           <ToolButton icon="search" label="Find in library" hint="{keyMod}{keyShift}F" onclick={openSearch} />
         </span>
         <span class="tools">
