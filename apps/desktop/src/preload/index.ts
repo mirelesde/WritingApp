@@ -14,6 +14,7 @@ const api: Api = {
   merge: (paths) => ipcRenderer.invoke('op:merge', paths),
   glue: (paths) => ipcRenderer.invoke('op:glue', paths),
   unglue: (paths) => ipcRenderer.invoke('op:unglue', paths),
+  deleteNodes: (paths) => ipcRenderer.invoke('op:delete', paths),
   undo: () => ipcRenderer.invoke('op:undo'),
   search: (query) => ipcRenderer.invoke('search:run', query),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),

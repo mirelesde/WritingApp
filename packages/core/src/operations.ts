@@ -152,6 +152,35 @@ export async function deleteNode(fs: FileSystem, path: string): Promise<void> {
 }
 
 /**
+ * `deleteNode`, plus the steps that bring the text back. Only Markdown
+ * files and sidecars come back; the originals also sit in the system trash.
+ */
+export async function deleteNodeUndoable(fs: FileSystem, path: string): Promise<UndoAction[]> {
+  const target = trimSlashes(path)
+  const dir = parentPath(target)
+  const restore: UndoAction[] = []
+  const collect = async (at: string, isDir: boolean): Promise<void> => {
+    if (!isDir) {
+      restore.push({ kind: 'write', path: at, text: await fs.readText(at) })
+      return
+    }
+    restore.push({ kind: 'makeDir', path: at })
+    for (const entry of await fs.list(at)) {
+      const isSidecar = entry.name === SIDECAR_NAME
+      if (entry.kind === 'directory' || isSidecar || entry.name.endsWith('.md')) {
+        await collect(joinPath(at, entry.name), entry.kind === 'directory')
+      }
+    }
+  }
+  const folder = await fs.list(dir)
+  const isDir = folder.some((e) => e.name === baseName(target) && e.kind === 'directory')
+  await collect(target, isDir)
+  const sidecar = await snapshotSidecar(fs, dir)
+  await deleteNode(fs, target)
+  return [...restore, sidecar]
+}
+
+/**
  * Moves a sheet or group into `targetGroup`, returning its new path. `index`
  * is its final position among that group's children (default: the end).
  * Within the same group this is a reorder. See `moveNodes`.
@@ -231,6 +260,30 @@ export async function moveNodes(
   await writeFolder(fs, sourceDir, source)
   await writeFolder(fs, target, dest)
   return froms.map((from) => joinPath(target, newNames.get(from)!))
+}
+
+/**
+ * `moveNodes`, plus the steps that put everything back: the items return to
+ * where they were and both folders get their old order and glue back.
+ */
+export async function moveNodesUndoable(
+  fs: FileSystem,
+  paths: string[],
+  targetGroup: string,
+  index?: number,
+): Promise<{ paths: string[]; undo: UndoAction[] }> {
+  if (paths.length === 0) return { paths: [], undo: [] }
+  const froms = paths.map(trimSlashes)
+  const sourceDir = parentPath(froms[0]!)
+  const target = trimSlashes(targetGroup)
+  const sidecars = [await snapshotSidecar(fs, sourceDir)]
+  if (target !== sourceDir) sidecars.push(await snapshotSidecar(fs, target))
+  const moved = await moveNodes(fs, paths, targetGroup, index)
+  const renames: UndoAction[] =
+    target === sourceDir
+      ? []
+      : moved.map((to, i): UndoAction => ({ kind: 'rename', from: to, to: froms[i]! })).reverse()
+  return { paths: moved, undo: [...renames, ...sidecars] }
 }
 
 /** Moves a sheet or group to `index` within its own group. */

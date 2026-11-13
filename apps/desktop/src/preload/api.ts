@@ -30,6 +30,7 @@ export type MenuCommand =
   | 'glue'
   | 'unglue'
   | 'undo-sheet-change'
+  | 'delete'
 
 /** A preview of an HTML export. */
 export interface ExportPreview {
@@ -71,7 +72,9 @@ export interface Api {
   glue(paths: string[]): Promise<OpResult>
   /** Detaches sheets from the runs they are in. */
   unglue(paths: string[]): Promise<OpResult>
-  /** Reverses the latest split, merge, glue or unglue. Rejects if there is none. */
+  /** Moves sheets or groups to the system trash; undoable. */
+  deleteNodes(paths: string[]): Promise<OpResult>
+  /** Reverses the latest move, delete, split, merge, glue or unglue. Rejects if there is none. */
   undo(): Promise<OpResult>
   /** Sheets containing `query`, in library order. */
   search(query: string): Promise<SearchHit[]>

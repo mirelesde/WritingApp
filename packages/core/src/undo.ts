@@ -10,6 +10,8 @@ export type UndoAction =
   | { kind: 'write'; path: string; text: string }
   | { kind: 'trash'; path: string }
   | { kind: 'sidecar'; dir: string; text: string }
+  | { kind: 'makeDir'; path: string }
+  | { kind: 'rename'; from: string; to: string }
 
 /** What a missing sidecar means, written out: no order, no glue. */
 const EMPTY_SIDECAR = '{"version":1,"order":[],"glued":[]}\n'
@@ -25,6 +27,8 @@ export async function snapshotSidecar(fs: FileSystem, dir: string): Promise<Undo
 export async function applyUndo(fs: FileSystem, actions: UndoAction[]): Promise<void> {
   for (const action of actions) {
     if (action.kind === 'write') await fs.writeText(action.path, action.text)
+    else if (action.kind === 'makeDir') await fs.makeDir(action.path)
+    else if (action.kind === 'rename') await fs.rename(action.from, action.to)
     else if (action.kind === 'trash') {
       if (await fs.exists(action.path)) await fs.trash(action.path)
     } else await fs.writeText(joinPath(action.dir, SIDECAR_NAME), action.text)

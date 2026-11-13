@@ -80,6 +80,11 @@ function buildMenu(): Menu {
           accelerator: 'CmdOrCtrl+Shift+M',
           click: () => sendCommand('move-to')
         },
+        {
+          label: 'Move to Trash',
+          accelerator: 'CmdOrCtrl+Alt+Backspace',
+          click: () => sendCommand('delete')
+        },
         { type: 'separator' },
         {
           label: 'Find in Library…',
@@ -122,7 +127,7 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
-          label: 'Undo Split, Merge or Glue',
+          label: 'Undo Library Change',
           accelerator: 'CmdOrCtrl+Alt+Z',
           click: () => sendCommand('undo-sheet-change')
         }

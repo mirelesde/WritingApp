@@ -5,12 +5,13 @@ import {
   applyUndo,
   createGroup,
   createSheet,
+  deleteNodeUndoable,
   exportHtml,
   glueSheets,
   loadLibrary,
   searchLibrary,
   mergeSheets,
-  moveNodes,
+  moveNodesUndoable,
   renameGroup,
   splitSheet,
   unglueSheets,
@@ -208,13 +209,28 @@ export function registerLibraryIpc(): void {
     change(async () => {
       if (!Array.isArray(paths)) throw new Error('Nothing to move')
       const from = paths.map((p) => inside(p))
-      const to = await moveNodes(
+      const { paths: to, undo } = await moveNodesUndoable(
         fs,
         from,
         inside(target, true),
         typeof index === 'number' ? index : undefined
       )
-      return { moved: from.map((p, i): [string, string] => [p, to[i]!]) }
+      return {
+        moved: from.map((p, i): [string, string] => [p, to[i]!]),
+        undo: { label: 'Move', actions: undo }
+      }
+    })
+  )
+
+  ipcMain.handle('op:delete', (_event, paths: unknown) =>
+    change(async () => {
+      if (!Array.isArray(paths) || paths.length === 0) throw new Error('Nothing to delete')
+      const chosen = paths.map((p) => inside(p))
+      const steps: UndoAction[][] = []
+      for (const path of chosen) steps.push(await deleteNodeUndoable(fs, path))
+      // Undo in the opposite order, so each sidecar is restored last-first.
+      const label = chosen.length === 1 ? 'Delete' : `Delete of ${chosen.length} items`
+      return { undo: { label, actions: steps.reverse().flat() } }
     })
   )
 
@@ -271,7 +287,10 @@ export function registerLibraryIpc(): void {
     if (!last) throw new Error('Nothing to undo')
     const result = await change(async () => {
       await applyUndo(fs, last.actions)
-      return {}
+      const moved = last.actions.flatMap((a): [string, string][] =>
+        a.kind === 'rename' ? [[a.from, a.to]] : []
+      )
+      return { moved }
     })
     return { ...result, label: last.label }
   })

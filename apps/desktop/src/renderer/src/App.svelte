@@ -262,6 +262,26 @@
     await runOp(() => (glue ? window.api.glue(chosen) : window.api.unglue(chosen)))
   }
 
+  /** Moves the selected sheets, or the selected group when the tree has focus, to the trash. */
+  async function deleteSelected(): Promise<void> {
+    if (!library) return
+    const inTree = treeEl?.contains(document.activeElement) ?? false
+    let paths: string[]
+    let fallback = selectedGroup
+    if (inTree || selection.length === 0) {
+      if (selectedGroup === library.tree.path) {
+        notice = 'Select a sheet or group to delete first.'
+        return
+      }
+      paths = [selectedGroup]
+      fallback = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
+    } else paths = [...selection] // a plain array: state proxies cannot cross the bridge
+    const result = await runOp(() => window.api.deleteNodes(paths))
+    if (!result) return
+    if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = fallback
+    showInfo('Moved to the trash. Undo with Cmd/Ctrl+Alt+Z.')
+  }
+
   async function undoSheetChange(): Promise<void> {
     const result = await runOp(() => window.api.undo(), true)
     if (result?.label) showInfo(`Undid ${result.label.toLowerCase()}`)
@@ -714,6 +734,7 @@
       else if (command === 'move-to') openMoveTo()
       else if (command === 'export-html') void openExport()
       else if (command === 'search') openSearch()
+      else if (command === 'delete') void deleteSelected()
       else if (command === 'split') void splitAtCursor()
       else if (command === 'merge') void mergeSelected()
       else if (command === 'glue') void glueSelected(true)
