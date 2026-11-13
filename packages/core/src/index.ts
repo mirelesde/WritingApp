@@ -5,3 +5,4 @@ export { isVisibleEntry, parseSidecar, reconcileFolder, SIDECAR_NAME } from './s
 export type { ReconciledFolder, Sidecar } from './sidecar'
 export { loadLibrary } from './library'
 export type { GroupNode, LibraryNode, SheetNode } from './library'
+export { sheetFileName, slugify } from './filename'
