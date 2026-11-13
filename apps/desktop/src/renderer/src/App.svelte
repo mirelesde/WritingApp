@@ -1671,7 +1671,7 @@
   }
   /* The library's name, big and bold above its projects. */
   .project {
-    padding: 4px 14px 10px;
+    padding: 4px 14px 10px 34px;
   }
   .project-title {
     display: block;
