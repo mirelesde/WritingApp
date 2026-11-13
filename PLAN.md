@@ -451,7 +451,7 @@ asked for directly.
 12. ~~**Open recent library; restore the last sheet.**~~ **Done.** Reopens where you left
     off, with a recent-libraries submenu. Needs the settings store from
     item 8.
-13. **Commented-out text (user).** Syntax to settle first; proposal:
+13. ~~**Commented-out text (user).**~~ **Done.** Syntax to settle first; proposal:
     `<!-- ... -->` (valid Markdown everywhere), toggled on the selection or
     line with Cmd/Ctrl+/. Dimmed in the editor, left out of HTML/PDF export
     and of word counts (so after item 3). Search still finds it. Needs an
@@ -466,6 +466,7 @@ asked for directly.
    (File > Quick Open…, Cmd/Ctrl+P. Subsequence matching over the title and the group path, best first.)
    (Sidebar toggle, new sheet and find on the left; bold, italic, link in the middle; export on the right. Buttons keep the editor's focus and selection.)
    (File > Open Recent lists the last ten libraries, drops one that is gone, and has Clear Menu. The open sheet is saved on each selection and reopened, without taking focus, at launch.)
+   (Syntax: `<!-- ... -->`, toggled with Cmd/Ctrl+/ on the selection or line. Comments inside fenced code blocks count as code and are kept. Resolved the open decision on comment syntax.)
 
 **Medium**
 
@@ -537,7 +538,7 @@ asked for directly.
 32. **Global quick capture.** A system-wide hotkey that opens a small
     window and appends to an Inbox sheet. Depends on windows (item 29).
 
-Open decisions for this list: the comment syntax (item 13), where images
+Open decisions for this list: where images
 live (item 23), where sheet notes are stored (item 24) and in-app Trash
 versus the system trash (item 25).
 

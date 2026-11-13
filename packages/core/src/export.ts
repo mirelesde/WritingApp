@@ -1,4 +1,5 @@
 import { Marked } from 'marked'
+import { stripComments } from './comments'
 import type { FileSystem } from './filesystem'
 import type { GroupNode, SheetNode } from './library'
 
@@ -137,7 +138,7 @@ export async function exportHtml(
   for (const run of runs) {
     const texts: string[] = []
     for (const sheet of run) texts.push(await fs.readText(sheet.path))
-    parts.push(markdownToHtml(texts.map((t) => t.trim()).join('\n\n')))
+    parts.push(markdownToHtml(texts.map((t) => stripComments(t).trim()).join('\n\n')))
   }
   const body = parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n')
   return {

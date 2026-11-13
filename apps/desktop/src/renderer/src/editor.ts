@@ -70,6 +70,8 @@ const markdownStyle = HighlightStyle.define([
   { tag: tags.emphasis, fontStyle: 'italic' },
   { tag: tags.strikethrough, textDecoration: 'line-through' },
   { tag: tags.link, textDecoration: 'underline' },
+  // Commented-out text: kept in the file, left out of exports and counts.
+  { tag: tags.comment, color: 'var(--marker)', fontStyle: 'italic' },
   { tag: tags.url, color: 'var(--marker)' },
   { tag: tags.monospace, fontFamily: mono, fontSize: '0.88em' },
   { tag: tags.quote, color: 'var(--muted)', fontStyle: 'italic' },

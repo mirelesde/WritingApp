@@ -1,3 +1,4 @@
+import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorSelection, type EditorState, type TransactionSpec } from '@codemirror/state'
 import type { Command } from '@codemirror/view'
 
@@ -109,6 +110,82 @@ export function insertLink(state: EditorState): TransactionSpec {
   }
 }
 
+/** The `<!-- -->` comment around `pos`, if any, as a range. */
+function commentAt(state: EditorState, from: number, to: number): { from: number; to: number } | null {
+  const tree = ensureSyntaxTree(state, state.doc.length, 200)
+  if (!tree) return null
+  let found: { from: number; to: number } | null = null
+  tree.iterate({
+    from,
+    to,
+    enter(node) {
+      if (
+        (node.name === 'Comment' || node.name === 'CommentBlock') &&
+        node.from <= from &&
+        node.to >= to
+      ) {
+        found = { from: node.from, to: node.to }
+      }
+    }
+  })
+  return found
+}
+
+/** Removes the `<!--` and `-->` (and one space inside each) from the comment at `range`. */
+function unwrapComment(state: EditorState, range: { from: number; to: number }): TransactionSpec {
+  const text = state.sliceDoc(range.from, range.to)
+  const open = text.startsWith('<!-- ') ? 5 : 4
+  const close = text.endsWith(' -->') ? 4 : 3
+  return {
+    changes: [
+      { from: range.from, to: range.from + open },
+      { from: range.to - close, to: range.to }
+    ],
+    selection: EditorSelection.range(range.from, range.to - open - close),
+    userEvent: 'input'
+  }
+}
+
+/**
+ * Comments text out with `<!-- -->`, or brings it back. Works on the
+ * selection, or on the line when nothing is selected; selecting inside a
+ * comment, or putting the cursor in one, takes the comment off again.
+ */
+export function toggleComment(state: EditorState): TransactionSpec | null {
+  const range = state.selection.main
+  const existing = commentAt(state, range.from, range.to)
+  if (existing) return unwrapComment(state, existing)
+
+  let { from, to } = range
+  const selected = state.sliceDoc(from, to)
+  if (selected.trim().startsWith('<!--') && selected.trim().endsWith('-->')) {
+    const start = from + (selected.length - selected.trimStart().length)
+    return unwrapComment(state, { from: start, to: start + selected.trim().length })
+  }
+
+  const first = state.doc.lineAt(from)
+  const last = state.doc.lineAt(to)
+  if (range.empty || first.number !== last.number) {
+    // The line, or the lines the selection touches, without their indentation.
+    from = first.from + (first.text.length - first.text.trimStart().length)
+    to = last.to
+    if (from > to) from = to
+  }
+  const text = state.sliceDoc(from, to)
+  if (text.includes('-->') || text.includes('<!--')) return null
+  const body = text === '' ? '  ' : ` ${text} `
+  return {
+    changes: { from, to, insert: `<!--${body}-->` },
+    selection:
+      text === ''
+        ? EditorSelection.cursor(from + 5)
+        : range.empty
+          ? EditorSelection.cursor(from + 5 + text.length)
+          : EditorSelection.range(from + 5, from + 5 + text.length),
+    userEvent: 'input'
+  }
+}
+
 function asCommand(spec: (state: EditorState) => TransactionSpec): Command {
   return (view) => {
     view.dispatch(spec(view.state))
@@ -119,10 +196,17 @@ function asCommand(spec: (state: EditorState) => TransactionSpec): Command {
 export const toggleBold: Command = asCommand((s) => toggleEmphasis(s, 2))
 export const toggleItalic: Command = asCommand((s) => toggleEmphasis(s, 1))
 export const linkCommand: Command = asCommand(insertLink)
+export const commentCommand: Command = (view) => {
+  const spec = toggleComment(view.state)
+  if (!spec) return false
+  view.dispatch(spec)
+  return true
+}
 
 /** Keyboard shortcuts for the formatting commands. */
 export const formattingKeymap = [
   { key: 'Mod-b', run: toggleBold },
   { key: 'Mod-i', run: toggleItalic },
-  { key: 'Mod-k', run: linkCommand }
+  { key: 'Mod-k', run: linkCommand },
+  { key: 'Mod-/', run: commentCommand }
 ]

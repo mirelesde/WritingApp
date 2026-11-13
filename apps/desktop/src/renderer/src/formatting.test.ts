@@ -1,6 +1,7 @@
 import { EditorSelection, EditorState } from '@codemirror/state'
 import { describe, expect, it } from 'vitest'
-import { insertLink, toggleEmphasis } from './formatting'
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { insertLink, toggleComment, toggleEmphasis } from './formatting'
 
 /** Applies `spec` to `doc`, where `[` `]` mark the selection; returns the result in the same notation. */
 function apply(
@@ -78,5 +79,61 @@ describe('links', () => {
 
   it('inserts an empty link with the cursor in the label', () => {
     expect(apply('go |', insertLink)).toBe('go [|](url)')
+  })
+})
+
+describe('commenting out', () => {
+  /** `[` `]` mark the selection and `|` the cursor in `doc`; the result is written the same way. */
+  function toggle(doc: string): string {
+    const from = doc.indexOf('[')
+    const rest = doc.replace('[', '')
+    const to = rest.indexOf(']')
+    const sel = from !== -1 && to !== -1
+    const text = sel ? rest.replace(']', '') : doc.replace('|', '')
+    const state = EditorState.create({
+      doc: text,
+      selection: sel ? EditorSelection.range(from, to) : EditorSelection.cursor(doc.indexOf('|')),
+      extensions: markdown({ base: markdownLanguage })
+    })
+    const spec = toggleComment(state)
+    if (!spec) return doc
+    const next = state.update(spec).state
+    const r = next.selection.main
+    const out = next.doc.toString()
+    return r.empty
+      ? out.slice(0, r.head) + '|' + out.slice(r.head)
+      : out.slice(0, r.from) + '[' + out.slice(r.from, r.to) + ']' + out.slice(r.to)
+  }
+
+  it('comments out the selection and keeps it selected', () => {
+    expect(toggle('a [secret] b')).toBe('a <!-- [secret] --> b')
+  })
+
+  it('comments out the whole line when nothing is selected', () => {
+    expect(toggle('first\nsecond li|ne\nthird')).toBe('first\n<!-- second line| -->\nthird')
+  })
+
+  it('keeps indentation outside the comment', () => {
+    expect(toggle('  - item|')).toBe('  <!-- - item| -->')
+  })
+
+  it('opens an empty comment on an empty line', () => {
+    expect(toggle('|')).toBe('<!-- | -->')
+  })
+
+  it('takes a comment off when the cursor is in it', () => {
+    expect(toggle('a <!-- se|cret --> b')).toBe('a [secret] b')
+  })
+
+  it('takes a comment off when it is selected', () => {
+    expect(toggle('a [<!-- secret -->] b')).toBe('a [secret] b')
+  })
+
+  it('comments out whole lines when the selection spans lines', () => {
+    expect(toggle('x\n[one\ntwo]\ny')).toBe('x\n<!-- [one\ntwo] -->\ny')
+  })
+
+  it('does nothing where comments would nest', () => {
+    expect(toggle('[a <!-- b --> c]')).toBe('[a <!-- b --> c]')
   })
 })

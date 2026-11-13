@@ -50,6 +50,16 @@ describe('exportRuns', () => {
 })
 
 describe('exportHtml', () => {
+  it('leaves commented-out text out', async () => {
+    const fs = new MemoryFileSystem({
+      '/Lib/Book/a.md': '# A\n\nshown <!-- inline secret --> text\n\n<!-- block secret -->\n\nend\n',
+    })
+    const out = await exportHtml(fs, await loadLibrary(fs, '/Lib'), ['/Lib/Book'])
+    expect(out.html).toContain('shown')
+    expect(out.html).toContain('end')
+    expect(out.html).not.toContain('secret')
+  })
+
   it('makes one standalone page from a group', async () => {
     const fs = setup()
     const tree = await loadLibrary(fs, '/Lib')

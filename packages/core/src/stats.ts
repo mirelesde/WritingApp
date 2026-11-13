@@ -1,3 +1,4 @@
+import { stripComments } from './comments'
 import type { FileSystem } from './filesystem'
 import type { GroupNode } from './library'
 
@@ -18,7 +19,7 @@ export interface TextStats {
  */
 export function countWords(text: string): number {
   let count = 0
-  for (const token of text.split(/\s+/)) {
+  for (const token of stripComments(text).split(/\s+/)) {
     if (/[\p{L}\p{N}]/u.test(token)) count++
   }
   return count
@@ -26,6 +27,7 @@ export function countWords(text: string): number {
 
 export function textStats(text: string): TextStats {
   const words = countWords(text)
+  text = stripComments(text)
   return {
     words,
     characters: [...text.replace(/[\r\n]/g, '')].length,

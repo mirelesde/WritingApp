@@ -17,6 +17,11 @@ describe('countWords', () => {
     expect(countWords('# Title\n\n- item\n\n> quote\n\n---')).toBe(3)
   })
 
+  it('leaves commented-out text out', () => {
+    expect(countWords('one <!-- two three --> four')).toBe(2)
+    expect(textStats('a <!-- hidden -->').characters).toBe(2)
+  })
+
   it('counts numbers, hyphenated words and accented words', () => {
     expect(countWords('42 well-known café')).toBe(3)
   })

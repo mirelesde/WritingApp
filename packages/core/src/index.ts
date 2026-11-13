@@ -44,3 +44,4 @@ export {
 export type { Font, Theme, ViewSettings } from './viewSettings'
 export { fuzzyScore, listSheets, rankSheets } from './quickOpen'
 export type { QuickOpenItem } from './quickOpen'
+export { stripComments } from './comments'
