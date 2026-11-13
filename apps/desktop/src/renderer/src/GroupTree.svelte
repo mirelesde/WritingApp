@@ -73,8 +73,12 @@
         tabindex="-1"
         aria-label={isOpen ? `Collapse ${group.name}` : `Expand ${group.name}`}
         aria-expanded={isOpen}
-        onclick={() => ontoggle(group.path)}>{isOpen ? '▾' : '▸'}</button
+        onclick={() => ontoggle(group.path)}
       >
+        <svg viewBox="0 0 12 12" aria-hidden="true" class:open={isOpen}>
+          <path d="M4.2 2.5L7.8 6l-3.6 3.5" />
+        </svg>
+      </button>
     {:else}
       <span class="chevron"></span>
     {/if}
@@ -203,9 +207,27 @@
   }
   .chevron {
     width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
     color: var(--muted);
-    font-size: 11px;
     flex: none;
+  }
+  .chevron svg {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 120ms ease-out;
+  }
+  .chevron svg.open {
+    transform: rotate(90deg);
+  }
+  .chevron:hover {
+    color: var(--text);
   }
   .name {
     flex: 1;
