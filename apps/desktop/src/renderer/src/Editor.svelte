@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { EditorView } from '@codemirror/view'
   import { createEditorState, fromDisk } from './editor'
+  import { linkCommand, toggleBold, toggleItalic } from './formatting'
 
   interface Props {
     /** The text to start from. Edits are reported through `onchange`. */
@@ -34,6 +35,14 @@
       selection: { anchor: where === 'start' ? 0 : view.state.doc.length },
       scrollIntoView: true
     })
+    view.focus()
+  }
+
+  /** Applies a formatting command to the selection, as the keyboard shortcuts do. */
+  export function format(kind: 'bold' | 'italic' | 'link'): void {
+    if (!view) return
+    const command = { bold: toggleBold, italic: toggleItalic, link: linkCommand }[kind]
+    command(view)
     view.focus()
   }
 

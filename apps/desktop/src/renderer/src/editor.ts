@@ -5,6 +5,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
+import { formattingKeymap } from './formatting'
 
 const serif = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif"
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
@@ -114,6 +115,8 @@ export function editorExtensions({
             edgeKey('ArrowLeft', false, false, onedge)
           ]
         : []),
+      // Before the default keymap, which uses Mod-i to select the parent syntax node.
+      ...formattingKeymap,
       indentWithTab,
       ...defaultKeymap,
       ...historyKeymap

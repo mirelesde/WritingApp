@@ -421,7 +421,7 @@ asked for directly.
    the selection; typing the closing marker steps over it. Must not misfire
    on list bullets (`* ` at line start). Do this after item 4 so the two
    agree on how `*` behaves.
-6. **Bold, italic and link shortcuts (user).** Cmd/Ctrl+B and +I wrap the
+6. ~~**Bold, italic and link shortcuts (user).**~~ **Done.** Cmd/Ctrl+B and +I wrap the
    selection in `**` / `*` (and unwrap if already wrapped); Cmd/Ctrl+K wraps
    it as `[text](url)` and selects the `url`. These are editor commands that
    the top bar (item 11) reuses.
