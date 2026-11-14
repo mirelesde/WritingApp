@@ -96,6 +96,8 @@ export { htmlToMarkdown, isRichPaste } from './htmlToMarkdown'
 export {
   ASSETS_DIR,
   assetName,
+  assetsMentioned,
+  unusedImages,
   assetNameFromUrl,
   embedImages,
   stripImages,
@@ -109,4 +111,4 @@ export {
   saveImage,
   toBase64,
 } from './images'
-export type { ImageRef, ImportedImage } from './images'
+export type { ImageRef, ImportedImage, UnusedImage } from './images'

@@ -17,6 +17,7 @@
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import RecoveryDialog from './RecoveryDialog.svelte'
+  import CleanUpImages from './CleanUpImages.svelte'
   import CommandPalette from './CommandPalette.svelte'
   import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -248,6 +249,33 @@
     selectedGroup = info.tree.path
     clearSheets()
     void checkRecovery()
+    checkUnused()
+  }
+
+  // --- Unused pictures --------------------------------------------------------
+
+  let unused = $state<{ name: string; size: number }[]>([])
+  let cleaning = $state<{ name: string; size: number }[] | null>(null)
+  let unusedTimer: ReturnType<typeof setTimeout> | undefined
+
+  /** Looks for pictures no sheet mentions, quietly, a moment after the library changes. */
+  function checkUnused(): void {
+    clearTimeout(unusedTimer)
+    unusedTimer = setTimeout(async () => {
+      if (library) unused = await window.api.unusedImages()
+    }, 1500)
+  }
+
+  async function openCleanUp(): Promise<void> {
+    unused = await window.api.unusedImages()
+    cleaning = unused
+  }
+
+  async function cleanUp(names: string[]): Promise<void> {
+    cleaning = null
+    const count = await window.api.trashUnusedImages(names)
+    unused = await window.api.unusedImages()
+    showInfo(`Moved ${count} unused ${count === 1 ? 'image' : 'images'} to the trash`)
   }
 
   function clearSheets(): void {
@@ -857,6 +885,7 @@
     if (JSON.stringify(info.tree) === JSON.stringify(library.tree) && !open) return
     if (JSON.stringify(info.tree) !== JSON.stringify(library.tree)) {
       library = info
+      checkUnused()
       if (!findGroup(info.tree, selectedGroup)) {
         selectedGroup = info.tree.path
         clearSheets()
@@ -1312,6 +1341,7 @@
     else if (command === 'insert-table') insertTable()
     else if (command === 'insert-footnote') insertFootnote()
     else if (command === 'insert-image') void insertImage()
+    else if (command === 'clean-images') void openCleanUp()
     else if (command === 'go-to-footnote') goToFootnote()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
@@ -1377,6 +1407,13 @@
         label: `New Sheet from Template: ${t.name}`,
         run: () => void newFromTemplate(t.path)
       })),
+      menu(
+        'File',
+        unused.length > 0
+          ? `Clean Up Unused Images… (${unused.length})`
+          : 'Clean Up Unused Images…',
+        'clean-images'
+      ),
       menu('File', 'Daily Note', 'daily-note', `${keyMod}⌥D`),
       menu('File', 'Save Sheet as Template', 'save-template'),
       menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
@@ -1766,6 +1803,10 @@
     onrestore={() => void finishRecovery(true)}
     ondiscard={() => void finishRecovery(false)}
   />
+{/if}
+
+{#if cleaning}
+  <CleanUpImages images={cleaning} onclean={(names) => void cleanUp(names)} oncancel={() => (cleaning = null)} />
 {/if}
 
 {#if conflict}

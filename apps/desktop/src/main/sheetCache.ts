@@ -1,6 +1,6 @@
 import type { SheetCache, SheetCacheEntry } from '@writingapp/core'
 
-const VERSION = 1
+const VERSION = 2
 
 /** The cache as JSON, for the file that lets the next launch skip reading unchanged sheets. */
 export function serializeSheetCache(root: string, cache: SheetCache): string {
@@ -14,6 +14,8 @@ function isEntry(value: unknown): value is SheetCacheEntry {
     typeof e.title === 'string' &&
     typeof e.preview === 'string' &&
     typeof e.words === 'number' &&
+    Array.isArray(e.images) &&
+    e.images.every((n) => typeof n === 'string') &&
     typeof e.modified === 'number' &&
     typeof e.size === 'number'
   )

@@ -26,6 +26,7 @@ import {
   assetNameFromUrl,
   imageMime,
   importImages,
+  unusedImages,
   saveImage,
   renameGroup,
   syncSheetName,
@@ -299,6 +300,24 @@ export function registerLibraryIpc(): void {
       throw new Error('Bad image')
     }
     return (await saveImage(fs, currentRoot, name, data)).markdown
+  })
+
+  ipcMain.handle('image:unused', async () => {
+    if (!currentRoot) return []
+    return unusedImages(fs, currentRoot, await load(currentRoot))
+  })
+
+  // Only pictures that are still unused are trashed, whatever the caller asks for.
+  ipcMain.handle('image:trashUnused', async (_event, names: unknown) => {
+    if (!currentRoot || !Array.isArray(names)) return 0
+    const wanted = new Set(names.filter((n): n is string => typeof n === 'string'))
+    let trashed = 0
+    for (const image of await unusedImages(fs, currentRoot, await load(currentRoot))) {
+      if (!wanted.has(image.name)) continue
+      await fs.trash(join(currentRoot, ASSETS_DIR, image.name))
+      trashed++
+    }
+    return trashed
   })
 
   ipcMain.handle('session:lastSheet', async () => (await settings.load()).lastSheet ?? null)

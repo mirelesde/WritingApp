@@ -49,6 +49,7 @@ export type MenuCommand =
   | 'insert-footnote'
   | 'go-to-footnote'
   | 'insert-image'
+  | 'clean-images'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
@@ -107,6 +108,10 @@ export interface Api {
   chooseImages(): Promise<string[]>
   /** Saves picture bytes (a pasted image) in the library and returns its Markdown. */
   saveImage(name: string, data: Uint8Array): Promise<string>
+  /** Pictures in the library's assets folder that no sheet mentions. */
+  unusedImages(): Promise<{ name: string; size: number }[]>
+  /** Moves these pictures to the system trash, if they are still unused. Returns how many. */
+  trashUnusedImages(names: string[]): Promise<number>
   copy(paths: string[], target: string, index?: number, label?: 'Duplicate' | 'Paste'): Promise<OpResult>
   /** Splits a sheet, given its current text, at `offset`; the tail becomes the next sheet. */
   split(path: string, text: string, offset: number): Promise<OpResult>

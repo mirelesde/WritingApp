@@ -3,6 +3,7 @@ import { parseSidecar, reconcileFolder, SIDECAR_NAME } from './sidecar'
 import { baseName, joinPath, trimSlashes } from './path'
 import { sheetPreview, sheetTitle } from './sheet'
 import { textStats } from './stats'
+import { assetsMentioned } from './images'
 
 async function times(
   fs: FileSystem,
@@ -20,6 +21,8 @@ export interface SheetInfo {
   title: string
   preview: string
   words: number
+  /** The library pictures the sheet mentions, by file name. */
+  images: string[]
 }
 
 /** A sheet's info and the file's state when it was read, so a later load can skip an unchanged file. */
@@ -77,6 +80,8 @@ export interface SheetNode {
   glued: boolean
   /** Words in the sheet. */
   words: number
+  /** The library pictures the sheet mentions, by file name. */
+  images: string[]
   /** Last change and creation, in ms since 1970, when the file system can say. */
   modified?: number
   created?: number
@@ -124,7 +129,7 @@ async function loadSheet(ctx: LoadContext, path: string): Promise<SheetInfo & { 
   if (hit && hit.modified === modified && hit.size === size) {
     ctx.stats.cached++
     ctx.seen.set(path, hit)
-    return { title: hit.title, preview: hit.preview, words: hit.words, modified, created }
+    return { title: hit.title, preview: hit.preview, words: hit.words, images: hit.images, modified, created }
   }
   const content = await fs.readText(path)
   ctx.stats.read++
@@ -132,6 +137,7 @@ async function loadSheet(ctx: LoadContext, path: string): Promise<SheetInfo & { 
     title: sheetTitle(content),
     preview: sheetPreview(content),
     words: textStats(content).words,
+    images: assetsMentioned(content),
   }
   if (known) ctx.seen.set(path, { ...info, modified, size })
   return { ...info, ...(modified !== undefined ? { modified } : {}), ...(created !== undefined ? { created } : {}) }

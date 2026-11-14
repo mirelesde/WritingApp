@@ -90,3 +90,18 @@ describe('data uri', () => {
     expect(await imageDataUri(fs, '/lib', 'https://x/a.png')).toBeNull()
   })
 })
+
+describe('finding unused pictures', () => {
+  it('counts a mention anywhere, even in code or a comment', async () => {
+    const { assetsMentioned, unusedImages } = await import('./images')
+    const { loadLibrary } = await import('./library')
+    expect(assetsMentioned('x ![a](.assets/a%20b.png) `.assets/c.png` <!-- .assets/d.png -->')).toEqual(['a b.png', 'c.png', 'd.png'])
+    const fs = new MemoryFileSystem({
+      '/lib/P/one.md': '![a](.assets/a.png)\n```\n![c](.assets/c.png)\n```',
+      '/lib/two.md': 'nothing',
+    })
+    for (const n of ['a.png', 'b.png', 'c.png']) await fs.makeDir('/lib/.assets').then(() => fs.writeBinary(`/lib/.assets/${n}`, new Uint8Array([1, 2])))
+    const tree = await loadLibrary(fs, '/lib')
+    expect(await unusedImages(fs, '/lib', tree)).toEqual([{ name: 'b.png', size: 2 }])
+  })
+})

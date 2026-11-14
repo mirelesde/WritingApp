@@ -27,6 +27,7 @@ describe('loadLibrary', () => {
       preview: 'Remember the ending.',
       glued: false,
       words: 4,
+      images: [],
     })
     const part = novel.children[1] as GroupNode
     expect(part.children.map((c) => (c.kind === 'sheet' ? c.title : c.name))).toEqual([

@@ -654,11 +654,11 @@ asked for directly.
     - **Still to build for B, in this order, one commit each:**
       (1) **built:** identical pictures stored once; insert, paste and drop
       compare the bytes with what `.assets/` holds (same size first) and
-      reuse the file already there; (2) an index of which sheets
+      reuse the file already there; (2) **built, with (3):** an index of which sheets
       link which pictures, kept in the sheet cache, so "which pictures does
       nothing use" is a lookup; checked in the background after load, shown
-      as a quiet count ("3 unused images, 4.2 MB"); (3) Clean Up Unused
-      Images…, which lists the unused pictures and, only when the user says
+      as a quiet count ("3 unused images, 4.2 MB"); (3) **built:** Clean Up Unused
+      Images… (File menu, command palette with the count), which lists the unused pictures and, only when the user says
       so, moves them to the system trash (never automatic; a link anywhere
       in a sheet, even in a code fence or comment, counts as use; merging
       existing duplicates is left out on purpose, as it edits sheets);

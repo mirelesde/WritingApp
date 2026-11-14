@@ -1,4 +1,5 @@
 import type { FileSystem } from './filesystem'
+import type { GroupNode, LibraryNode } from './library'
 import { joinPath } from './path'
 
 /*
@@ -224,4 +225,49 @@ export function stripImages(text: string): string {
   let out = text
   for (const ref of [...refs].reverse()) out = out.slice(0, ref.from) + out.slice(ref.to)
   return out
+}
+
+const MENTION = /\.assets\/([^\s)"'`\]>]+)/g
+
+/**
+ * The names of the library pictures a text mentions. Looser than
+ * `findImages` on purpose: a link inside a code fence or a comment still
+ * counts, so a picture is never called unused while any sheet names it.
+ */
+export function assetsMentioned(text: string): string[] {
+  if (!text.includes(`${ASSETS_DIR}/`)) return []
+  const names = new Set<string>()
+  for (const m of text.matchAll(MENTION)) {
+    const name = assetNameFromUrl(`${ASSETS_DIR}/${m[1]}`)
+    if (name) names.add(name)
+  }
+  return [...names]
+}
+
+/** A picture in the assets folder that no sheet mentions. */
+export interface UnusedImage {
+  name: string
+  /** Bytes, when the file system can say. */
+  size: number
+}
+
+/** The pictures in the assets folder that no sheet in the tree mentions, by name. */
+export async function unusedImages(fs: FileSystem, root: string, tree: GroupNode): Promise<UnusedImage[]> {
+  const dir = joinPath(root, ASSETS_DIR)
+  if (!(await fs.exists(dir))) return []
+  const used = new Set<string>()
+  const walk = (nodes: LibraryNode[]): void => {
+    for (const node of nodes) {
+      if (node.kind === 'group') walk(node.children)
+      else for (const name of node.images) used.add(name)
+    }
+  }
+  walk(tree.children)
+  const unused: UnusedImage[] = []
+  for (const entry of await fs.list(dir)) {
+    if (entry.kind !== 'file' || !isImageName(entry.name) || used.has(entry.name)) continue
+    const size = (await fs.fileTimes?.(joinPath(dir, entry.name)))?.size ?? (await fs.readBinary(joinPath(dir, entry.name))).length
+    unused.push({ name: entry.name, size })
+  }
+  return unused.sort((a, b) => a.name.localeCompare(b.name))
 }
