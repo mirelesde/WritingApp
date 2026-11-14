@@ -1,6 +1,6 @@
 import { promises as nodeFs } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, protocol, shell, app } from 'electron'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
   applyUndo,
@@ -21,7 +21,9 @@ import {
   mergeSheets,
   moveNodesUndoable,
   copyNodes,
+  ASSETS_DIR,
   IMAGE_EXTENSIONS,
+  assetNameFromUrl,
   imageMime,
   importImages,
   saveImage,
@@ -276,8 +278,8 @@ export function registerLibraryIpc(): void {
     currentRoot ? (await journal.pending(currentRoot)).filter((entry) => entry.savedAt < startedAt) : []
   )
 
-  ipcMain.handle('image:choose', async (event, sheet: unknown) => {
-    if (typeof sheet !== 'string' || !currentRoot || !isSheetInside(currentRoot, sheet)) return []
+  ipcMain.handle('image:choose', async (event) => {
+    if (!currentRoot) return []
     const options: Electron.OpenDialogOptions = {
       title: 'Insert Image',
       buttonLabel: 'Insert',
@@ -289,20 +291,14 @@ export function registerLibraryIpc(): void {
       ? await dialog.showOpenDialog(window, options)
       : await dialog.showOpenDialog(options)
     if (result.canceled) return []
-    return (await importImages(fs, dirname(sheet), result.filePaths.map(toPosix))).map((i) => i.markdown)
+    return (await importImages(fs, currentRoot, result.filePaths.map(toPosix))).map((i) => i.markdown)
   })
 
-  ipcMain.handle('image:save', async (_event, sheet: unknown, name: unknown, data: unknown) => {
-    if (
-      typeof sheet !== 'string' ||
-      !currentRoot ||
-      !isSheetInside(currentRoot, sheet) ||
-      typeof name !== 'string' ||
-      !(data instanceof Uint8Array)
-    ) {
+  ipcMain.handle('image:save', async (_event, name: unknown, data: unknown) => {
+    if (!currentRoot || typeof name !== 'string' || !(data instanceof Uint8Array)) {
       throw new Error('Bad image')
     }
-    return (await saveImage(fs, dirname(sheet), name, data)).markdown
+    return (await saveImage(fs, currentRoot, name, data)).markdown
   })
 
   ipcMain.handle('session:lastSheet', async () => (await settings.load()).lastSheet ?? null)
@@ -581,7 +577,7 @@ export function registerLibraryIpc(): void {
   })
 }
 
-/** The scheme the editor loads pictures through: `wa-asset://f/<encoded path of the picture>`. */
+/** The scheme the editor loads library pictures through: `wa-asset://library/<file name>`. */
 export const ASSET_SCHEME = 'wa-asset'
 
 /** Must run before the app is ready. */
@@ -591,21 +587,16 @@ export function registerAssetScheme(): void {
   ])
 }
 
-/** Serves picture files from inside the open library, and nothing else. */
+/** Serves pictures from the open library's assets folder, and nothing else. */
 export function registerAssetProtocol(): void {
   protocol.handle(ASSET_SCHEME, async (request) => {
-    let path = ''
+    const url = new URL(request.url)
+    const name = assetNameFromUrl(`${ASSETS_DIR}/${url.pathname.replace(/^\//, '')}`)
+    const mime = name ? imageMime(name) : undefined
+    if (!currentRoot || !name || !mime) return new Response('Not found', { status: 404 })
     try {
-      path = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, ''))
-    } catch {
-      return new Response('Not found', { status: 404 })
-    }
-    const mime = imageMime(path)
-    if (!currentRoot || !mime || !isInside(currentRoot, path, false)) {
-      return new Response('Not found', { status: 404 })
-    }
-    try {
-      return new Response(Buffer.from(await fs.readBinary(path)), { headers: { 'content-type': mime } })
+      const bytes = await fs.readBinary(join(currentRoot, ASSETS_DIR, name))
+      return new Response(Buffer.from(bytes), { headers: { 'content-type': mime } })
     } catch {
       return new Response('Not found', { status: 404 })
     }

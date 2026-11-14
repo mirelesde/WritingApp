@@ -2,11 +2,13 @@ import type { FileSystem } from './filesystem'
 import { joinPath } from './path'
 
 /*
- * A picture is stored in the same folder as the sheet that shows it, under
- * its own file name (a numeric suffix on a clash), and linked by that name:
- * `![alt](cat.png)`. The library tree lists only sheets and groups, so the
- * pictures stay out of sight; other Markdown apps read the same links.
+ * Images live in one hidden folder at the root of the library, `.assets/`,
+ * under their own file names (a numeric suffix on a clash). A sheet links to
+ * one as `![alt](.assets/name.png)`: the link is relative to the library, not
+ * to the sheet, so moving a sheet to another group never breaks it.
  */
+
+export const ASSETS_DIR = '.assets'
 
 const MIME: Record<string, string> = {
   png: 'image/png',
@@ -57,29 +59,23 @@ export function assetName(original: string, taken: ReadonlySet<string>): string 
   return name
 }
 
-/** The Markdown for a picture at `path`, relative to its sheet's folder. */
-export function imageMarkdown(path: string, alt = ''): string {
+/** The Markdown for an image already in the assets folder. */
+export function imageMarkdown(name: string, alt = ''): string {
   const text = alt.replace(/[[\]\n]/g, ' ').trim()
-  return `![${text}](${path.split('/').map(encodeURIComponent).join('/')})`
+  return `![${text}](${ASSETS_DIR}/${encodeURIComponent(name)})`
 }
 
-/**
- * The path, relative to the sheet's folder, that a link points at, or null
- * when it is not a picture file next to the sheet: a web address, an
- * absolute path, a path that climbs out of the folder, or not an image.
- */
-export function localImagePath(url: string): string | null {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith('/') || url.startsWith('#')) return null
-  let path: string
+/** The file name in the assets folder a link points at, or null for any other link. */
+export function assetNameFromUrl(url: string): string | null {
+  const prefix = `${ASSETS_DIR}/`
+  if (!url.startsWith(prefix)) return null
+  let name: string
   try {
-    path = decodeURIComponent(url.replace(/^\.\//, ''))
+    name = decodeURIComponent(url.slice(prefix.length))
   } catch {
     return null
   }
-  if (path === '' || path.includes('\\')) return null
-  const parts = path.split('/')
-  if (parts.some((p) => p === '' || p === '..' || p === '.' || p.startsWith('.'))) return null
-  return isImageName(path) ? path : null
+  return name === '' || name.includes('/') || name.includes('\\') || name.startsWith('.') ? null : name
 }
 
 export interface ImageRef {
@@ -112,48 +108,50 @@ export function findImages(text: string): ImageRef[] {
   return refs
 }
 
-/** What importing a picture gave: the Markdown to put in a sheet, and the file's name in the folder. */
+/** What importing a picture gave: the Markdown to put in a sheet, and the file's name in the library. */
 export interface ImportedImage {
   name: string
   markdown: string
 }
 
-async function takenNames(fs: FileSystem, dir: string): Promise<Set<string>> {
+async function takenNames(fs: FileSystem, root: string): Promise<Set<string>> {
+  const dir = joinPath(root, ASSETS_DIR)
+  if (!(await fs.exists(dir))) return new Set()
   return new Set((await fs.list(dir)).map((e) => e.name))
 }
 
-function altOf(name: string): string {
-  return name.replace(/\.[^.]*$/, '')
-}
-
 /**
- * Copies picture files into the sheet's folder and returns the Markdown for
- * each. Files that are not images are skipped.
+ * Copies picture files into the library's assets folder and returns the
+ * Markdown for each. Files that are not images are skipped.
  */
-export async function importImages(fs: FileSystem, dir: string, sources: string[]): Promise<ImportedImage[]> {
-  const taken = await takenNames(fs, dir)
+export async function importImages(fs: FileSystem, root: string, sources: string[]): Promise<ImportedImage[]> {
+  const dir = joinPath(root, ASSETS_DIR)
+  const taken = await takenNames(fs, root)
   const done: ImportedImage[] = []
   for (const source of sources) {
     const original = fileNameOf(source)
     if (!isImageName(original)) continue
+    await fs.makeDir(dir)
     const name = assetName(original, taken)
     await fs.copyFile(source, joinPath(dir, name))
     taken.add(name)
-    done.push({ name, markdown: imageMarkdown(name, altOf(name)) })
+    done.push({ name, markdown: imageMarkdown(name, name.replace(/\.[^.]*$/, '')) })
   }
   return done
 }
 
-/** Saves picture bytes, such as a pasted screenshot, in the sheet's folder. */
+/** Saves picture bytes, such as a pasted screenshot, in the assets folder. */
 export async function saveImage(
   fs: FileSystem,
-  dir: string,
+  root: string,
   originalName: string,
   data: Uint8Array,
 ): Promise<ImportedImage> {
-  const name = assetName(originalName, await takenNames(fs, dir))
+  const dir = joinPath(root, ASSETS_DIR)
+  await fs.makeDir(dir)
+  const name = assetName(originalName, await takenNames(fs, root))
   await fs.writeBinary(joinPath(dir, name), data)
-  return { name, markdown: imageMarkdown(name, altOf(name)) }
+  return { name, markdown: imageMarkdown(name, name.replace(/\.[^.]*$/, '')) }
 }
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -170,23 +168,24 @@ export function toBase64(data: Uint8Array): string {
   return out
 }
 
-/** A `data:` address with the picture inside, or null if the link is not a local picture or the file is missing. */
-export async function imageDataUri(fs: FileSystem, dir: string, url: string): Promise<string | null> {
-  const path = localImagePath(url)
-  const mime = path ? imageMime(path) : undefined
-  if (!path || !mime) return null
+/** A `data:` address with the image inside, or null if the link is not a library image or the file is missing. */
+export async function imageDataUri(fs: FileSystem, root: string, url: string): Promise<string | null> {
+  const name = assetNameFromUrl(url)
+  const mime = name ? imageMime(name) : undefined
+  if (!name || !mime) return null
   try {
-    return `data:${mime};base64,${toBase64(await fs.readBinary(joinPath(dir, path)))}`
+    return `data:${mime};base64,${toBase64(await fs.readBinary(joinPath(joinPath(root, ASSETS_DIR), name)))}`
   } catch {
     return null
   }
 }
 
-/** The text with each local picture's link replaced by one that carries the picture itself. */
-export async function embedImages(fs: FileSystem, dir: string, text: string): Promise<string> {
+/** The text with each library picture's link replaced by one that carries the picture itself. */
+export async function embedImages(fs: FileSystem, root: string, text: string): Promise<string> {
+  const refs = findImages(text)
   let out = text
-  for (const ref of [...findImages(text)].reverse()) {
-    const uri = await imageDataUri(fs, dir, ref.url)
+  for (const ref of [...refs].reverse()) {
+    const uri = await imageDataUri(fs, root, ref.url)
     if (uri) out = out.slice(0, ref.from) + `![${ref.alt}](${uri})` + out.slice(ref.to)
   }
   return out
@@ -194,53 +193,8 @@ export async function embedImages(fs: FileSystem, dir: string, text: string): Pr
 
 /** The text with every image's Markdown removed, for counting words. */
 export function stripImages(text: string): string {
+  const refs = findImages(text)
   let out = text
-  for (const ref of [...findImages(text)].reverse()) out = out.slice(0, ref.from) + out.slice(ref.to)
+  for (const ref of [...refs].reverse()) out = out.slice(0, ref.from) + out.slice(ref.to)
   return out
-}
-
-/**
- * A sheet is going to another folder: copies the pictures it links into that
- * folder (a picture already there with the same bytes is reused, a different
- * one gets a new name) and rewrites its links to match. The originals stay,
- * since other sheets may use them. Returns the sheet's text before, and the
- * files created, so the change can be undone; null when nothing needed doing.
- */
-export async function carryImages(
-  fs: FileSystem,
-  fromDir: string,
-  sheetPath: string,
-): Promise<{ before: string; created: string[] } | null> {
-  const toDir = sheetPath.slice(0, sheetPath.lastIndexOf('/')) || '/'
-  if (toDir === fromDir) return null
-  const text = await fs.readText(sheetPath)
-  const created: string[] = []
-  let out = text
-  for (const ref of [...findImages(text)].reverse()) {
-    const rel = localImagePath(ref.url)
-    if (!rel) continue
-    const source = joinPath(fromDir, rel)
-    if (!(await fs.exists(source))) continue
-    const slash = rel.lastIndexOf('/')
-    const sub = slash < 0 ? '' : rel.slice(0, slash)
-    const destDir = sub ? joinPath(toDir, sub) : toDir
-    const bytes = await fs.readBinary(source)
-    let name = fileNameOf(rel)
-    if (await fs.exists(joinPath(destDir, name))) {
-      const same = await fs.readBinary(joinPath(destDir, name))
-      if (same.length !== bytes.length || same.some((b, i) => b !== bytes[i])) {
-        name = assetName(name, await takenNames(fs, destDir))
-      }
-    }
-    const target = joinPath(destDir, name)
-    if (!(await fs.exists(target))) {
-      if (sub) await fs.makeDir(destDir)
-      await fs.writeBinary(target, bytes)
-      created.push(target)
-    }
-    const next = sub ? `${sub}/${name}` : name
-    if (next !== rel) out = out.slice(0, ref.from) + imageMarkdown(next, ref.alt) + out.slice(ref.to)
-  }
-  if (out !== text) await fs.writeText(sheetPath, out)
-  return created.length === 0 && out === text ? null : { before: text, created }
 }

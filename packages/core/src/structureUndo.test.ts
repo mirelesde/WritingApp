@@ -125,25 +125,3 @@ describe('copyNodes', () => {
     await expect(copyNodes(fs, ['/Lib/Book'], '/Lib/Book/Part')).rejects.toThrow('into itself')
   })
 })
-
-describe('pictures follow a sheet to another group', () => {
-  it('moves with copies and undoes cleanly', async () => {
-    const fs = new MemoryFileSystem({ '/lib/A/s.md': '![p](p.png)', '/lib/B/t.md': 'x' })
-    await fs.writeBinary('/lib/A/p.png', new Uint8Array([1, 2]))
-    const { moveNodesUndoable, applyUndo } = await import('./index')
-    const { paths, undo } = await moveNodesUndoable(fs, ['/lib/A/s.md'], '/lib/B')
-    expect(paths).toEqual(['/lib/B/s.md'])
-    expect(Array.from(await fs.readBinary('/lib/B/p.png'))).toEqual([1, 2])
-    await applyUndo(fs, undo)
-    expect(await fs.exists('/lib/B/s.md')).toBe(false)
-    expect(await fs.readText('/lib/A/s.md')).toBe('![p](p.png)')
-  })
-
-  it('copies take them too', async () => {
-    const fs = new MemoryFileSystem({ '/lib/A/s.md': '![p](p.png)', '/lib/B/t.md': 'x' })
-    await fs.writeBinary('/lib/A/p.png', new Uint8Array([7]))
-    const { copyNodes } = await import('./index')
-    await copyNodes(fs, ['/lib/A/s.md'], '/lib/B')
-    expect(Array.from(await fs.readBinary('/lib/B/p.png'))).toEqual([7])
-  })
-})

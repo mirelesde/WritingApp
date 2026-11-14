@@ -94,9 +94,9 @@ export {
 export type { Template } from './templates'
 export { htmlToMarkdown, isRichPaste } from './htmlToMarkdown'
 export {
+  ASSETS_DIR,
   assetName,
-  carryImages,
-  localImagePath,
+  assetNameFromUrl,
   embedImages,
   stripImages,
   findImages,

@@ -289,7 +289,7 @@
   async function insertImage(): Promise<void> {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (!path || !editors[path]) return
-    const markdown = await window.api.chooseImages(path)
+    const markdown = await window.api.chooseImages()
     editors[path]?.insertImagesAtCursor(markdown)
   }
 
@@ -1702,7 +1702,6 @@
                 <Editor
                   bind:this={editors[part.path]}
                   text={part.text}
-                  path={part.path}
                   onchange={(content) => edited(part.path, content)}
                   onblur={() => void autosaver.flush()}
                   onescape={() => (zen ? toggleZen() : sheetsEl?.focus())}

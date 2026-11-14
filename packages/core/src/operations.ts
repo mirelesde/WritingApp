@@ -1,4 +1,3 @@
-import { carryImages, isImageName } from './images'
 import type { DirEntry, FileSystem } from './filesystem'
 import { sheetFileName, slugify } from './filename'
 import { sheetTitle } from './sheet'
@@ -313,18 +312,11 @@ export async function moveNodesUndoable(
   const sidecars = [await snapshotSidecar(fs, sourceDir)]
   if (target !== sourceDir) sidecars.push(await snapshotSidecar(fs, target))
   const moved = await moveNodes(fs, paths, targetGroup, index)
-  if (target === sourceDir) return { paths: moved, undo: sidecars }
-  const renames = moved.map((to, i): UndoAction => ({ kind: 'rename', from: to, to: froms[i]! })).reverse()
-  // A sheet that changes folder takes copies of its pictures along.
-  const restores: UndoAction[] = []
-  for (const [i, to] of moved.entries()) {
-    if (!to.endsWith('.md')) continue
-    const carried = await carryImages(fs, sourceDir, to)
-    if (!carried) continue
-    restores.push({ kind: 'write', path: froms[i]!, text: carried.before })
-    for (const path of carried.created) restores.push({ kind: 'trash', path })
-  }
-  return { paths: moved, undo: [...renames, ...restores, ...sidecars] }
+  const renames: UndoAction[] =
+    target === sourceDir
+      ? []
+      : moved.map((to, i): UndoAction => ({ kind: 'rename', from: to, to: froms[i]! })).reverse()
+  return { paths: moved, undo: [...renames, ...sidecars] }
 }
 
 /** Copies a sheet, or a group with every sheet and sub-group in it, to `to`. */
@@ -335,7 +327,7 @@ async function copyTree(fs: FileSystem, from: string, to: string, isDir: boolean
   }
   await fs.makeDir(to)
   for (const entry of await fs.list(from)) {
-    const keep = entry.kind === 'directory' ? !entry.name.startsWith('.') : entry.name === SIDECAR_NAME || entry.name.endsWith('.md') || isImageName(entry.name)
+    const keep = entry.kind === 'directory' ? !entry.name.startsWith('.') : entry.name === SIDECAR_NAME || entry.name.endsWith('.md')
     if (keep) await copyTree(fs, joinPath(from, entry.name), joinPath(to, entry.name), entry.kind === 'directory')
   }
 }
@@ -385,10 +377,6 @@ export async function copyNodes(
     taken.add(newName.toLowerCase())
     await copyTree(fs, from, joinPath(target, newName), isDir)
     written.push(joinPath(target, newName))
-    if (!isDir && parentPath(from) !== target) {
-      const carried = await carryImages(fs, parentPath(from), joinPath(target, newName))
-      if (carried) written.push(...carried.created)
-    }
     created.set(from, newName)
     insertName(dest, newName, start + i)
   }
