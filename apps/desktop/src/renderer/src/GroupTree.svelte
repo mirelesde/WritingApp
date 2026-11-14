@@ -196,6 +196,7 @@
 
 <style>
   .row {
+    position: relative;
     display: flex;
     align-items: center;
     border-radius: 8px;
@@ -208,11 +209,23 @@
     outline: 2px solid var(--accent);
     outline-offset: -2px;
   }
-  .row.drop-before {
-    box-shadow: 0 -2px 0 var(--accent);
+  /* A straight line that stops where the row's rounded corners begin. */
+  .row.drop-before::before,
+  .row.drop-after::after {
+    content: '';
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: var(--accent);
+    pointer-events: none;
   }
-  .row.drop-after {
-    box-shadow: 0 2px 0 var(--accent);
+  .row.drop-before::before {
+    top: -2px;
+  }
+  .row.drop-after::after {
+    bottom: -2px;
   }
   .row.selected {
     background: var(--selected);

@@ -2130,6 +2130,7 @@
     padding: 0 6px 12px;
   }
   .sheet {
+    position: relative;
     display: block;
     width: 100%;
     text-align: left;
@@ -2158,11 +2159,23 @@
   .sheet.run-end {
     border-top-right-radius: 0;
   }
-  .sheet.drop-before {
-    box-shadow: 0 -2px 0 var(--accent);
+  /* The drop line is straight and stops where the card's rounded corners begin. */
+  .sheet.drop-before::before,
+  .sheet.drop-after::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: var(--accent);
+    pointer-events: none;
   }
-  .sheet.drop-after {
-    box-shadow: 0 2px 0 var(--accent);
+  .sheet.drop-before::before {
+    top: -4px;
+  }
+  .sheet.drop-after::after {
+    bottom: -4px;
   }
   .sheet:hover {
     background: var(--hover);
