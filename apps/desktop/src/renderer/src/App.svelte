@@ -304,7 +304,8 @@
     styleOpen = false
     formatActive(kind)
   }
-  const STYLES: { kind: FormatKind; label: string; hint?: string }[][] = [
+  /** `hint` is the digit after Cmd/Ctrl+Alt; `keys` is a whole shortcut, for the rest. */
+  const STYLES: { kind: FormatKind; label: string; hint?: string; keys?: string }[][] = [
     [
       { kind: 'h1', label: 'Heading 1', hint: '1' },
       { kind: 'h2', label: 'Heading 2', hint: '2' },
@@ -321,7 +322,7 @@
       { kind: 'strike', label: 'Strikethrough' },
       { kind: 'code', label: 'Inline code' },
       { kind: 'codeblock', label: 'Code block' },
-      { kind: 'comment', label: 'Comment' },
+      { kind: 'comment', label: 'Comment', keys: '/' },
       { kind: 'rule', label: 'Horizontal rule' }
     ]
   ]
@@ -1370,10 +1371,10 @@
       menu('File', 'Daily Note', 'daily-note', `${keyMod}⌥D`),
       menu('File', 'Save Sheet as Template', 'save-template'),
       menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
-      menu('File', 'New Project', 'new-project'),
+      menu('File', 'New Project', 'new-project', `${keyMod}⌥${keyShift}N`),
       menu('File', 'Duplicate', 'duplicate'),
       menu('File', 'Move to…', 'move-to', `${keyMod}${keyShift}M`),
-      menu('File', 'Move to Trash', 'delete'),
+      menu('File', 'Move to Trash', 'delete', `${keyMod}⌥⌫`),
       menu('File', 'Quick Open…', 'quick-open', `${keyMod}P`),
       menu('File', 'Find in Library…', 'search', `${keyMod}${keyShift}F`),
       menu('File', 'Export…', 'export-html', `${keyMod}E`),
@@ -1381,10 +1382,10 @@
       menu('Sheet', 'Split at Cursor', 'split', `${keyMod}${keyShift}↩`),
       menu('Sheet', 'Merge Sheets', 'merge', `${keyMod}${keyShift}J`),
       menu('Sheet', 'Glue Sheets', 'glue', `${keyMod}${keyShift}G`),
-      menu('Sheet', 'Unglue Sheets', 'unglue'),
-      menu('Sheet', 'Undo Library Change', 'undo-sheet-change'),
+      menu('Sheet', 'Unglue Sheets', 'unglue', `${keyMod}⌥G`),
+      menu('Sheet', 'Undo Library Change', 'undo-sheet-change', `${keyMod}⌥Z`),
       ...STYLES.flat().map((s) =>
-        menu('Format', s.label, `format-${s.kind}`, s.hint ? `${keyMod}⌥${s.hint}` : undefined)
+        menu('Format', s.label, `format-${s.kind}`, s.hint ? `${keyMod}⌥${s.hint}` : s.keys ? `${keyMod}${s.keys}` : undefined)
       ),
       menu('Format', 'Bold', 'format-bold', `${keyMod}B`),
       menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
@@ -1396,7 +1397,7 @@
       menu('View', 'Toggle Sheet List', 'toggle-sheets'),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
       { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
-      setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }),
+      { ...setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }), shortcut: `${keyMod}${keyShift}L` },
       setting('View', `${view?.typewriter ? 'Turn off' : 'Turn on'} Typewriter Scrolling`, { typewriter: !view?.typewriter }),
       setting('View', `${view?.lineNumbers ? 'Hide' : 'Show'} Line Numbers`, { lineNumbers: !view?.lineNumbers }),
       setting('View', 'Light Theme', { theme: 'light' }),
@@ -1405,8 +1406,8 @@
       setting('View', 'Serif Font', { font: 'serif' }),
       setting('View', 'Sans-serif Font', { font: 'sans' }),
       setting('View', 'Monospace Font', { font: 'mono' }),
-      setting('View', 'Larger Text', { fontSize: (view?.fontSize ?? 18) + 1 }),
-      setting('View', 'Smaller Text', { fontSize: (view?.fontSize ?? 18) - 1 }),
+      { ...setting('View', 'Larger Text', { fontSize: (view?.fontSize ?? 18) + 1 }), shortcut: `${keyMod}+` },
+      { ...setting('View', 'Smaller Text', { fontSize: (view?.fontSize ?? 18) - 1 }), shortcut: `${keyMod}-` },
       ...SORTS.map(([value, label]) => setting('Sort', `Sheets by ${label}`, { sheetSort: value }))
     ]
     return list
@@ -1665,7 +1666,7 @@
                   {#each group as item (item.kind)}
                     <button role="menuitem" class:current={item.kind === styleNow} onclick={() => applyStyle(item.kind)}>
                       <span>{item.label}</span>
-                      {#if item.hint}<kbd>{keyMod}⌥{item.hint}</kbd>{/if}
+                      {#if item.hint}<kbd>{keyMod}⌥{item.hint}</kbd>{:else if item.keys}<kbd>{keyMod}{item.keys}</kbd>{/if}
                     </button>
                   {/each}
                 {/each}

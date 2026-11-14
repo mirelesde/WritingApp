@@ -274,7 +274,7 @@ function buildMenu(): Menu {
       submenu: [
         { label: 'Table', click: () => sendCommand('insert-table') },
         { label: 'Footnote', click: () => sendCommand('insert-footnote') },
-        { label: 'Go to Footnote', click: () => sendCommand('go-to-footnote') }
+        { label: 'Go to Footnote', ...shown('CmdOrCtrl+Alt+J'), click: () => sendCommand('go-to-footnote') }
       ]
     },
     viewMenu(isMac),
