@@ -810,8 +810,8 @@ the items marked done above.
 - Comments (`<!-- -->`) are red and quotations blue; both colours can be set
   by a colour theme. The default light and dark themes are neutral grey.
 - Text column widths include Compact and Wider, and Narrow is the default.
-- Indent paragraphs (Preferences, Cmd/Ctrl+Shift+D is distraction-free, not
-  this) is a display and export style; see item 61.
+- Indent paragraphs (a Preferences switch) is a display and export style; see
+  item 61.
 
 **Tables** are edited in place; see item 28. Insert > Table adds one.
 
