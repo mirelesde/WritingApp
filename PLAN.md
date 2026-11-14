@@ -754,8 +754,7 @@ Ulysses has and we do not; 72 to 81 are suggestions of our own.
     Look-in scope in "Still open". Cheap on top of what exists.
 74. **Sample library on first run.** A small "Welcome" project that teaches
     the shortcuts, offered instead of the bare empty state.
-75. **Crash and data-loss safety.** Journal unsaved edits to the app's data
-    folder and offer to restore them after a crash or a power cut.
+75. ~~**Crash and data-loss safety.**~~ **Done.** The editor journals its unsaved text to the app's data folder (`journal/`, one file per sheet) 250 ms after a keystroke and clears it once the file is written. At launch, any entry that differs from its file (a crash, a power cut or a save that kept failing) opens a dialog showing the recovered text beside the file's, with Restore or Keep the file as it is. Entries whose sheet is gone, or that match the file, are dropped silently; text journaled during the current run is never offered.
 76. **Format menu check marks.** The menu does not show the style at the
     cursor yet (only the popover does).
 77. **Print.** A Print command (File menu, Cmd/Ctrl+P conflicts with Quick

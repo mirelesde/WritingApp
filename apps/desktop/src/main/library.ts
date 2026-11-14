@@ -40,6 +40,7 @@ import { isInside, isSheetInside, toPosix } from './paths'
 import { watchFolder } from './watcher'
 import { createSettingsStore, withRecent } from './settings'
 import { parseSheetCache, serializeSheetCache } from './sheetCache'
+import { createJournal } from './journal'
 
 const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
 let settings: ReturnType<typeof createSettingsStore>
@@ -251,6 +252,25 @@ export function registerLibraryIpc(): void {
     const { libraryPath } = await settings.load()
     return libraryPath ? open(libraryPath) : null
   })
+
+  // Unsaved text, kept apart from the library so a crash cannot lose what was typed since the last save.
+  const journal = createJournal(join(app.getPath('userData'), 'journal'))
+  const journalPath = (path: unknown): string => {
+    if (typeof path !== 'string' || !currentRoot || !isSheetInside(currentRoot, path)) {
+      throw new Error('Not a sheet in the open library')
+    }
+    return path
+  }
+  ipcMain.handle('journal:put', (_event, path: unknown, text: unknown) => {
+    if (typeof text !== 'string') throw new Error('Nothing to journal')
+    return journal.put(currentRoot!, journalPath(path), text)
+  })
+  ipcMain.handle('journal:clear', (_event, path: unknown) => journal.clear(journalPath(path)))
+  // Text journaled during this run is still in flight, not left over from a crash.
+  const startedAt = Date.now()
+  ipcMain.handle('journal:pending', async () =>
+    currentRoot ? (await journal.pending(currentRoot)).filter((entry) => entry.savedAt < startedAt) : []
+  )
 
   ipcMain.handle('session:lastSheet', async () => (await settings.load()).lastSheet ?? null)
 

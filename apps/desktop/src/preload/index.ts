@@ -3,6 +3,9 @@ import type { ViewSettings } from '@writingapp/core'
 import type { Api, LibraryInfo, MenuCommand } from './api'
 
 const api: Api = {
+  journalPut: (path, text) => ipcRenderer.invoke('journal:put', path, text),
+  journalClear: (path) => ipcRenderer.invoke('journal:clear', path),
+  journalPending: () => ipcRenderer.invoke('journal:pending'),
   getLibrary: () => ipcRenderer.invoke('library:get'),
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
   readSheet: (path) => ipcRenderer.invoke('sheet:read', path),

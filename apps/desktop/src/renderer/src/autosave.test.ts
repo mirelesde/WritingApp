@@ -131,3 +131,66 @@ describe('createAutosaver', () => {
     expect(writes).toEqual([])
   })
 })
+
+describe('createAutosaver journal', () => {
+  function withJournal() {
+    const puts: [string, string][] = []
+    const clears: string[] = []
+    const writes: [string, string][] = []
+    const autosaver = createAutosaver({
+      save: async (p, t) => void writes.push([p, t]),
+      journal: {
+        put: async (p, t) => void puts.push([p, t]),
+        clear: async (p) => void clears.push(p)
+      },
+      delay: 800,
+      journalDelay: 250
+    })
+    return { autosaver, puts, clears, writes }
+  }
+
+  it('journals the latest text soon after typing, and clears it once saved', async () => {
+    const { autosaver, puts, clears, writes } = withJournal()
+    autosaver.change('/a.md', 'h')
+    autosaver.change('/a.md', 'he')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(puts).toEqual([['/a.md', 'he']])
+    expect(clears).toEqual([])
+    await vi.advanceTimersByTimeAsync(600)
+    expect(writes).toEqual([['/a.md', 'he']])
+    expect(clears).toEqual(['/a.md'])
+  })
+
+  it('does not journal text that was saved before the journal delay passed', async () => {
+    const { autosaver, puts, clears } = withJournal()
+    autosaver.change('/a.md', 'quick')
+    await autosaver.flush()
+    await vi.advanceTimersByTimeAsync(300)
+    expect(puts).toEqual([])
+    expect(clears).toEqual([])
+  })
+
+  it('keeps the journal when a save fails', async () => {
+    const puts: [string, string][] = []
+    const clears: string[] = []
+    const autosaver = createAutosaver({
+      save: async () => {
+        throw new Error('disk full')
+      },
+      journal: { put: async (p, t) => void puts.push([p, t]), clear: async (p) => void clears.push(p) },
+      retryDelay: 100000
+    })
+    autosaver.change('/a.md', 'precious')
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(puts).toEqual([['/a.md', 'precious']])
+    expect(clears).toEqual([])
+  })
+
+  it('clears the journal when the text is discarded', async () => {
+    const { autosaver, clears } = withJournal()
+    autosaver.change('/a.md', 'mine')
+    await vi.advanceTimersByTimeAsync(300)
+    autosaver.discard('/a.md')
+    expect(clears).toEqual(['/a.md'])
+  })
+})

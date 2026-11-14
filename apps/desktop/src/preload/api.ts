@@ -50,6 +50,14 @@ export type MenuCommand =
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
+/** Text that never reached its sheet, found at launch (see the journal in the main process). */
+export interface RecoveredSheet {
+  path: string
+  text: string
+  disk: string
+  savedAt: number
+}
+
 /** A preview of an HTML export. */
 export interface ExportPreview {
   title: string
@@ -122,6 +130,12 @@ export interface Api {
   saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
   /** The sheet that was open when the app last ran, if any. */
   getLastSheet(): Promise<string | null>
+  /** Keeps unsaved editor text safe until the sheet is written. */
+  journalPut(path: string, text: string): Promise<void>
+  /** Forgets a sheet's journaled text, once it is saved or given up. */
+  journalClear(path: string): Promise<void>
+  /** Unsaved text left over from a crash, for the open library. */
+  journalPending(): Promise<RecoveredSheet[]>
   /** Remembers the open sheet for the next launch. */
   setLastSheet(path: string): Promise<void>
   /** How the app looks, with defaults filled in. */

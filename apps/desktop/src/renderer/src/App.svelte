@@ -12,10 +12,11 @@
     type SheetSort,
     type ViewSettings
   } from '@writingapp/core'
-  import type { LibraryInfo, MenuCommand, OpResult, PdfOptions } from '../../preload/api'
+  import type { LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
   import { applyView } from './view'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
+  import RecoveryDialog from './RecoveryDialog.svelte'
   import CommandPalette from './CommandPalette.svelte'
   import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -100,8 +101,44 @@
         throw e
       }
     },
-    onStatus: (status) => (saveStatus = status)
+    onStatus: (status) => (saveStatus = status),
+    journal: {
+      put: (path, text) => window.api.journalPut(path, text),
+      clear: (path) => window.api.journalClear(path)
+    }
   })
+
+  // Unsaved text left by a crash, offered back one sheet at a time.
+  let recovery = $state<RecoveredSheet[]>([])
+  let recoveryTotal = $state(0)
+
+  async function checkRecovery(): Promise<void> {
+    try {
+      recovery = await window.api.journalPending()
+      recoveryTotal = recovery.length
+    } catch {
+      recovery = []
+    }
+  }
+
+  async function finishRecovery(restore: boolean): Promise<void> {
+    const entry = recovery[0]
+    if (!entry) return
+    if (restore) {
+      try {
+        await autosaver.flush()
+        await guard.save(entry.path, entry.text)
+      } catch (e) {
+        notice = errorMessage(e)
+        return
+      }
+      edits[entry.path] = entry.text
+      editors[entry.path]?.replaceText(entry.text)
+      showInfo('Restored the recovered text')
+    }
+    void window.api.journalClear(entry.path)
+    recovery = recovery.slice(1)
+  }
 
   function raiseConflict(path: string, mine: string, disk: string): void {
     if (conflict?.path !== path) conflict = { path, mine, disk }
@@ -210,6 +247,7 @@
     expanded = { [info.tree.path]: true }
     selectedGroup = info.tree.path
     clearSheets()
+    void checkRecovery()
   }
 
   function clearSheets(): void {
@@ -1697,6 +1735,19 @@
 
 {#if palette}
   <CommandPalette commands={paletteCommands} onrun={runPaletteCommand} oncancel={closePalette} />
+{/if}
+
+{#if recovery[0] && !conflict}
+  <RecoveryDialog
+    name={recovery[0].path.slice(recovery[0].path.lastIndexOf('/') + 1)}
+    recovered={recovery[0].text}
+    disk={recovery[0].disk}
+    savedAt={recovery[0].savedAt}
+    position={recoveryTotal - recovery.length + 1}
+    total={recoveryTotal}
+    onrestore={() => void finishRecovery(true)}
+    ondiscard={() => void finishRecovery(false)}
+  />
 {/if}
 
 {#if conflict}

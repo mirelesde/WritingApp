@@ -16,6 +16,13 @@ interface Options {
   delay?: number
   /** How long to wait before retrying after a failed save. */
   retryDelay?: number
+  /** Keeps unsaved text somewhere safe, so a crash before the save loses nothing. */
+  journal?: {
+    put: (path: string, text: string) => Promise<void>
+    clear: (path: string) => Promise<void>
+  }
+  /** Quiet time after a keystroke before the text is journaled. Shorter than `delay`. */
+  journalDelay?: number
 }
 
 /**
@@ -27,9 +34,27 @@ export function createAutosaver({
   save,
   onStatus = () => {},
   delay = 800,
-  retryDelay = 5000
+  retryDelay = 5000,
+  journal,
+  journalDelay = 250
 }: Options): Autosaver {
   const unsaved = new Map<string, string>()
+  // What the journal holds for each sheet, so only new text is sent and only stored text is cleared.
+  const journaled = new Map<string, string>()
+  let journalTimer: ReturnType<typeof setTimeout> | undefined
+
+  function writeJournal(): void {
+    for (const [path, text] of unsaved) {
+      if (journaled.get(path) === text) continue
+      journaled.set(path, text)
+      journal?.put(path, text).catch(() => journaled.delete(path))
+    }
+  }
+
+  function clearJournal(path: string): void {
+    if (!journaled.delete(path)) return
+    journal?.clear(path).catch(() => {})
+  }
   let timer: ReturnType<typeof setTimeout> | undefined
   let tail: Promise<void> = Promise.resolve()
   let writing = 0
@@ -48,7 +73,10 @@ export function createAutosaver({
     try {
       await save(path, text)
       failed = false
-      if (unsaved.get(path) === text) unsaved.delete(path)
+      if (unsaved.get(path) === text) {
+        unsaved.delete(path)
+        clearJournal(path)
+      }
     } catch {
       failed = true
       schedule(retryDelay)
@@ -75,10 +103,15 @@ export function createAutosaver({
       unsaved.set(path, text)
       status()
       schedule(delay)
+      if (journal) {
+        clearTimeout(journalTimer)
+        journalTimer = setTimeout(writeJournal, journalDelay)
+      }
     },
     flush,
     discard(path) {
       unsaved.delete(path)
+      clearJournal(path)
       status()
     }
   }
