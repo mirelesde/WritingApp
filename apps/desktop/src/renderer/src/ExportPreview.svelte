@@ -300,7 +300,7 @@
     color: var(--danger);
   }
   .dialog {
-    width: min(860px, calc(100vw - 48px));
+    width: min(1160px, calc(100vw - 48px));
     height: calc(100vh - 48px);
     display: flex;
     flex-direction: column;
@@ -312,13 +312,14 @@
   }
   header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     padding: 10px 12px;
     border-bottom: 1px solid var(--border);
   }
   .name {
-    flex: 1 1 0;
+    flex: 1 1 140px;
     min-width: 60px;
     overflow: hidden;
     text-overflow: ellipsis;
