@@ -1096,6 +1096,16 @@ tested with the in-memory one)
 
 - **Live checks still owed.** `docs/UAT.md` holds the manual test scripts for wiki links, hidden marks, folding, import, code colours and maths, and drop lines. Not yet seen working in the running app: the import file dialog, fold shortcuts and the Fold menu, unfolding through outline or search, focus mode with folds, duplicate wiki-link titles, PDF export of maths, a real mouse drag showing the straight drop bars, and anything on Windows or Linux.
 - **Small gaps from recent features, none urgent:** maths in table cells and footnotes is not drawn, with no maths menu entry or KaTeX macros; exports leave fenced code uncoloured; folding does not cover lists or code blocks; a renamed heading loses its remembered fold. Wiki-link leftovers are listed under item 30 and import gaps under item 57.
+- **Export styles: gaps and future tweaks (item 69).**
+  - *Unverified:* saving HTML and PDF in a chosen style was not run live (the preview was); the user-style overwrite and delete paths, dark mode of the style editor, and Windows and Linux are unchecked. Built-ins name Palatino, Courier New and Times, which Linux may not have, so they fall back to another serif or mono face.
+  - *Sanitiser is a filter, not a CSS parser.* It strips `@import`, `url()` to `http(s)` or `//`, and `</style`. CSS escapes (`u\72l(`), `image-set()` and `@font-face` sources could slip a web fetch past it. A real parser, or a Content-Security-Policy `<meta>` in the export that blocks remote loads, would close it. Exported HTML itself carries no such guard once opened elsewhere.
+  - *Page setup is not part of a style.* Page size, margins and page numbers stay in the dialog; `@page` rules in a style are ignored by the PDF path. A style could carry its own defaults (Manuscript: Letter, 1 in).
+  - *Editor:* plain textarea with no highlighting, no CSS error messages, no reset-to-original, no undo beyond the textarea's own. Built-ins cannot be edited in place (they are copied), and a renamed style keeps its old file name.
+  - *Sharing:* styles are shared by copying a `.css` file; there is no import button, no style pack, and no Ulysses `.ulstyle` importer (that would parse user-supplied files only; the Ulysses catalogue is not licensed for copying, see item 69).
+  - *Scope:* one style per export; no per-sheet or per-group override, no remembered style per library, and the choice is stored in the browser's local storage, not in settings. Markdown export and the editor's own look do not use styles.
+  - *Content features a style cannot add:* title page, table of contents, running headers and footers, chapter numbering, drop caps and first-line small caps, widow and orphan control beyond the print basics, per-style horizontal-rule ornaments for the "break" between sheets beyond a character.
+  - *Formats:* no ePub or DOCX, which Ulysses styles also target; both would reuse the style CSS (ePub) or need a mapping (DOCX).
+  - *UI polish:* the export dialog header clips the title on narrow windows; style descriptions are cut off with an ellipsis; the preview shows a light page even in dark mode for styles that do not force one.
 
 - **Scope for Find in Library (decided, see item 73: group or whole library).** Old note: Find and Replace in the
   library search every sheet. Option: a "Look in" selector (Library,
