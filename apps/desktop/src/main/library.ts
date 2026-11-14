@@ -3,6 +3,7 @@ import { BrowserWindow, dialog, ipcMain, protocol, shell, app } from 'electron'
 import { basename, dirname, extname, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
+  docxToMarkdown,
   applyUndo,
   snapshotSidecar,
   createGroup,
@@ -506,7 +507,7 @@ export function registerLibraryIpc(): void {
       title: 'Import',
       buttonLabel: 'Import',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'Text, RTF and Markdown', extensions: ['txt', 'text', 'rtf', 'md', 'markdown'] }]
+      filters: [{ name: 'Word, text, RTF and Markdown', extensions: ['docx', 'txt', 'text', 'rtf', 'md', 'markdown'] }]
     }
     const window = BrowserWindow.fromWebContents(event.sender)
     const picked = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
@@ -519,7 +520,11 @@ export function registerLibraryIpc(): void {
       for (const file of picked.filePaths) {
         try {
           const bytes = await nodeFs.readFile(file)
-          const markdown = importedMarkdown(basename(file), decodeImported(bytes, extname(file)))
+          const root = currentRoot
+          const markdown =
+            extname(file).toLowerCase() === '.docx' && root
+              ? (await docxToMarkdown(bytes, { saveImage: async (name, data) => (await saveImage(fs, root, name, data, hashImage)).name })).markdown
+              : importedMarkdown(basename(file), decodeImported(bytes, extname(file)))
           if (markdown === null) throw new Error('Not a type that can be imported')
           copied.push(await createSheet(fs, parent, markdown, at))
           if (at !== undefined) at++
