@@ -46,6 +46,9 @@
     onscope: (scope: FindScope) => void
   }
 
+  const mac = navigator.platform.startsWith('Mac')
+  const replaceAllHint = mac ? '⌘⌥↩' : 'Ctrl+Alt+Enter'
+
   let { scopes, scope, initialQuery = '', showReplace = false, host, onclose, onscope }: Props = $props()
 
   // svelte-ignore state_referenced_locally
@@ -332,8 +335,8 @@
       <div class="field">
         <input class="input" bind:value={replacement} placeholder="Replace with" aria-label="Replace with" spellcheck="false" />
       </div>
-      <button class="act" disabled={total === 0} onclick={() => void replaceOne()}>Replace</button>
-      <button class="act" disabled={total === 0} onclick={() => void replaceEverywhere()}>Replace All</button>
+      <button class="act" disabled={total === 0} onclick={() => void replaceOne()}>Replace <kbd>↩</kbd></button>
+      <button class="act" disabled={total === 0} onclick={() => void replaceEverywhere()}>Replace All <kbd>{replaceAllHint}</kbd></button>
       {#if done}<span class="done" role="status">{done}</span>{/if}
     </div>
   {/if}
@@ -460,6 +463,12 @@
   }
   .act:hover:not(:disabled) {
     background: color-mix(in srgb, var(--text) 13%, transparent);
+  }
+  kbd {
+    font: inherit;
+    font-size: 11px;
+    margin-left: 4px;
+    color: var(--muted);
   }
   .done {
     font-size: 12px;
