@@ -8,6 +8,7 @@ import {
   createFromTemplate,
   replaceInLibrary,
   createSheet,
+  importedMarkdown,
   dailyNote,
   listTemplates,
   saveAsTemplate,
@@ -206,6 +207,17 @@ export async function openRecentLibrary(path: string): Promise<LibraryInfo | nul
 }
 
 /** Runs a change to the library, then reloads it so the UI sees the result. */
+/** The text of an imported file: UTF-16 or UTF-8 as marked, else UTF-8 falling back to Windows-1252. */
+function decodeImported(bytes: Buffer, ext: string): string {
+  if (ext.toLowerCase() === '.rtf') return bytes.toString('latin1')
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes)
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes)
+  }
+}
+
 async function change(
   run: (root: string) => Promise<{
     moved?: [string, string][]
@@ -474,6 +486,32 @@ export function registerLibraryIpc(): void {
       return { created: await createSheet(fs, parent, '', at) }
     })
   )
+
+  ipcMain.handle('import:files', async (event, group: unknown, index: unknown) => {
+    const parent = inside(group, true)
+    const options: Electron.OpenDialogOptions = {
+      title: 'Import',
+      buttonLabel: 'Import',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Text, RTF and Markdown', extensions: ['txt', 'text', 'rtf', 'md', 'markdown'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const picked = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
+    return change(async () => {
+      const copied: string[] = []
+      if (picked.canceled) return { copied }
+      let at = typeof index === 'number' ? index : undefined
+      for (const file of picked.filePaths) {
+        const bytes = await nodeFs.readFile(file)
+        const markdown = importedMarkdown(basename(file), decodeImported(bytes, extname(file)))
+        if (markdown === null) continue
+        const path = await createSheet(fs, parent, markdown, at)
+        copied.push(path)
+        if (at !== undefined) at++
+      }
+      return { copied }
+    })
+  })
 
   ipcMain.handle('templates:list', async () =>
     currentRoot ? listTemplates(fs, currentRoot) : []

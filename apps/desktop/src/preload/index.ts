@@ -20,6 +20,7 @@ const api: Api = {
   renameGroup: (path, name) => ipcRenderer.invoke('op:renameGroup', path, name),
   syncSheetNames: (paths) => ipcRenderer.invoke('op:syncSheetNames', paths),
   move: (paths, target, index) => ipcRenderer.invoke('op:move', paths, target, index),
+  importFiles: (group, index) => ipcRenderer.invoke('import:files', group, index),
   chooseImages: () => ipcRenderer.invoke('image:choose'),
   saveImage: (name, data) => ipcRenderer.invoke('image:save', name, data),
   unusedImages: () => ipcRenderer.invoke('image:unused'),

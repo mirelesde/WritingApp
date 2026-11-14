@@ -197,6 +197,7 @@ function buildMenu(): Menu {
           click: () => sendCommand('search')
         },
         { type: 'separator' },
+        { label: 'Import…', click: () => sendCommand('import') },
         { label: 'Clean Up Unused Images…', click: () => sendCommand('clean-images') },
         {
           label: 'Export…',

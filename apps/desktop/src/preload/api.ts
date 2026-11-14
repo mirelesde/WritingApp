@@ -38,6 +38,7 @@ export type MenuCommand =
   | 'glue'
   | 'unglue'
   | 'undo-sheet-change'
+  | 'import'
   | 'fold-all'
   | 'unfold-all'
   | 'fold-section'
@@ -111,6 +112,8 @@ export interface Api {
   /** Moves sheets or groups sharing one parent into `target` as a block. */
   move(paths: string[], target: string, index?: number): Promise<OpResult>
   /** Copies sheets or groups into a group; `label` names the undo step. */
+  /** Asks for .txt, .rtf and Markdown files and adds them to a group as sheets; null (none if cancelled). `copied` lists the new sheets. */
+  importFiles(group: string, index?: number): Promise<OpResult>
   /** Asks for picture files, copies them into the library, and returns the Markdown for each. */
   chooseImages(): Promise<string[]>
   /** Saves picture bytes (a pasted image) in the library and returns its Markdown. */

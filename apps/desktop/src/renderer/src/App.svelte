@@ -324,6 +324,17 @@
     editors[path]?.insertImagesAtCursor(markdown)
   }
 
+  async function importFiles(): Promise<void> {
+    const parent = group
+    if (!parent) return
+    const at = parent.children.findIndex((c) => c.path === cursor)
+    const result = await runOp(() => window.api.importFiles(parent.path, at >= 0 ? at + 1 : undefined))
+    if (result?.copied?.length) {
+      await selectCopies(result.copied)
+      showInfo(`Imported ${result.copied.length === 1 ? '1 sheet' : `${result.copied.length} sheets`}.`)
+    }
+  }
+
   function foldHere(fold: boolean): void {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (path) editors[path]?.foldSectionAtCursor(fold)
@@ -1400,6 +1411,7 @@
     else if (command === 'insert-image') void insertImage()
     else if (command === 'clean-images') void openCleanUp()
     else if (command === 'go-to-footnote') goToFootnote()
+    else if (command === 'import') void importFiles()
     else if (command === 'fold-section') foldHere(true)
     else if (command === 'unfold-section') foldHere(false)
     else if (command === 'fold-all') foldAll(true)
@@ -1475,6 +1487,7 @@
           : 'Clean Up Unused Images…',
         'clean-images'
       ),
+      menu('File', 'Import…', 'import'),
       menu('File', 'Daily Note', 'daily-note', `${keyMod}⌥D`),
       menu('File', 'Save Sheet as Template', 'save-template'),
       menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),

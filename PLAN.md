@@ -631,9 +631,17 @@ asked for directly.
 56. **Writing aids.** Highlight repeated or overused words, a readability
     score in the stats, and the system dictionary lookup on right-click.
     Each is its own switch in Preferences.
-57. **Import.** Bring `.txt`, `.rtf` and `.docx` files in as sheets, or an
-    existing folder of Markdown as a project, by menu or by dropping files
-    onto the window. `.docx` needs a converter library.
+57. **Import.** *Partly done:* File > Import… adds `.txt`, `.rtf` and
+    Markdown files as sheets after the current one (several at once; the
+    sheet title is the first line). Plain text is tidied (line endings,
+    BOM, spacing; UTF-8, UTF-16 or Windows-1252). RTF is read by a small
+    parser in core (`importText.ts`): paragraphs, bold, italic, bullet and
+    numbered lists, hyperlinks, accents and Unicode; tables, pictures and
+    headers are dropped, and Markdown characters in the text are escaped.
+    Not yet checked in the app: the file dialog itself (it cannot be driven
+    by the test harness). Still to do: `.docx` (needs a converter library),
+    an existing folder of Markdown as a project, dropping files onto the
+    window, RTF headings (from style or size) and tables.
 58. **More export routes.** Copy a sheet as rich text or HTML, export a
     whole group as one Markdown file, and print. EPUB export is a bigger
     sibling of these and lives in "Later".
