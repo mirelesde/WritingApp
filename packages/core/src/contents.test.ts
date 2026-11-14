@@ -10,19 +10,24 @@ describe('table of contents', () => {
   })
 
   it('lists the headings after the marker, nested by level', () => {
-    const [out] = expandContents(['# Title\n\n(cnt)\n\n# One\n\n## Sub\n\n# Two'], false)
+    const [out] = expandContents(['# Title\n\n(cnt)\n\n# One\n\n## Sub\n\n# Two'], 'none')
     expect(out).toBe('# Title\n\n- One\n  - Sub\n- Two\n\n# One\n\n## Sub\n\n# Two')
   })
 
   it('reads headings across sheets and links them for HTML', () => {
-    const out = expandContents(['(cnt)', '# One', '## One'], true)
+    const out = expandContents(['(cnt)', '# One', '## One'], 'html')
     expect(out[0]).toBe('- [One](#one "toc")\n  - [One](#one-2 "toc")')
   })
 
   it('leaves texts alone without a marker, and drops the marker with no headings', () => {
     const same = ['# A']
-    expect(expandContents(same, true)).toBe(same)
-    expect(expandContents(['(cnt)'], true)).toEqual([''])
+    expect(expandContents(same, 'html')).toBe(same)
+    expect(expandContents(['(cnt)'], 'html')).toEqual([''])
+  })
+
+  it('links to GitHub-style anchors for Markdown', () => {
+    const [out] = expandContents(['(cnt)\n\n# ¿Qué es?\n\n## Qué es\n\n## Qué es'], 'github')
+    expect(out!.split('\n\n')[0]).toBe('- [¿Qué es?](#qué-es)\n  - [Qué es](#qué-es-1)\n  - [Qué es](#qué-es-2)')
   })
 
   it('makes unique accented slugs', () => {

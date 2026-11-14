@@ -175,7 +175,7 @@ describe('table of contents in exports', () => {
     expect(html.html).toContain('<a class="toc-link" href="#one">One</a>')
     expect(html.html).toContain('<h1 id="one">One</h1>')
     const md = await exportMarkdown(fs, tree, ['/Lib/Book'], 'x')
-    expect(md.markdown).toContain('- One\n  - Sub')
+    expect(md.markdown).toContain('- [One](#one)\n  - [Sub](#sub)')
     expect(md.markdown).not.toContain('(cnt)')
   })
 })

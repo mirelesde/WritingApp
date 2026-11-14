@@ -336,7 +336,7 @@ Quick checks that earlier features still work with today's changes.
 
 1. In a sheet type a heading, then a line with only `(cnt)`, then a few headings (`#`, `##`) below it. Move the cursor off the `(cnt)` line: it shows as a "Table of Contents" chip. Move onto it: the text `(cnt)` returns.
 2. Export as HTML (or preview it). Where `(cnt)` was is a nested list of the later headings; clicking an entry jumps to that heading.
-3. Export as Markdown or Word: the same list appears without links, and `(cnt)` is gone.
+3. Export as Markdown: the same list appears with each entry linking to its heading (`[Title](#title)`), and `(cnt)` is gone. Open it in a Markdown viewer and click an entry, including one with accents.
 4. Select several sheets or a group and export: the list covers headings from all of them that come after the marker.
 5. Put the cursor in a sheet and choose Insert > Table of Contents: `(cnt)` appears on its own line with a blank line either side. Choosing it on a `(cnt)` line does nothing.
 6. Export as PDF a group with several long sheets and a `(cnt)` sheet first. Each entry has a dotted line and a page number; go to that page: the heading is on it. Turning page numbers off in the dialog does not remove them from the contents.

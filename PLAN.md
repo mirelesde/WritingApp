@@ -1262,7 +1262,7 @@ tested with the in-memory one)
     editor it shows as a "Table of Contents" chip until the cursor is on the
     line. On export it lists the headings that come after it, across every
     exported sheet. HTML: a nested list linked to anchors on the headings.
-    Markdown: the same list as plain text. PDF: the list gets dotted leaders and
+    Markdown: the same list, each entry linking to its heading with GitHub-style anchors (accents kept, repeats numbered -1, -2), which most viewers follow but some differ on for odd punctuation. PDF: the list gets dotted leaders and
     page numbers; the PDF is printed twice, the first time with the PDF outline
     switched on so each heading's page can be read (pdf-lib), then again with the
     numbers in. Word: `(cnt)` becomes a real TOC field over the headings that

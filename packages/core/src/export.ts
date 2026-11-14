@@ -256,7 +256,7 @@ export async function exportHtml(
     runTexts.push(texts)
   }
   const flat = runTexts.flat()
-  const expanded = expandContents(flat, true)
+  const expanded = expandContents(flat, 'html')
   let at = 0
   const parts = runTexts.map((texts) => {
     const mine = expanded.slice(at, (at += texts.length))
@@ -323,7 +323,7 @@ export async function exportMarkdown(
     }
     runTexts.push(texts)
   }
-  const expanded = expandMarker ? expandContents(runTexts.flat(), false) : runTexts.flat()
+  const expanded = expandMarker ? expandContents(runTexts.flat(), 'github') : runTexts.flat()
   let at = 0
   const parts = runTexts.map((texts) => expanded.slice(at, (at += texts.length)).join('\n\n'))
   return {

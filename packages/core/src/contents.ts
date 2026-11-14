@@ -27,43 +27,53 @@ export function findMarkers(text: string): number[] {
   return found
 }
 
-/** Anchor names for headings, unique within one document: "intro", "intro-2", … */
-export function headingSlugs(headings: Heading[]): string[] {
+/**
+ * Anchor names for headings, unique within one document. Our own style (used in
+ * HTML we write) is "intro", "intro-2". GitHub's, which most Markdown viewers
+ * follow, keeps accents and counts duplicates "intro", "intro-1".
+ */
+export function headingSlugs(headings: Heading[], style: 'own' | 'github' = 'own'): string[] {
   const seen = new Map<string, number>()
   return headings.map((h) => {
     const base =
-      h.text
-        .toLowerCase()
-        .normalize('NFKD')
-        .replace(/[̀-ͯ]/g, '')
-        .replace(/[^\p{L}\p{N}]+/gu, '-')
-        .replace(/^-+|-+$/g, '') || 'section'
-    const n = (seen.get(base) ?? 0) + 1
-    seen.set(base, n)
-    return n === 1 ? base : `${base}-${n}`
+      style === 'github'
+        ? h.text
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}\p{M}_ -]/gu, '')
+            .replace(/ /g, '-')
+        : h.text
+            .toLowerCase()
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\p{L}\p{N}]+/gu, '-')
+            .replace(/^-+|-+$/g, '') || 'section'
+    const n = seen.get(base) ?? 0
+    seen.set(base, n + 1)
+    return n === 0 ? base : style === 'github' ? `${base}-${n}` : `${base}-${n + 1}`
   })
 }
 
 /** The headings of several texts read in order, with offsets into their join. */
-function allHeadings(texts: string[]): { heading: Heading; slug: string }[] {
+function allHeadings(texts: string[], style: 'own' | 'github' = 'own'): { heading: Heading; slug: string }[] {
   const list: Heading[] = []
   let base = 0
   for (const text of texts) {
     for (const h of extractHeadings(text)) list.push({ ...h, offset: h.offset + base })
     base += text.length + 2
   }
-  const slugs = headingSlugs(list)
+  const slugs = headingSlugs(list, style)
   return list.map((heading, i) => ({ heading, slug: slugs[i]! }))
 }
 
 /**
  * Replaces each `(cnt)` line with a nested list of the headings that come
- * after it, across all `texts` (which an export joins in order). With
- * `links`, entries link to anchors named by `headingSlugs`, for HTML.
+ * after it, across all `texts` (which an export joins in order). `links`:
+ * 'html' links entries to anchors we write on the headings; 'github' to the
+ * anchors Markdown viewers make; 'none' lists plain text.
  */
-export function expandContents(texts: string[], links: boolean): string[] {
+export function expandContents(texts: string[], links: 'none' | 'html' | 'github'): string[] {
   if (!texts.some(hasContentsMarker)) return texts
-  const headings = allHeadings(texts)
+  const headings = allHeadings(texts, links === 'github' ? 'github' : 'own')
   let base = 0
   return texts.map((text) => {
     const offsets = findMarkers(text)
@@ -77,7 +87,8 @@ export function expandContents(texts: string[], links: boolean): string[] {
       const lines = after.map(({ heading, slug }) => {
         const indent = '  '.repeat(Math.min(heading.level - top, 5))
         const label = heading.text.replace(/([\[\]\\])/g, '\\$1')
-        return `${indent}- ${links ? `[${label}](#${slug} "toc")` : heading.text}`
+        const link = links === 'html' ? `[${label}](#${slug} "toc")` : links === 'github' ? `[${label}](#${slug})` : heading.text
+        return `${indent}- ${link}`
       })
       const end = text.indexOf('\n', at)
       const lineEnd = end === -1 ? text.length : end
