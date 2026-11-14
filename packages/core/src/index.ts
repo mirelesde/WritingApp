@@ -118,3 +118,4 @@ export type { Hasher, ImageIndexEntry, ImageRef, ImportedImage, UnusedImage } fr
 export { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLink, titleKey } from './wikiLinks'
 export type { Backlink, WikiLink } from './wikiLinks'
 export { importedMarkdown, rtfToMarkdown, textToMarkdown } from './importText'
+export { findMath, mathToHtml, type MathSpan } from './math'

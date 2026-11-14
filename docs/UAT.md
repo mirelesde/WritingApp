@@ -143,7 +143,21 @@ Make these files in a scratch folder:
 
 Known gaps: `.docx`, importing a folder as a project, and dropping files onto the window are not built.
 
-## 5. Regression sweep
+## 5. Code colours and maths
+
+| # | Steps | Expected |
+|---|-------|----------|
+| 5.1 | Type a fence ```` ```js ```` with `const x = 'hi' // note` and a function. | Keywords, strings, numbers, function names and comments are coloured; all lines of the fence are monospace. |
+| 5.2 | Try ```` ```python ````, ```` ```css ````, ```` ```html ```` and an unlabelled fence. | Labelled ones colour; the unlabelled one stays plain monospace. An unknown label stays plain. |
+| 5.3 | Switch the app theme to dark. | Code colours stay readable. |
+| 5.4 | Type `Euler: $e^{i\pi} + 1 = 0$.` | The formula is drawn as maths when the cursor leaves it; the TeX shows while the cursor is inside. |
+| 5.5 | Type `$$`, a line of TeX such as `\frac{1}{2}`, then `$$`. | Drawn as a centred block once the cursor is outside; source shows when inside. |
+| 5.6 | Type `It costs $5 and $10.` and `` `$x$` `` and a fenced block containing `$x$`. | None of these are drawn as maths. |
+| 5.7 | Write bad TeX such as `$\frac{$`. | No crash; the TeX shows as plain text or in red. |
+| 5.8 | Export (HTML preview and PDF) a sheet with formulas. | Inline and block formulas appear as maths; prices stay as text. **(PDF not yet checked live)** |
+| 5.9 | Fold a section holding maths; hide Markdown marks on. | No errors; formulas still draw. |
+
+## 6. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 

@@ -25,6 +25,7 @@ import { linkChips } from './linkChips'
 import { wikiLinks } from './wikiLinks'
 import { foldSections } from './foldSections'
 import { fencedCode } from './fencedCode'
+import { mathWidgets } from './mathWidgets'
 import { imagePaste, imageThumbs } from './imageThumbs'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -51,6 +52,8 @@ const theme = EditorView.theme({
     padding: '0 64px',
     caretColor: 'var(--text)'
   },
+  '.cm-math': { display: 'inline-block', verticalAlign: 'middle', cursor: 'text' },
+  '.cm-math-block': { display: 'block', textAlign: 'center', margin: '0.6em 0' },
   '.cm-fenced': { fontFamily: mono, fontSize: '0.88em' },
   '.cm-line': { padding: '0', transition: 'opacity 0.2s', position: 'relative' },
   // One outlined chip around the whole [text](address) link.
@@ -260,6 +263,7 @@ export function editorExtensions({
     wikiLinks,
     foldSections,
     fencedCode,
+    mathWidgets,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),
     highlightSelectionMatches(),

@@ -1,6 +1,7 @@
 import { assetNameFromUrl, embedImages, findImages, imagesSize, linkImagesToFolder } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
+import { mathToHtml } from './math'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
 import type { FileSystem } from './filesystem'
 import type { GroupNode, SheetNode } from './library'
@@ -20,9 +21,39 @@ const highlight = {
   },
 }
 
+/** `$x$` and `$$x$$` inside a line, as MathML. Not a price: no space inside the dollars, no digit after. */
+const inlineMath = {
+  name: 'inlineMath',
+  level: 'inline' as const,
+  start: (src: string) => src.indexOf('$'),
+  tokenizer(src: string) {
+    const match = /^(?:\$\$(?=\S)(.+?)(?<=\S)\$\$|\$(?=[^\s$])((?:\\.|[^$\\])+?)(?<=\S)\$(?![\d$]))/.exec(src)
+    if (!match) return undefined
+    return { type: 'inlineMath', raw: match[0], text: (match[1] ?? match[2] ?? '').trim(), display: match[1] !== undefined }
+  },
+  renderer(token: { text?: string; display?: boolean }) {
+    return mathToHtml(token.text ?? '', token.display === true)
+  },
+}
+
+/** A `$$` block on its own lines, as display MathML. */
+const blockMath = {
+  name: 'blockMath',
+  level: 'block' as const,
+  start: (src: string) => src.indexOf('$$'),
+  tokenizer(src: string) {
+    const match = /^\$\$[ \t]*\n?([\s\S]+?)\n?[ \t]*\$\$[ \t]*(?:\n|$)/.exec(src)
+    if (!match) return undefined
+    return { type: 'blockMath', raw: match[0], text: match[1]!.trim() }
+  },
+  renderer(token: { text?: string }) {
+    return `<div class="math-block">${mathToHtml(token.text ?? '', true)}</div>\n`
+  },
+}
+
 const marked = new Marked({
   gfm: true,
-  extensions: [highlight as never],
+  extensions: [highlight as never, blockMath as never, inlineMath as never],
   renderer: {
     // Raw HTML in a sheet is shown as text, so an export never carries
     // scripts or markup the writer did not mean to publish.
@@ -119,6 +150,7 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.25; margin: 2em 0 .5em; font-family: sys
 h1 { font-size: 2rem; margin-top: 0; }
 p, ul, ol, blockquote, pre, table { margin: 0 0 1em; }
 blockquote { margin-left: 0; padding-left: 1em; border-left: 3px solid #8885; color: #666; }
+.math-block { margin: 0 0 1em; text-align: center; overflow-x: auto; }
 mark { background: #ffe14d88; color: inherit; padding: 0 .1em; border-radius: 2px; }
 code { font: .9em ui-monospace, Menlo, Consolas, monospace; background: #8882; padding: .1em .3em; border-radius: 3px; }
 pre { background: #8882; padding: 1em; overflow-x: auto; border-radius: 4px; }
