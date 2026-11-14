@@ -10,6 +10,7 @@
   import { insertTable } from './tableWidget'
   import { goToFootnote, insertFootnote } from './footnotes'
   import { insertImages } from './imageThumbs'
+  import { updateWikiHost } from './wikiLinks'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
@@ -39,6 +40,10 @@
     smartTypography?: boolean
     /** Show line numbers in a gutter. */
     lineNumbers?: boolean
+    /** Every sheet title, for [[wiki links]]. */
+    titles?: string[]
+    /** A wiki link was Cmd/Ctrl-clicked. */
+    onwiki?: (target: string) => void
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
@@ -52,7 +57,9 @@
     typewriterAt = 'centre',
     smartTypography: smart = false,
     lineNumbers = false,
-    autofocus = false
+    autofocus = false,
+    titles = [],
+    onwiki
   }: Props = $props()
   let view: EditorView | undefined
 
@@ -163,6 +170,12 @@
     view?.dispatch({ effects: gutter.reconfigure(show ? lineNumbersExtension() : []) })
   })
 
+  // The library's titles can change while the editor is open.
+  $effect(() => {
+    const list = [...titles]
+    if (view) updateWikiHost(view, { titles: list, open: (target) => onwiki?.(target) })
+  })
+
   onMount(() => {
     view = new EditorView({
       parent: host,
@@ -178,6 +191,7 @@
         ]
       )
     })
+    updateWikiHost(view, { titles: [...titles], open: (target) => onwiki?.(target) })
     if (autofocus) view.focus()
     return () => view?.destroy()
   })

@@ -21,7 +21,12 @@ export const linkChips = ViewPlugin.fromClass(
           from,
           to,
           enter(node) {
-            if (node.name === 'Link') builder.add(node.from, node.to, chip)
+            if (node.name !== 'Link') return
+            // [[Wiki links]] parse as a reference link inside brackets; they draw their own chip.
+            const doc = view.state.doc
+            const wrapped = doc.sliceString(Math.max(0, node.from - 1), node.from) === '[' &&
+              doc.sliceString(node.to, node.to + 1) === ']'
+            if (!wrapped) builder.add(node.from, node.to, chip)
           }
         })
       }

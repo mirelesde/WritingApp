@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Heading } from '@writingapp/core'
+  import type { Backlink, Heading } from '@writingapp/core'
 
   export interface Entry extends Heading {
     /** The sheet the heading is in. */
@@ -9,8 +9,17 @@
   let {
     entries,
     current = null,
-    onpick
-  }: { entries: Entry[]; current?: Entry | null; onpick: (entry: Entry) => void } = $props()
+    onpick,
+    backlinks = [],
+    onbacklink
+  }: {
+    entries: Entry[]
+    current?: Entry | null
+    onpick: (entry: Entry) => void
+    /** Sheets that link to the open one. */
+    backlinks?: Backlink[]
+    onbacklink?: (path: string) => void
+  } = $props()
   const shallowest = $derived(entries.reduce((min, e) => Math.min(min, e.level), 6))
 </script>
 
@@ -34,6 +43,19 @@
       {/each}
     </ul>
   {/if}
+  <h2 class="linked">Linked from</h2>
+  {#if backlinks.length === 0}
+    <p class="none">No sheet links here yet. Use [[title]] to link.</p>
+  {:else}
+    <ul>
+      {#each backlinks as link (link.path)}
+        <li style:padding-left="8px">
+          <button class="top" onclick={() => onbacklink?.(link.path)}>{link.title}</button>
+          <span class="where">{link.where}</span>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </aside>
 
 <style>
@@ -50,6 +72,15 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
+  }
+  .linked {
+    margin-top: 20px;
+  }
+  .where {
+    display: block;
+    padding: 0 8px 4px;
+    font-size: 11px;
+    color: var(--faint);
   }
   ul {
     list-style: none;

@@ -2,7 +2,10 @@
   import { onMount, tick } from 'svelte'
   import {
     extractHeadings,
+    backlinksTo,
+    linkTargets,
     listSheets,
+    resolveWikiLink,
     sheetPreview,
     sheetTitle,
     sortSheets,
@@ -777,6 +780,33 @@
     }
   }
 
+  /** Every sheet title, for wiki links. */
+  const sheetTitles = $derived(library ? listSheets(library.tree).map((s) => s.title) : [])
+  /** The sheets that link to the open one. */
+  const backlinks = $derived(
+    library && selection.length === 1 ? backlinksTo(library.tree, selection[0]!) : []
+  )
+
+  /** Opens the sheet a [[link]] names; a link to nothing creates that sheet beside the current one. */
+  async function followWikiLink(target: string): Promise<void> {
+    if (!library) return
+    const path = resolveWikiLink(library.tree, target)
+    if (path) {
+      await revealSheet(path)
+      return
+    }
+    const parent = group
+    if (!parent) return
+    await autosaver.flush()
+    const at = parent.children.findIndex((c) => c.path === cursor)
+    const result = await runOp(() =>
+      window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
+    )
+    if (!result?.created) return
+    await window.api.writeSheet(result.created, `# ${target.trim()}\n\n`)
+    await setSelection([result.created], result.created, true)
+  }
+
   async function newSheet(): Promise<void> {
     const parent = group
     if (!parent) return
@@ -863,6 +893,7 @@
     if (sheet) {
       sheet.title = sheetTitle(content)
       sheet.preview = sheetPreview(content)
+      sheet.links = linkTargets(content)
     }
   }
 
@@ -1769,6 +1800,8 @@
                   focusScope={prefs?.focusScope}
                   typewriterAt={prefs?.typewriterPosition}
                   autofocus={focusEditor && part.path === selection[0]}
+                  titles={sheetTitles}
+                  onwiki={(target) => void followWikiLink(target)}
                 />
               </div>
             {/each}
@@ -1784,7 +1817,7 @@
         <StatusBar text={runText} selected={selectedText} {groupWords} />
       {/if}
       {#if outlineOpen && !zen}
-        <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} /></div>
+        <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} {backlinks} onbacklink={(p) => void revealSheet(p)} /></div>
       {/if}
     </section>
   </div>

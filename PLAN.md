@@ -779,9 +779,20 @@ asked for directly.
     sheet, a window-aware main process (watcher, undo stack and library
     root are currently one per app), and menu commands routed to the
     focused window. Touches almost every layer.
-30. **Wiki-links `[[sheet]]` and backlinks.** Links by sheet title,
-    autocomplete, a backlinks panel, rewriting links on rename (so after
-    item 16). Worth doing only if notes-style use is wanted.
+30. ~~**Wiki-links `[[sheet]]` and backlinks.**~~ **Done (first version).**
+    `[[Title]]` and `[[Title|shown text]]` link to a sheet by title
+    (case and spacing ignored; the first match in library order wins;
+    code fences and inline code are skipped). Drawn as one chip, dashed
+    when no sheet has that title; typing `[[` completes from titles;
+    Cmd/Ctrl-click opens the sheet, or creates it (titled as the link,
+    beside the current sheet) when none exists. The outline panel has a
+    "Linked from" list of sheets linking to the open one, kept current as
+    you type (links are stored in the sheet cache, version 3).
+    Not built: rewriting links when a title changes (titles follow the
+    first line, so it would fire while typing; broken links show dashed
+    instead), `[[Title#Heading]]`, link snippets in the backlinks list,
+    unlinked mentions, wiki links in export (they export as plain text),
+    and picking up links in sheets of other groups when names clash.
 31. **Sync conflict handling.** Detect conflict copies from iCloud or
     Dropbox (`name (conflicted copy).md`) and offer a side-by-side merge.
     Needs a diff view.

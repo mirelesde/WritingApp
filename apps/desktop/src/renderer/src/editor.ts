@@ -21,6 +21,7 @@ import { tableWidgets } from './tableWidget'
 import { highlightSyntax, highlightTag } from './highlightMark'
 import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
+import { wikiLinks } from './wikiLinks'
 import { imagePaste, imageThumbs } from './imageThumbs'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -54,6 +55,23 @@ const theme = EditorView.theme({
     borderRadius: '5px',
     padding: '0 3px'
   },
+  // [[Wiki links]]: an outlined chip like links; dashed when no sheet has that title.
+  '.cm-wiki-link': {
+    color: 'var(--accent)',
+    border: '1px solid color-mix(in srgb, var(--accent) 55%, transparent)',
+    borderRadius: '5px',
+    padding: '0 3px'
+  },
+  '.cm-wiki-missing': { borderStyle: 'dashed', color: 'var(--faint)' },
+  '.cm-tooltip.cm-tooltip-autocomplete': {
+    backgroundColor: 'var(--pane)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '6px',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: '13px'
+  },
+  '.cm-tooltip-autocomplete > ul > li[aria-selected]': { backgroundColor: 'var(--selection)', color: 'var(--text)' },
   '.cm-line.cm-dim': { opacity: 'var(--dim-opacity, 0.3)' },
   '.cm-dim-text': { opacity: 'var(--dim-opacity, 0.3)', transition: 'opacity 0.2s' },
   // The blank line between paragraphs: its height is the paragraph spacing setting.
@@ -197,6 +215,7 @@ export function editorExtensions({
     imagePaste,
     richPaste,
     linkChips,
+    wikiLinks,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),
     highlightSelectionMatches(),
