@@ -1,5 +1,5 @@
 import { ensureSyntaxTree } from '@codemirror/language'
-import { EditorSelection, type EditorState, type TransactionSpec } from '@codemirror/state'
+import { ChangeSet, EditorSelection, type EditorState, type TransactionSpec } from '@codemirror/state'
 import type { Command } from '@codemirror/view'
 
 /** Counts the `marker` characters in a row ending at `pos`, going back. */
@@ -20,9 +20,44 @@ function runAfter(state: EditorState, pos: number, marker: string): number {
 const hasLevel = (run: number, width: number): boolean =>
   width === 1 ? run === 1 || run === 3 : run >= 2
 
+/** Block markers at the start of a line that emphasis must stay clear of: headings, quotes, list items. */
+const BLOCK_PREFIX = /^\s*(#{1,6}\s+|>\s?|[-+*]\s+(\[[ xX]\]\s+)?|\d+[.)]\s+)/
+
 /**
- * Toggles `*` (italic, width 1) or `**` (bold, width 2) around the selection,
- * or around the word at the cursor, or inserts an empty pair.
+ * The stretches of a selection that emphasis goes around: one per line, without
+ * the spaces, line breaks and list or heading markers at their edges, because
+ * emphasis cannot touch whitespace or run across a blank line.
+ */
+function emphasisSegments(state: EditorState, from: number, to: number): { from: number; to: number }[] {
+  const out: { from: number; to: number }[] = []
+  for (let pos = from; pos <= to; ) {
+    const line = state.doc.lineAt(pos)
+    let start = Math.max(from, line.from)
+    const end = Math.min(to, line.to)
+    if (start === line.from) start += BLOCK_PREFIX.exec(line.text)?.[0].length ?? 0
+    const text = state.sliceDoc(start, Math.max(start, end))
+    const lead = text.length - text.trimStart().length
+    const trimmed = text.trim()
+    if (trimmed !== '') out.push({ from: start + lead, to: start + lead + trimmed.length })
+    pos = line.to + 1
+  }
+  return out
+}
+
+/** How a stretch is wrapped in `width` stars: around the outside, inside its ends, or not at all. */
+function wrapping(state: EditorState, from: number, to: number, width: number): 'outside' | 'inside' | 'none' {
+  const outside = Math.min(runBefore(state, from, '*'), runAfter(state, to, '*'))
+  if (outside >= width && hasLevel(outside, width)) return 'outside'
+  const text = state.sliceDoc(from, to)
+  const inside = Math.min(/^\*+/.exec(text)?.[0].length ?? 0, /\*+$/.exec(text)?.[0].length ?? 0)
+  if (inside >= width && hasLevel(inside, width) && text.length > 2 * width) return 'inside'
+  return 'none'
+}
+
+/**
+ * Toggles `*` (italic, width 1) or `**` (bold, width 2) around the selection
+ * (each line of it, without the spaces at its edges), or around the word at the
+ * cursor, or inserts an empty pair. Pressing it again takes the marks off.
  */
 export function toggleEmphasis(state: EditorState, width: 1 | 2): TransactionSpec {
   const mark = '*'.repeat(width)
@@ -41,37 +76,29 @@ export function toggleEmphasis(state: EditorState, width: 1 | 2): TransactionSpe
     ;({ from, to } = word)
   }
 
-  // Stars around the selection, or inside its ends, count the same way.
-  const outside = Math.min(runBefore(state, from, '*'), runAfter(state, to, '*'))
-  const text = state.sliceDoc(from, to)
-  const inside = Math.min(/^\*+/.exec(text)?.[0].length ?? 0, /\*+$/.exec(text)?.[0].length ?? 0)
-
-  if (outside >= width && hasLevel(outside, width)) {
+  const segments = emphasisSegments(state, from, to)
+  if (segments.length === 0) {
     return {
-      changes: [
-        { from: from - width, to: from },
-        { from: to, to: to + width }
-      ],
-      selection: EditorSelection.range(from - width, to - width),
+      changes: { from: range.from, insert: mark + mark },
+      selection: EditorSelection.cursor(range.from + width),
       userEvent: 'input'
     }
   }
-  if (inside >= width && hasLevel(inside, width) && text.length > 2 * width) {
-    return {
-      changes: [
-        { from, to: from + width },
-        { from: to - width, to }
-      ],
-      selection: EditorSelection.range(from, to - 2 * width),
-      userEvent: 'input'
+  const kinds = segments.map((s) => wrapping(state, s.from, s.to, width))
+  const removing = kinds.every((k) => k !== 'none')
+  const changes: { from: number; to?: number; insert?: string }[] = []
+  segments.forEach((s, i) => {
+    if (removing) {
+      if (kinds[i] === 'outside') changes.push({ from: s.from - width, to: s.from }, { from: s.to, to: s.to + width })
+      else changes.push({ from: s.from, to: s.from + width }, { from: s.to - width, to: s.to })
+    } else if (kinds[i] === 'none') {
+      changes.push({ from: s.from, insert: mark }, { from: s.to, insert: mark })
     }
-  }
+  })
+  const set = ChangeSet.of(changes, state.doc.length)
   return {
-    changes: [
-      { from, insert: mark },
-      { from: to, insert: mark }
-    ],
-    selection: EditorSelection.range(from + width, to + width),
+    changes: set,
+    selection: EditorSelection.range(set.mapPos(segments[0]!.from, 1), set.mapPos(segments[segments.length - 1]!.to, -1)),
     userEvent: 'input'
   }
 }

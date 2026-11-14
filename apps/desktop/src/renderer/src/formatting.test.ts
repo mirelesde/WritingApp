@@ -60,6 +60,24 @@ describe('bold and italic', () => {
     expect(apply('make thi|s bold', bold)).toBe('make **[this]** bold')
   })
 
+  it('keeps the marks off spaces and line breaks at the edges of the selection', () => {
+    expect(apply('a [two words ] b', italic)).toBe('a *[two words]*  b')
+    expect(apply('[one line\n]next', italic)).toBe('*[one line]*\nnext')
+  })
+
+  it('marks each line of a selection, leaving list and heading markers alone', () => {
+    expect(apply('[one\n\ntwo]', italic)).toBe('*[one*\n\n*two]*')
+    expect(apply('[- one\n- two]', italic)).toBe('- *[one*\n- *two]*')
+    expect(apply('[# Title]', bold)).toBe('# **[Title]**')
+  })
+
+  it('takes the marks off again however many times it is pressed', () => {
+    let text = 'a [two words\n]b'
+    const seen: string[] = []
+    for (let i = 0; i < 4; i++) seen.push((text = apply(text, italic)))
+    expect(seen).toEqual(['a *[two words]*\nb', 'a [two words]\nb', 'a *[two words]*\nb', 'a [two words]\nb'])
+  })
+
   it('inserts an empty pair between words', () => {
     expect(apply('a |', bold)).toBe('a **|**')
     expect(apply('a |', italic)).toBe('a *|*')
