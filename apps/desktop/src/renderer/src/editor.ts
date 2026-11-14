@@ -8,6 +8,7 @@ import {
 } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { languages } from '@codemirror/language-data'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
@@ -23,6 +24,7 @@ import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
 import { wikiLinks } from './wikiLinks'
 import { foldSections } from './foldSections'
+import { fencedCode } from './fencedCode'
 import { imagePaste, imageThumbs } from './imageThumbs'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -49,6 +51,7 @@ const theme = EditorView.theme({
     padding: '0 64px',
     caretColor: 'var(--text)'
   },
+  '.cm-fenced': { fontFamily: mono, fontSize: '0.88em' },
   '.cm-line': { padding: '0', transition: 'opacity 0.2s', position: 'relative' },
   // One outlined chip around the whole [text](address) link.
   '.cm-link-chip': {
@@ -171,6 +174,14 @@ const markdownStyle = HighlightStyle.define([
   // Markers (#, *, >, brackets) stay in the text but fade back.
   { tag: tags.processingInstruction, color: 'var(--faint)' },
   // A --- rule is drawn as a spaced accent line.
+  // Code inside fences, coloured by the language named after the opening fence.
+  { tag: [tags.keyword, tags.operatorKeyword, tags.modifier, tags.controlKeyword], color: 'var(--code-keyword)' },
+  { tag: [tags.string, tags.regexp, tags.special(tags.string)], color: 'var(--code-string)' },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom], color: 'var(--code-number)' },
+  { tag: [tags.function(tags.variableName), tags.function(tags.propertyName), tags.definition(tags.variableName)], color: 'var(--code-function)' },
+  { tag: [tags.typeName, tags.className, tags.tagName, tags.namespace], color: 'var(--code-type)' },
+  { tag: [tags.propertyName, tags.attributeName], color: 'var(--code-property)' },
+  { tag: [tags.lineComment, tags.blockComment, tags.docComment], color: 'var(--code-comment)', fontStyle: 'italic' },
   { tag: tags.contentSeparator, color: 'var(--accent)', letterSpacing: '0.25em' }
 ])
 
@@ -238,7 +249,7 @@ export function editorExtensions({
     // GitHub-flavoured base: strikethrough, task lists, tables.
     // The markdown keymap (included) continues lists on Enter and
     // removes list markers on Backspace.
-    markdown({ base: markdownLanguage, extensions: [highlightSyntax] }),
+    markdown({ base: markdownLanguage, extensions: [highlightSyntax], codeLanguages: languages }),
     ...emphasisPairs,
     ...bracketPairs,
     linkBehaviour,
@@ -248,6 +259,7 @@ export function editorExtensions({
     linkChips,
     wikiLinks,
     foldSections,
+    fencedCode,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),
     highlightSelectionMatches(),

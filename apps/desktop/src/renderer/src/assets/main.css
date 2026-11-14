@@ -19,6 +19,14 @@
   --mark: rgba(255, 214, 10, 0.4);
   /* Markdown markers and link addresses: present, but out of the way. */
   --faint: color-mix(in srgb, var(--text) 30%, transparent);
+  /* Colours for code inside fences. */
+  --code-keyword: #a626a4;
+  --code-string: #3b7d2a;
+  --code-number: #b35c00;
+  --code-function: #1f6fd0;
+  --code-type: #a1741a;
+  --code-property: #0b7a8a;
+  --code-comment: #8a8a8a;
   --accent: #2f6f6a;
   --editor-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --editor-size: 18px;
@@ -44,6 +52,13 @@
     --quote: #6cb0ff;
     --mark: rgba(255, 214, 10, 0.28);
     --accent: #6fb3ac;
+    --code-keyword: #d58cf0;
+    --code-string: #98c379;
+    --code-number: #e8a35c;
+    --code-function: #6cb0ff;
+    --code-type: #e5c07b;
+    --code-property: #56c2d0;
+    --code-comment: #8e8e8e;
   }
 }
 
