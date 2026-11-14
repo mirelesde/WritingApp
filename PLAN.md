@@ -632,7 +632,17 @@ asked for directly.
 
 **Medium to hard**
 
-23. **Images.** Not supported yet. Wanted:
+23. **Images.** *In progress, in this order, one commit each:* (a) insert from a file, (b) paste from the clipboard, (c) drag and drop. Wanted:
+    - **Shown as a thumbnail, not full size (user).** An image is drawn
+      inline in the editor as a small fixed-size square thumbnail (cropped to
+      fill the square, the way Ulysses does), so a sheet's text stays
+      readable. Later: clicking a thumbnail opens a preview of the image at
+      full size (not built yet; its own step). HTML and PDF export embed the
+      image at a sensible size, not as a thumbnail.
+    - **Storage, as built for the first steps:** shared hidden `.assets/`
+      folder at the library root (alternative B below), original file names
+      kept with a numeric suffix on a collision. The browsable stash picker
+      (B plus a stash) is not built yet.
     - **Insert** an image from a file picker, through a toolbar button, an
       Insert menu item and a keyboard shortcut.
     - **Paste** an image from the clipboard (screenshots, copied images).
@@ -711,7 +721,7 @@ asked for directly.
     Needs a diff view.
 32. **Global quick capture.** A system-wide hotkey that opens a small
     window and appends to an Inbox sheet. Depends on windows (item 29).
-   Edited in a dialog (Format > Table…, command palette) rather than as an inline widget: title caption, add/delete rows and columns, alignment, Tab/Enter navigation; writes clean aligned Markdown
+   Edited in place in the editor (Insert > Table, command palette): a table is drawn as an editable grid with a title caption, add/delete rows and columns, alignment and Tab/Enter navigation, and bold, italics, strikethrough and code show inside cells; the cursor entering it shows the raw Markdown. Writes clean aligned Markdown. Sheet previews show (Table) instead of the raw text. (It began as a dialog and was changed to in-place editing.)
 
 **Added after comparing with Ulysses (round 3)**
 
@@ -767,6 +777,49 @@ Suggested first five (not decided): 17 / 81, 72, 75, 21 + 55, 26 + 62.
 Open decisions for this list: where images
 live (item 23, alternatives written out there), where sheet notes are stored (item 24) and in-app Trash
 versus the system trash (item 25).
+
+## Also built, for the user guide
+
+Behaviour that was added along the way and has no backlog item of its own.
+Kept here so the user-facing documentation can describe it later. See also
+the items marked done above.
+
+**Panes and sidebar**
+- The sidebar is two panes that hide separately. Hide sidebar (button,
+  View > Toggle Sidebar, Cmd/Ctrl+\) hides only the library (project and
+  group) pane; a second button above the sheets (two diagonal arrows),
+  View > Toggle Sheet List, hides the sheet list. Both states are
+  remembered.
+- With the library pane hidden, moving the pointer to the left edge slides
+  it in as an overlay, and the sheet list slides right with it; it goes
+  away when the pointer leaves or focus leaves it. Cmd/Ctrl+1 also shows
+  it. The group title at the top of the sheet list lines up with the sheet
+  titles.
+- The library's name is a large bold title above its projects. Empty states
+  read "No Sheet Selected" and "No Sheets". Sheet cards all have the same
+  height, and an empty sheet shows "(No Content)". With a sort other than
+  manual order active, dragging to reorder sheets is switched off.
+- The autosave indicator at the top right of the editor shows a spinner
+  while saving and a check when saved.
+
+**Editor look**
+- Headings are drawn larger while their `#` marks stay body-sized and hang
+  in the left margin; the marks come back into the line while the cursor is
+  among them (the editor must have focus). A `---` separator is a full-width
+  rule with its dashes hung in the margin, shown on the line with the cursor.
+- Comments (`<!-- -->`) are red and quotations blue; both colours can be set
+  by a colour theme. The default light and dark themes are neutral grey.
+- Text column widths include Compact and Wider, and Narrow is the default.
+- Indent paragraphs (Preferences, Cmd/Ctrl+Shift+D is distraction-free, not
+  this) is a display and export style; see item 61.
+
+**Tables** are edited in place; see item 28. Insert > Table adds one.
+
+**Safety**
+- Unsaved text is journaled and offered back after a crash (item 75).
+- Loading is cached and parallel (item 72).
+- If a sheet changed on disk while you had unsaved edits, the app asks which
+  version to keep (item 49).
 
 ## Look and feel (modelled on Ulysses)
 
