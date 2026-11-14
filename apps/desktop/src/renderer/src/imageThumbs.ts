@@ -90,10 +90,10 @@ export const imageThumbs = [
   })
 ]
 
-/** Puts Markdown (one image per line) at the cursor. */
-export function insertImages(view: EditorView, markdown: string[]): void {
+/** Puts Markdown (one image per paragraph) at `at`, or at the cursor. */
+export function insertImages(view: EditorView, markdown: string[], at?: number): void {
   if (markdown.length === 0) return
-  const { from, to } = view.state.selection.main
+  const { from, to } = at === undefined ? view.state.selection.main : { from: Math.min(at, view.state.doc.length), to: Math.min(at, view.state.doc.length) }
   const text = markdown.join('\n\n')
   view.dispatch({
     changes: { from, to, insert: text },
@@ -126,13 +126,30 @@ export async function saveImageFiles(sheet: string, files: File[]): Promise<stri
   return markdown
 }
 
-/** Pasting a picture (a screenshot, a copied image) saves it in the library and shows its thumbnail. */
+const hasPictures = (dt: DataTransfer | null): boolean =>
+  !!dt && [...dt.items].some((i) => i.kind === 'file' && i.type in PASTED_TYPES)
+
+/** Pasting or dropping a picture (a screenshot, a copied image, a file) saves it beside the sheet and shows its thumbnail. */
 export const imagePaste = EditorView.domEventHandlers({
   paste(event, view) {
     const files = [...(event.clipboardData?.files ?? [])].filter((f) => f.type in PASTED_TYPES)
     if (files.length === 0) return false
     event.preventDefault()
     void saveImageFiles(view.state.facet(sheetPathOf)(), files).then((markdown) => insertImages(view, markdown))
+    return true
+  },
+  dragover(event) {
+    if (!hasPictures(event.dataTransfer)) return false
+    event.preventDefault()
+    return true
+  },
+  drop(event, view) {
+    const files = [...(event.dataTransfer?.files ?? [])].filter((f) => f.type in PASTED_TYPES)
+    if (files.length === 0) return false
+    event.preventDefault()
+    // At the spot it was dropped on, not wherever the cursor was.
+    const at = view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? view.state.selection.main.head
+    void saveImageFiles(view.state.facet(sheetPathOf)(), files).then((markdown) => insertImages(view, markdown, at))
     return true
   }
 })

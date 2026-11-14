@@ -632,7 +632,7 @@ asked for directly.
 
 **Medium to hard**
 
-23. **Images.** *In progress, in this order, one commit each:* (a) insert from a file (**done**), (b) paste from the clipboard (**done**), (c) drag and drop. Wanted:
+23. **Images.** *In progress, in this order, one commit each:* (a) insert from a file (**done**), (b) paste from the clipboard (**done**), (c) drag and drop (**done**). Wanted:
     - **Shown as a thumbnail, not full size (user).** An image is drawn
       inline in the editor as a small fixed-size square thumbnail (cropped to
       fill the square, the way Ulysses does), so a sheet's text stays
@@ -661,6 +661,10 @@ asked for directly.
     - **Built (b):** pasting a picture (screenshot, copied image, a file
       copied in the file manager) saves it next to the sheet and shows its
       thumbnail at the cursor.
+    - **Built (c):** dropping picture files on the editor saves them beside
+      the sheet and puts the thumbnails where they were dropped. Pictures
+      dragged out of a web page work when the browser hands over the file;
+      one that gives only an address is not handled.
     - **Insert** an image from a file picker, through a toolbar button, an
       Insert menu item and a keyboard shortcut.
     - **Paste** an image from the clipboard (screenshots, copied images).
