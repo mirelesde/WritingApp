@@ -54,6 +54,12 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // A file dropped outside the editor must not turn the window into that file.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const current = mainWindow.webContents.getURL().split('#')[0]
+    if (url.split('#')[0] !== current) event.preventDefault()
+  })
+
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

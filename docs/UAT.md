@@ -193,6 +193,7 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 7.10 | Link a picture that does not exist. | A dashed box with a warning mark and the file name replaces the thumbnail (no preview on click); the sheet still opens and edits normally. |
 | 7.11 | Hover a thumbnail, click "Alt" (or "+ Alt"), type, press Enter; repeat with Escape and with text containing brackets. | Enter rewrites the alt text in the Markdown; Escape leaves it; brackets become spaces; the cursor returns to the editor. |
 | 7.12 | Link a picture by `![alt](https://…)`. | A dashed "Load from host" box shows and nothing is fetched until clicked; clicking loads the thumbnail (a click then opens the preview); a dead link shows the missing box. |
+| 7.13 | Drag a picture file from the file manager onto the sidebar, the sheet list and the toolbar. | Nothing happens: the window does not turn into the picture. **(real drag not yet checked live)** |
 
 ## 8. Regression sweep
 
