@@ -44,20 +44,22 @@ export function diffSequences<T>(x: T[], y: T[]): DiffRun<T>[] {
     for (let i = a.length - 1; i >= 0; i--) {
       for (let j = b.length - 1; j >= 0; j--) {
         table[i * w + j] =
-          a[i] === b[j] ? table[(i + 1) * w + j + 1] + 1 : Math.max(table[(i + 1) * w + j], table[i * w + j + 1])
+          a[i] === b[j]
+            ? table[(i + 1) * w + j + 1]! + 1
+            : Math.max(table[(i + 1) * w + j]!, table[i * w + j + 1]!)
       }
     }
     let i = 0
     let j = 0
     while (i < a.length && j < b.length) {
       if (a[i] === b[j]) {
-        push('same', [a[i]])
+        push('same', [a[i]!])
         i++
         j++
-      } else if (table[(i + 1) * w + j] >= table[i * w + j + 1]) {
-        push('del', [a[i++]])
+      } else if (table[(i + 1) * w + j]! >= table[i * w + j + 1]!) {
+        push('del', [a[i++]!])
       } else {
-        push('add', [b[j++]])
+        push('add', [b[j++]!])
       }
     }
     push('del', a.slice(i))

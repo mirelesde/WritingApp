@@ -12,6 +12,7 @@
     sortSheets,
     type GroupNode,
     type ColorTheme,
+    type SearchOptions,
     type SheetNode,
     type SheetSort,
     type ViewSettings
@@ -1072,8 +1073,16 @@
   }
 
   /** Replaces in the library (or one sheet) for the Find dialog; returns how many were changed. */
-  async function replaceFound(query: string, replacement: string, path?: string): Promise<number> {
-    const result = await runOp(() => window.api.replaceAll(query, replacement, path ? [path] : undefined), true)
+  async function replaceFound(
+    query: string,
+    replacement: string,
+    path: string | undefined,
+    options: SearchOptions
+  ): Promise<number> {
+    const result = await runOp(
+      () => window.api.replaceAll(query, replacement, path ? [path] : undefined, options),
+      true
+    )
     if (result?.replaced) showInfo(`Replaced ${result.replaced} ${result.replaced === 1 ? 'match' : 'matches'}. Undo Library Change brings them back.`)
     return result?.replaced ?? 0
   }
@@ -1957,7 +1966,12 @@
 {/if}
 
 {#if searching}
-  <SearchDialog onpick={revealSheet} oncancel={closeSearch} onreplace={replaceFound} />
+  <SearchDialog
+    onpick={revealSheet}
+    oncancel={closeSearch}
+    onreplace={replaceFound}
+    scope={group && library && group.path !== library.tree.path ? { path: group.path, name: group.name } : undefined}
+  />
 {/if}
 
 {#if palette}

@@ -55,3 +55,49 @@ describe('replace', () => {
     expect(await fs.readText('/lib/a.md')).toBe('# A\nred red')
   })
 })
+
+describe('search options', () => {
+  const lib = new MemoryFileSystem({
+    '/L/A/a.md': '# A\nCat catalog cat. Concat\n',
+    '/L/B/b.md': '# B\nthe CAT sat\n',
+    '/L/c.md': '# C\ncolour color\n',
+  })
+
+  it('matches case when asked', async () => {
+    const tree = await loadLibrary(lib, '/L')
+    expect(await searchLibrary(lib, tree, 'CAT', 50, { caseSensitive: true })).toHaveLength(1)
+    expect(await searchLibrary(lib, tree, 'CAT')).toHaveLength(2)
+  })
+
+  it('matches whole words only', async () => {
+    const tree = await loadLibrary(lib, '/L')
+    const [hit] = await searchLibrary(lib, tree, 'cat', 50, { wholeWord: true })
+    expect(hit!.count).toBe(2) // Cat and cat, not catalog or Concat
+  })
+
+  it('searches with regular expressions, per line, and rejects bad ones', async () => {
+    const tree = await loadLibrary(lib, '/L')
+    const hits = await searchLibrary(lib, tree, 'colou?r', 50, { regex: true })
+    expect(hits.map((h) => h.count)).toEqual([2])
+    expect(await searchLibrary(lib, tree, '^the', 50, { regex: true })).toHaveLength(1)
+    await expect(searchLibrary(lib, tree, '(', 50, { regex: true })).rejects.toThrow('valid regular expression')
+    await expect(searchLibrary(lib, tree, 'a*', 50, { regex: true })).rejects.toThrow('empty')
+  })
+
+  it('limits to a group or a sheet', async () => {
+    const tree = await loadLibrary(lib, '/L')
+    expect(await searchLibrary(lib, tree, 'cat', 50, { within: '/L/B' })).toHaveLength(1)
+    expect(await searchLibrary(lib, tree, 'cat', 50, { within: '/L/A/a.md' })).toHaveLength(1)
+    expect(await searchLibrary(lib, tree, 'cat', 50, { within: '/L/Bx' })).toHaveLength(0)
+  })
+
+  it('replaces with capture groups in regex mode and only inside the scope', async () => {
+    expect(replaceAllIn('2024-05-06', '(\\d+)-(\\d+)-(\\d+)', '$3/$2/$1', { regex: true }).text).toBe('06/05/2024')
+    expect(replaceAllIn('a.b', '.', '$1')).toEqual({ text: 'a$1b', count: 1 })
+    const fs2 = new MemoryFileSystem({ '/r/G/a.md': '# A\nred', '/r/b.md': '# B\nred' })
+    const tree = await loadLibrary(fs2, '/r')
+    const out = await replaceInLibrary(fs2, tree, 'red', 'blue', undefined, { within: '/r/G' })
+    expect(out.sheets).toBe(1)
+    expect(await fs2.readText('/r/b.md')).toBe('# B\nred')
+  })
+})

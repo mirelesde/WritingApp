@@ -1,4 +1,4 @@
-import type { ColorTheme, GroupNode, SearchHit, ViewSettings } from '@writingapp/core'
+import type { ColorTheme, GroupNode, SearchHit, SearchOptions, ViewSettings } from '@writingapp/core'
 
 /** A loaded library: where it lives and its tree. */
 export interface LibraryInfo {
@@ -141,9 +141,9 @@ export interface Api {
   /** Reverses the latest move, delete, split, merge, glue or unglue. Rejects if there is none. */
   undo(): Promise<OpResult>
   /** Sheets containing `query`, in library order. */
-  search(query: string): Promise<SearchHit[]>
+  search(query: string, options?: SearchOptions): Promise<SearchHit[]>
   /** Replaces a query in every sheet that has it, or only in `only`; one undo step. */
-  replaceAll(query: string, replacement: string, only?: string[]): Promise<OpResult>
+  replaceAll(query: string, replacement: string, only?: string[], options?: SearchOptions): Promise<OpResult>
   /** Total words in a group's sheets, including sub-groups. */
   groupWords(path: string): Promise<number>
   /** Builds the HTML export of the given sheets and groups, without saving it. */

@@ -374,7 +374,7 @@ Notes from building it:
 
 - **Search:** File > Find in Library (`Cmd/Ctrl+Shift+F`). Case-insensitive
   substring over every sheet's text, first 50 sheets in library order, with
-  a snippet. Plain substring only; no ranking, regex or word matching.
+  a snippet. Item 73 later added case, whole-word and regex options and a group scope; there is still no ranking.
 - **Delete and undo:** File > Move to Trash (`Cmd/Ctrl+Alt+Backspace`).
   Undo (`Cmd/Ctrl+Alt+Z`, "Undo Library Change") now covers move, delete,
   split, merge, glue and unglue, in-memory, 20 deep, cleared when another
@@ -862,8 +862,7 @@ Ulysses has and we do not; 72 to 81 are suggestions of our own.
     is not forgotten if 56 is split.
 
 72. ~~**Load performance.**~~ **Done.** Loading reads sheets in parallel (32 at a time) and skips any file whose modified time and size match the cache (`loadLibrary`'s `cache` option; `groupWordCount` now uses the loaded word counts). The main process keeps the cache between loads and saves it per library in the app's data folder (`sheet-cache/`), so the next launch starts warm. On a synthetic 3,000-sheet, 23 MB library a load went from about 750 ms to about 130 ms. Cold first load, and loads on slow or synced disks, still read every file once.
-73. **Search upgrades.** Whole-word and regular-expression options, plus the
-    Look-in scope in "Still open". Cheap on top of what exists.
+73. ~~**Search upgrades.**~~ **Done.** Find in Library has Match case (`Aa`), Whole words (`ab`) and Regular expression (`.*`) toggles, remembered between openings, and a "Look in" choice (the selected group, or the whole library) that limits both results and Replace All. Regex mode matches `^` and `$` per line, rejects invalid patterns and ones that match empty text, and lets the replacement use `$1`, `$<name>`, `$&` and `$$`. Not built: ranking, a 50-sheet cap notice, a single-sheet scope (the editor's own find bar covers that).
 74. **Sample library on first run.** A small "Welcome" project that teaches
     the shortcuts, offered instead of the bare empty state.
 75. ~~**Crash and data-loss safety.**~~ **Done.** The editor journals its unsaved text to the app's data folder (`journal/`, one file per sheet) 250 ms after a keystroke and clears it once the file is written. At launch, any entry that differs from its file (a crash, a power cut or a save that kept failing) opens a dialog showing the recovered text beside the file's, with Restore or Keep the file as it is. Entries whose sheet is gone, or that match the file, are dropped silently; text journaled during the current run is never offered.
@@ -1099,7 +1098,7 @@ tested with the in-memory one)
 - **Live checks still owed.** `docs/UAT.md` holds the manual test scripts for wiki links, hidden marks, folding, import, code colours and maths, and drop lines. Not yet seen working in the running app: the import file dialog, fold shortcuts and the Fold menu, unfolding through outline or search, focus mode with folds, duplicate wiki-link titles, PDF export of maths, a real mouse drag showing the straight drop bars, and anything on Windows or Linux.
 - **Small gaps from recent features, none urgent:** maths in table cells and footnotes is not drawn, with no maths menu entry or KaTeX macros; exports leave fenced code uncoloured; folding does not cover lists or code blocks; a renamed heading loses its remembered fold. Wiki-link leftovers are listed under item 30 and import gaps under item 57.
 
-- **Scope for Find in Library (to decide).** Find and Replace in the
+- **Scope for Find in Library (decided, see item 73: group or whole library).** Old note: Find and Replace in the
   library search every sheet. Option: a "Look in" selector (Library,
   Project, Group, Sheet) that limits both the results and Replace All,
   defaulting to the selected group or project. `replaceInLibrary` already

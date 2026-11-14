@@ -21,6 +21,7 @@ import {
   groupWordCount,
   loadLibrary,
   searchLibrary,
+  type SearchOptions,
   mergeSheets,
   moveNodesUndoable,
   copyNodes,
@@ -388,17 +389,27 @@ export function registerLibraryIpc(): void {
     return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent }, imagesFolder)
   }
 
-  ipcMain.handle('search:run', async (_event, query: unknown) => {
+  const searchOptions = (raw: unknown): SearchOptions => {
+    const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+    return {
+      caseSensitive: o.caseSensitive === true,
+      wholeWord: o.wholeWord === true,
+      regex: o.regex === true,
+      ...(typeof o.within === 'string' ? { within: inside(o.within, true) } : {})
+    }
+  }
+
+  ipcMain.handle('search:run', async (_event, query: unknown, options: unknown) => {
     if (typeof query !== 'string' || !currentRoot) return []
-    return searchLibrary(fs, await load(currentRoot), query)
+    return searchLibrary(fs, await load(currentRoot), query, 50, searchOptions(options))
   })
 
-  ipcMain.handle('op:replaceAll', async (_event, query: unknown, replacement: unknown, only: unknown) => {
+  ipcMain.handle('op:replaceAll', async (_event, query: unknown, replacement: unknown, only: unknown, options: unknown) => {
     if (typeof query !== 'string' || typeof replacement !== 'string') throw new Error('Nothing to replace')
     const paths = Array.isArray(only) ? only.map((p) => inside(p)) : undefined
     let replaced = 0
     const result = await change(async (root) => {
-      const outcome = await replaceInLibrary(fs, await load(root), query, replacement, paths)
+      const outcome = await replaceInLibrary(fs, await load(root), query, replacement, paths, searchOptions(options))
       replaced = outcome.count
       return outcome.count > 0
         ? { undo: { label: `Replace “${query.trim()}”`, actions: outcome.undo } }

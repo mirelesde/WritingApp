@@ -83,6 +83,6 @@ describe('findConflictCopies', () => {
     ]
     const pairs = findConflictCopies(sheets)
     expect(pairs).toHaveLength(1)
-    expect(pairs[0].original.path).toBe('/p/a.md')
+    expect(pairs[0]!.original.path).toBe('/p/a.md')
   })
 })

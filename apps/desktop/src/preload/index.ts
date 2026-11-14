@@ -34,9 +34,9 @@ const api: Api = {
   deleteNodes: (paths) => ipcRenderer.invoke('op:delete', paths),
   undo: () => ipcRenderer.invoke('op:undo'),
   groupWords: (path) => ipcRenderer.invoke('stats:group', path),
-  search: (query) => ipcRenderer.invoke('search:run', query),
-  replaceAll: (query, replacement, only) =>
-    ipcRenderer.invoke('op:replaceAll', query, replacement, only),
+  search: (query, options) => ipcRenderer.invoke('search:run', query, options),
+  replaceAll: (query, replacement, only, options) =>
+    ipcRenderer.invoke('op:replaceAll', query, replacement, only, options),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths, pictures) => ipcRenderer.invoke('export:save', paths, pictures),
   saveExportMarkdown: (paths) => ipcRenderer.invoke('export:saveMarkdown', paths),

@@ -19,12 +19,9 @@
 
   const hunks = $derived(diffHunks(a, b))
   const total = $derived(changeCount(hunks))
-  let picks = $state<('a' | 'b')[]>([])
+  // Reset whenever the texts change; clicking a button overwrites it.
+  let picks = $derived<('a' | 'b')[]>(Array.from({ length: total }, () => start))
 
-  // Reset whenever the texts change.
-  $effect(() => {
-    picks = Array.from({ length: total }, () => start)
-  })
   $effect(() => {
     result = mergeHunks(hunks, picks.length === total ? picks : Array.from({ length: total }, () => start))
     chosenB = picks.filter((p) => p === 'b').length
@@ -69,7 +66,7 @@
   })
 
   function pick(n: number, side: 'a' | 'b'): void {
-    picks[n] = side
+    picks = picks.map((p, i) => (i === n ? side : p))
   }
   function setAll(side: 'a' | 'b'): void {
     picks = picks.map(() => side)

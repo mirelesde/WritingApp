@@ -204,7 +204,18 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 8.3 | Choose the copy for one difference, then click the primary button. | The sheet holds the mixed text, the copy is in the trash, the banner is gone. Undo Library Change restores the copy. |
 | 8.4 | Edit a sheet in the app, then change the same file outside it. | The "changed outside the app" dialog shows the diff; "Use my choices" saves the combined text. |
 
-## 9. Regression sweep
+## 9. Search options
+
+| # | Steps | Expected |
+|---|---|---|
+| 9.1 | Open Find in Library with a group selected. | A "Look in" row offers that group and "Whole library"; the group is chosen. |
+| 9.2 | Search a word that is in another group too, then switch to "Whole library". | Results grow to include the other group. |
+| 9.3 | Search `cat` with Whole words on. | "catalog" and "concat" are not counted. Match case (`Aa`) separates "Cat" from "cat". |
+| 9.4 | Turn on Regular expression and search `(\d+)-(\d+)-(\d+)`; Replace with `$3/$2/$1`. | Dates are rewritten day first; Undo Library Change restores them. |
+| 9.5 | Type `(` in regex mode. | "That is not a valid regular expression". |
+| 9.6 | Close and reopen the dialog. | The three toggles keep their state. **(Replace in a Windows or Linux build not yet checked)** |
+
+## 10. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 

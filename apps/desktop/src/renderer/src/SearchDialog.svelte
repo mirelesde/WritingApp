@@ -1,23 +1,52 @@
+<script module lang="ts">
+  // Kept between openings, so a writer who likes whole-word search keeps it.
+  const remembered = { caseSensitive: false, wholeWord: false, regex: false }
+</script>
+
 <script lang="ts">
-  import type { SearchHit } from '@writingapp/core'
+  import type { SearchHit, SearchOptions } from '@writingapp/core'
   import { errorMessage } from './organise'
 
   let {
     onpick,
     oncancel,
-    onreplace
+    onreplace,
+    scope
   }: {
     onpick: (path: string) => void
     oncancel: () => void
-    onreplace: (query: string, replacement: string, path?: string) => Promise<number>
+    onreplace: (query: string, replacement: string, path: string | undefined, options: SearchOptions) => Promise<number>
+    /** The selected group, when it is not the whole library. */
+    scope?: { path: string; name: string }
   } = $props()
+
+  let caseSensitive = $state(remembered.caseSensitive)
+  let wholeWord = $state(remembered.wholeWord)
+  let regex = $state(remembered.regex)
+  // svelte-ignore state_referenced_locally
+  let narrow = $state(scope !== undefined)
+
+  function options(): SearchOptions {
+    return { caseSensitive, wholeWord, regex, ...(narrow && scope ? { within: scope.path } : {}) }
+  }
+
+  function toggle(which: 'caseSensitive' | 'wholeWord' | 'regex' | 'narrow'): void {
+    if (which === 'caseSensitive') caseSensitive = !caseSensitive
+    else if (which === 'wholeWord') wholeWord = !wholeWord
+    else if (which === 'regex') regex = !regex
+    else narrow = !narrow
+    remembered.caseSensitive = caseSensitive
+    remembered.wholeWord = wholeWord
+    remembered.regex = regex
+    void run()
+  }
 
   let replacement = $state('')
   let showReplace = $state(false)
   let done = $state('')
 
   async function replace(path?: string): Promise<void> {
-    const n = await onreplace(query, replacement, path)
+    const n = await onreplace(query, replacement, path, options())
     done = n > 0 ? `Replaced ${n} ${n === 1 ? 'match' : 'matches'}` : ''
     await run()
   }
@@ -42,13 +71,16 @@
   async function run(): Promise<void> {
     const id = ++latest
     try {
-      const found = await window.api.search(query)
+      const found = await window.api.search(query, options())
       if (id !== latest) return // a newer search has started
       hits = found
       index = 0
       searched = query.trim() !== ''
       problem = ''
     } catch (e) {
+      if (id !== latest) return
+      hits = []
+      searched = false
       problem = errorMessage(e)
     }
   }
@@ -75,13 +107,25 @@
     onmousedown={(e) => e.stopPropagation()}
     onkeydown={keydown}
   >
-    <input
-      use:focusInput
-      bind:value={query}
-      oninput={typed}
-      placeholder="Search every sheet"
-      aria-label="Search every sheet"
-    />
+    <div class="field">
+      <input
+        use:focusInput
+        bind:value={query}
+        oninput={typed}
+        placeholder={narrow && scope ? `Search in ${scope.name}` : 'Search every sheet'}
+        aria-label="Search"
+      />
+      <button class="opt" class:on={caseSensitive} aria-pressed={caseSensitive} title="Match case" onclick={() => toggle('caseSensitive')}>Aa</button>
+      <button class="opt" class:on={wholeWord} aria-pressed={wholeWord} title="Whole words only" onclick={() => toggle('wholeWord')}><u>ab</u></button>
+      <button class="opt" class:on={regex} aria-pressed={regex} title="Regular expression" onclick={() => toggle('regex')}>.*</button>
+    </div>
+    {#if scope}
+      <div class="scope">
+        Look in
+        <button class="opt wide" class:on={narrow} aria-pressed={narrow} onclick={() => toggle('narrow')}>{scope.name}</button>
+        <button class="opt wide" class:on={!narrow} aria-pressed={!narrow} onclick={() => toggle('narrow')}>Whole library</button>
+      </div>
+    {/if}
     <div class="replace">
       {#if showReplace}
         <input
@@ -151,6 +195,43 @@
     border-radius: 10px;
     box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
     overflow: hidden;
+  }
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 10px;
+  }
+  .field input {
+    flex: 1;
+    margin: 0;
+  }
+  .scope {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  button.opt {
+    display: block;
+    width: auto;
+    padding: 4px 7px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  button.opt.wide {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  button.opt.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
   }
   input {
     margin: 10px;
