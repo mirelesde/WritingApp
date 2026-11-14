@@ -341,3 +341,10 @@ Quick checks that earlier features still work with today's changes.
 5. Put the cursor in a sheet and choose Insert > Table of Contents: `(cnt)` appears on its own line with a blank line either side. Choosing it on a `(cnt)` line does nothing.
 6. Export as PDF a group with several long sheets and a `(cnt)` sheet first. Each entry has a dotted line and a page number; go to that page: the heading is on it. Turning page numbers off in the dialog does not remove them from the contents.
 7. Export as Word and open it in Word: it asks whether to update fields; say Yes. The contents shows headings with page numbers. Right-click > Update Field refreshes it after edits.
+
+## 13.23 Shortcuts in the menus
+
+1. Format > Toggle Task with the cursor on `- [ ] item` ticks it; again unticks it. Elsewhere it says to put the cursor on a task.
+2. Fold > Go to Next Heading and Go to Previous Heading move the cursor between headings.
+3. File > Find and Replace… opens the Find bar on the sheet with the Replace row showing.
+4. Open the command palette (Cmd/Ctrl+Shift+P) and type "paste", "heading", "task" or "replace": each command appears with its shortcut. Copy Sheets then Paste Sheets duplicates the selected sheet.

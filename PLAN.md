@@ -1191,15 +1191,6 @@ tested with the in-memory one)
   - *Formats:* no ePub or DOCX, which Ulysses styles also target; both would reuse the style CSS (ePub) or need a mapping (DOCX).
   - *UI polish:* the export dialog header clips the title on narrow windows; style descriptions are cut off with an ellipsis; Book, Manuscript and Academic force a light page, so a dark-mode saved HTML does not follow the system, while Default, Modern and Plain notes do.
 
-- **Shortcuts with no menu item or palette entry (to decide).** These work
-  but are not listed anywhere, so a user cannot discover them: Cmd/Ctrl+Enter
-  (toggle a task), Cmd/Ctrl+Alt+Up and Down (previous and next heading),
-  Cmd/Ctrl+Alt+F (find and replace in the sheet), and Cmd/Ctrl+C, X, V and D
-  in the sheet list and the tree (copy, cut, paste, duplicate). Option:
-  add palette entries (and Format or Edit menu items where they fit) showing
-  the shortcut; the editor-only ones would use the display-only `shown()`
-  helper so the editor keeps the keys. Cmd/Ctrl+D must stay off the native
-  menu, since the editor uses it.
 - Get signing certificates (Apple Developer ID, a Windows code-signing
   certificate) and run the release workflow once end to end.
 - Try export, watching and builds on Windows and Linux, and look at the UI there (see the gaps under "UI consistency").
@@ -1271,6 +1262,16 @@ tested with the in-memory one)
     other apps show the stored list without numbers; only headings after the
     marker are listed; setext (underlined) headings get no link or page number;
     no menu shortcut; HTML has no page numbers (it has no pages).
+
+78. **Hidden shortcuts now listed.** **Done.** The keys that used to have no
+    menu item are in the menus and the command palette, with their shortcut
+    shown: Format > Toggle Task (Cmd/Ctrl+Enter), Fold > Go to Previous and
+    Next Heading (Cmd/Ctrl+Alt+Up and Down), File > Find and Replace…
+    (Cmd/Ctrl+Alt+F, opens the Find bar on the open sheet with Replace showing),
+    and palette entries for Copy, Cut and Paste Sheets and Duplicate (Cmd/Ctrl+C,
+    X, V, D in the list and tree). The editor-only keys use the display-only
+    `shown()` helper on macOS so the editor keeps them; Copy, Cut, Paste and
+    Duplicate have no native menu items, since the text roles own those keys.
 
 ## Later, in rough order
 

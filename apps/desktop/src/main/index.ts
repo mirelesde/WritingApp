@@ -236,6 +236,7 @@ function buildMenu(): Menu {
           accelerator: 'CmdOrCtrl+Shift+F',
           click: () => sendCommand('search')
         },
+        { label: 'Find and Replace…', ...shown('CmdOrCtrl+Alt+F'), click: () => sendCommand('find-replace') },
         { type: 'separator' },
         { label: 'Import…', click: () => sendCommand('import') },
         { label: 'Clean Up Unused Images…', click: () => sendCommand('clean-images') },
@@ -323,6 +324,7 @@ function buildMenu(): Menu {
         { label: 'Inline Code', click: () => sendCommand('format-code') },
         { label: 'Link', ...shown('CmdOrCtrl+K'), click: () => sendCommand('format-link') },
         { type: 'separator' },
+        { label: 'Toggle Task', ...shown('CmdOrCtrl+Return'), click: () => sendCommand('toggle-task') },
         { label: 'Code Block', click: () => sendCommand('format-codeblock') },
         { label: 'Comment', ...shown('CmdOrCtrl+/'), click: () => sendCommand('format-comment') },
         { label: 'Horizontal Rule', click: () => sendCommand('format-rule') }
@@ -333,6 +335,9 @@ function buildMenu(): Menu {
       submenu: [
         { label: 'Fold Section', ...shown('CmdOrCtrl+Alt+['), click: () => sendCommand('fold-section') },
         { label: 'Unfold Section', ...shown('CmdOrCtrl+Alt+]'), click: () => sendCommand('unfold-section') },
+        { type: 'separator' },
+        { label: 'Go to Previous Heading', ...shown('CmdOrCtrl+Alt+Up'), click: () => sendCommand('previous-heading') },
+        { label: 'Go to Next Heading', ...shown('CmdOrCtrl+Alt+Down'), click: () => sendCommand('next-heading') },
         { type: 'separator' },
         { label: 'Fold All Sections', click: () => sendCommand('fold-all') },
         { label: 'Unfold All Sections', click: () => sendCommand('unfold-all') }

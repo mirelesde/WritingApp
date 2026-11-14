@@ -456,6 +456,11 @@
     if (path) editors[path]?.insertFootnoteAtCursor()
   }
 
+  function activeEditor(): (typeof editors)[string] | undefined {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    return path ? editors[path] : undefined
+  }
+
   function insertContents(): void {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (path) editors[path]?.insertContentsAtCursor()
@@ -1879,6 +1884,15 @@
       void openConflicts()
     }
     else if (command === 'go-to-footnote') goToFootnote()
+    else if (command === 'toggle-task') {
+      if (!activeEditor()?.toggleTaskAtCursor()) showInfo('Put the cursor on a task item (- [ ]) first.')
+    }
+    else if (command === 'previous-heading') activeEditor()?.jumpHeading('previous')
+    else if (command === 'next-heading') activeEditor()?.jumpHeading('next')
+    else if (command === 'find-replace') openFind('sheet', true)
+    else if (command === 'copy-sheets') copySelected(false)
+    else if (command === 'cut-sheets') copySelected(true)
+    else if (command === 'paste-sheets') void pasteNodes()
     else if (command === 'import') void importFiles()
     else if (command === 'fold-section') foldHere(true)
     else if (command === 'unfold-section') foldHere(false)
@@ -1968,7 +1982,14 @@
       menu('File', 'Save Sheet as Template', 'save-template'),
       menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
       menu('File', 'New Project', 'new-project', `${keyMod}⌥${keyShift}N`),
-      menu('File', 'Duplicate', 'duplicate'),
+      menu('File', 'Duplicate', 'duplicate', `${keyMod}D`),
+      menu('File', 'Find and Replace…', 'find-replace', `${keyMod}⌥F`),
+      menu('Sheet', 'Copy Sheets', 'copy-sheets', `${keyMod}C`),
+      menu('Sheet', 'Cut Sheets', 'cut-sheets', `${keyMod}X`),
+      menu('Sheet', 'Paste Sheets', 'paste-sheets', `${keyMod}V`),
+      menu('Format', 'Toggle Task', 'toggle-task', `${keyMod}↩`),
+      menu('Fold', 'Go to Previous Heading', 'previous-heading', `${keyMod}⌥↑`),
+      menu('Fold', 'Go to Next Heading', 'next-heading', `${keyMod}⌥↓`),
       menu('File', 'Move to…', 'move-to', `${keyMod}${keyShift}M`),
       menu('File', 'Move to Trash', 'delete', `${keyMod}⌥⌫`),
       menu('File', 'Quick Open…', 'quick-open', `${keyMod}P`),

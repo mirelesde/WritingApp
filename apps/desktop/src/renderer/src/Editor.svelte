@@ -10,6 +10,8 @@
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
   import { insertTable } from './tableWidget'
   import { insertContents } from './contentsChip'
+  import { toggleTaskCommand } from './taskBoxes'
+  import { nextHeading, previousHeading } from './headingJump'
   import { goToFootnote, insertFootnote } from './footnotes'
   import { insertImages } from './imageThumbs'
   import { updateWikiHost } from './wikiLinks'
@@ -117,6 +119,16 @@
             : formatCommand(kind)
     command(view)
     view.focus()
+  }
+
+  /** Ticks or unticks the task item the cursor is on; false when it is not on one. */
+  export function toggleTaskAtCursor(): boolean {
+    return view ? toggleTaskCommand(view) : false
+  }
+
+  /** Moves the cursor to the previous or next heading. */
+  export function jumpHeading(direction: 'previous' | 'next'): void {
+    if (view) (direction === 'next' ? nextHeading : previousHeading)(view)
   }
 
   /** Folds or opens the section under the heading nearest above the cursor. */
