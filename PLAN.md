@@ -125,7 +125,7 @@ Three things, and nothing else until they are good enough to write in daily:
 | File access | A small filesystem interface the core depends on | Electron implements it with Node; Capacitor implements it with its own plugin later |
 | Front end | TypeScript + Svelte + Vite | Small and fast; talks to the core through a narrow set of commands |
 | Editor | CodeMirror 6 | Handles incremental parsing, long documents, and input methods |
-| Editor style | Markdown markers stay visible but dimmed | Avoids the hide/reveal cursor problems of live-preview editors |
+| Editor style | Markdown markers stay visible but dimmed; an optional "Hide Markdown marks" setting (off by default) hides them except on the cursor's lines | Avoids the hide/reveal cursor problems of live-preview editors by default; the setting uses atomic ranges so the cursor never lands in hidden text |
 | Storage | Plain `.md` files plus one sidecar file per folder | No lock-in; sync comes free from iCloud, Dropbox, or git |
 | Export | HTML is the pivot format | Works on every platform including iOS; no Pandoc, nothing for users to install |
 
@@ -592,7 +592,7 @@ asked for directly.
 21. **Goals and progress.** A word target per sheet or group with a
     progress indicator in the status bar. Stored in the sidecar. (Moved up
     from "Later".)
-22. ~~**Drag and drop to reorder (user).**~~ **Done.** Drag one or more selected sheets
+22. ~~**Drag and drop to reorder (user).**~~ **Done.** (The drop indicator is a straight 3px accent bar inset from the card corners, on sheet cards and group rows; the drop-inside outline is unchanged.) Drag one or more selected sheets
     or groups within and between groups, with a drop indicator and
     auto-expand on hover. Uses `moveNodesUndoable`, so undo already works.
     Must refuse dropping a group into itself. The Move to… command stays as
@@ -1090,6 +1090,9 @@ tested with the in-memory one)
   a version of the other copy rather than discard it.
 
 ## Still open
+
+- **Live checks still owed.** `docs/UAT.md` holds the manual test scripts for wiki links, hidden marks, folding, import, code colours and maths, and drop lines. Not yet seen working in the running app: the import file dialog, fold shortcuts and the Fold menu, unfolding through outline or search, focus mode with folds, duplicate wiki-link titles, PDF export of maths, a real mouse drag showing the straight drop bars, and anything on Windows or Linux.
+- **Small gaps from recent features, none urgent:** maths in table cells and footnotes is not drawn, with no maths menu entry or KaTeX macros; exports leave fenced code uncoloured; folding does not cover lists or code blocks; a renamed heading loses its remembered fold. Wiki-link leftovers are listed under item 30 and import gaps under item 57.
 
 - **Scope for Find in Library (to decide).** Find and Replace in the
   library search every sheet. Option: a "Look in" selector (Library,
