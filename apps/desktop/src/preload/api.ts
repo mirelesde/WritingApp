@@ -66,6 +66,9 @@ export interface ExportPreview {
   title: string
   html: string
   sheets: number
+  /** Library pictures the export uses, and their total size in bytes. */
+  images: string[]
+  imageBytes: number
 }
 
 /** Page layout for a PDF export. */
@@ -136,7 +139,7 @@ export interface Api {
   /** Builds the HTML export of the given sheets and groups, without saving it. */
   previewExport(paths: string[]): Promise<ExportPreview>
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */
-  saveExport(paths: string[]): Promise<string | null>
+  saveExport(paths: string[], pictures?: 'embed' | 'folder'): Promise<string | null>
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
   /** Asks where to save, writes the selection as Markdown, and copies the pictures it uses into a folder beside it. */
   saveExportMarkdown(paths: string[]): Promise<string | null>

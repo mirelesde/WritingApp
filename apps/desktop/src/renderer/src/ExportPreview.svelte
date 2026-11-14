@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { embeddedGrowth, FOLDER_SUGGESTION_GROWTH } from '@writingapp/core'
   import type { PdfOptions } from '../../preload/api'
 
   let {
     title,
     html,
     sheets,
+    imageBytes,
     saving,
     onsave,
     onsavepdf,
@@ -15,8 +17,10 @@
     title: string
     html: string
     sheets: number
+    /** Total size of the pictures the export uses. */
+    imageBytes: number
     saving: boolean
-    onsave: () => void
+    onsave: (pictures: 'embed' | 'folder') => void
     onsavepdf: (options: PdfOptions) => void
     onsavemarkdown: () => void
     onclose: () => void
@@ -25,6 +29,14 @@
   let pageSize = $state<PdfOptions['pageSize']>('A4')
   let margin = $state<PdfOptions['margin']>('normal')
   let pageNumbers = $state(true)
+
+  // The preview always has the pictures inside it. If that makes the page much bigger, a folder is suggested.
+  const growth = $derived(embeddedGrowth(imageBytes, html.length))
+  const suggest = $derived(imageBytes > 0 && growth >= FOLDER_SUGGESTION_GROWTH)
+  let chosen = $state<'embed' | 'folder' | null>(null)
+  const pictures = $derived(chosen ?? (suggest ? 'folder' : 'embed'))
+  const size = (n: number): string =>
+    n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`
 
   let saveButton: HTMLButtonElement | undefined
 
@@ -60,9 +72,24 @@
       <button disabled={saving} onclick={() => onsavepdf({ pageSize, margin, pageNumbers })}>
         Save as PDF…
       </button>
+      {#if imageBytes > 0}
+        <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
+          <select
+            value={pictures}
+            onchange={(e) => (chosen = e.currentTarget.value as 'embed' | 'folder')}
+            aria-label="Pictures in HTML"
+          >
+            <option value="embed">Pictures inside the file</option>
+            <option value="folder">Pictures in a folder</option>
+          </select>
+        </label>
+        {#if suggest && pictures === 'embed'}
+          <span class="hint">Pictures make this {Math.round(growth * 100)}% bigger</span>
+        {/if}
+      {/if}
       <button disabled={saving} onclick={onsavemarkdown}>Save as Markdown…</button>
       <button onclick={onclose}>Close</button>
-      <button class="primary" bind:this={saveButton} disabled={saving} onclick={onsave}>
+      <button class="primary" bind:this={saveButton} disabled={saving} onclick={() => onsave(pictures)}>
         Save as HTML…
       </button>
     </header>
@@ -141,5 +168,10 @@
     flex: 1;
     border: none;
     background: #fff;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
   }
 </style>

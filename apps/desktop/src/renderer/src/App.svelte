@@ -972,7 +972,7 @@
 
   // --- Export ----------------------------------------------------------------
 
-  let exportPreview = $state<{ title: string; html: string; sheets: number } | null>(null)
+  let exportPreview = $state<{ title: string; html: string; sheets: number; imageBytes: number } | null>(null)
   let exportPaths: string[] = [] // plain, so it can cross the bridge
   let exportSaving = $state(false)
 
@@ -989,10 +989,10 @@
     }
   }
 
-  async function saveExport(): Promise<void> {
+  async function saveExport(pictures: 'embed' | 'folder'): Promise<void> {
     exportSaving = true
     try {
-      const saved = await window.api.saveExport(exportPaths)
+      const saved = await window.api.saveExport(exportPaths, pictures)
       if (saved) {
         exportPreview = null
         showInfo('Exported to ' + saved.split(/[\\/]/).pop())
@@ -1844,6 +1844,7 @@
     title={exportPreview.title}
     html={exportPreview.html}
     sheets={exportPreview.sheets}
+    imageBytes={exportPreview.imageBytes}
     saving={exportSaving}
     onsave={saveExport}
     onsavepdf={saveExportPdf}

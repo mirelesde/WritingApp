@@ -666,6 +666,11 @@ asked for directly.
       the file and rewrites the links, so the picture links work outside
       the app. A library already holding same-folder pictures would need a
       one-off migration; not written, as none exists yet.
+    - **Export size (user):** HTML export can keep the pictures inside the
+      file or in a `<name>-images/` folder beside it, chosen in the export
+      dialog. When embedding would make the page 50% or more bigger than it
+      is without the pictures, the dialog says so and preselects the folder.
+      PDF always embeds; Markdown export always uses the folder.
     - **Built (a):** Insert > Image… (`Cmd/Ctrl+Alt+I`) picks one or more
       files and puts a thumbnail at the cursor; the raw Markdown shows
       while the cursor is on it. A toolbar button is not built (there is

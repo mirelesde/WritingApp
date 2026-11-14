@@ -1,4 +1,4 @@
-import { assetNameFromUrl, embedImages, findImages } from './images'
+import { assetNameFromUrl, embedImages, findImages, imagesSize, linkImagesToFolder } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
@@ -173,6 +173,10 @@ export interface HtmlExport {
   html: string
   /** How many sheets it holds. */
   sheets: number
+  /** The library pictures the text uses, by file name. */
+  images: string[]
+  /** Their total size in bytes, whether embedded or not. */
+  imageBytes: number
 }
 
 /**
@@ -185,6 +189,8 @@ export async function exportHtml(
   root: GroupNode,
   selection: string[],
   style: ExportStyle = {},
+  /** Name of a folder beside the saved file to keep the pictures in; without it they are embedded in the page. */
+  imagesFolder?: string,
 ): Promise<HtmlExport> {
   const runs = exportRuns(root, selection)
   if (runs.length === 0) throw new Error('Nothing to export: select sheets or a group')
@@ -192,17 +198,29 @@ export async function exportHtml(
   const only = selection.length === 1 ? findGroup(root, selection[0]!) : undefined
   const title = only ? only.name : runs[0]![0]!.title
 
+  const used = new Set<string>()
   const parts: string[] = []
   for (const run of runs) {
     const texts: string[] = []
-    for (const sheet of run) texts.push(await embedImages(fs, root.path, await fs.readText(sheet.path)))
-    parts.push(markdownToHtml(texts.map((t) => stripComments(t).trim()).join('\n\n')))
+    for (const sheet of run) {
+      let text = stripComments(await fs.readText(sheet.path)).trim()
+      for (const ref of findImages(text)) {
+        const name = assetNameFromUrl(ref.url)
+        if (name) used.add(name)
+      }
+      text = imagesFolder ? linkImagesToFolder(text, imagesFolder).text : await embedImages(fs, root.path, text)
+      texts.push(text)
+    }
+    parts.push(markdownToHtml(texts.join('\n\n')))
   }
   const body = parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n')
+  const images = [...used]
   return {
     title,
     html: htmlDocument(title, body, style),
     sheets: runs.reduce((n, run) => n + run.length, 0),
+    images,
+    imageBytes: await imagesSize(fs, root.path, images),
   }
 }
 
@@ -247,16 +265,9 @@ export async function exportMarkdown(
   for (const run of runs) {
     const texts: string[] = []
     for (const sheet of run) {
-      let text = stripComments(await fs.readText(sheet.path)).trim()
-      for (const ref of [...findImages(text)].reverse()) {
-        const name = assetNameFromUrl(ref.url)
-        if (!name) continue
-        images.add(name)
-        text =
-          text.slice(0, ref.from) +
-          `![${ref.alt}](${encodeURI(imagesFolder)}/${encodeURIComponent(name)})` +
-          text.slice(ref.to)
-      }
+      const linked = linkImagesToFolder(stripComments(await fs.readText(sheet.path)).trim(), imagesFolder)
+      for (const name of linked.names) images.add(name)
+      const text = linked.text
       texts.push(text)
     }
     parts.push(texts.join('\n\n'))
@@ -268,3 +279,14 @@ export async function exportMarkdown(
     sheets: runs.reduce((n, run) => n + run.length, 0),
   }
 }
+
+/** How much larger embedding pictures makes the page, compared with the page without them (1 = twice the size). */
+export function embeddedGrowth(imageBytes: number, embeddedHtmlLength: number): number {
+  // Base64 makes a picture a third bigger as text.
+  const extra = Math.ceil((imageBytes * 4) / 3)
+  const base = Math.max(1, embeddedHtmlLength - extra)
+  return extra / base
+}
+
+/** Embedding pictures grows the page by this much before a folder is suggested instead. */
+export const FOLDER_SUGGESTION_GROWTH = 0.5

@@ -271,3 +271,36 @@ export async function unusedImages(fs: FileSystem, root: string, tree: GroupNode
   }
   return unused.sort((a, b) => a.name.localeCompare(b.name))
 }
+
+/**
+ * The text with each library picture's link pointed into `folder`, a folder
+ * that will sit beside the exported file. Returns the names of the pictures used.
+ */
+export function linkImagesToFolder(text: string, folder: string): { text: string; names: string[] } {
+  const names = new Set<string>()
+  let out = text
+  for (const ref of [...findImages(text)].reverse()) {
+    const name = assetNameFromUrl(ref.url)
+    if (!name) continue
+    names.add(name)
+    out =
+      out.slice(0, ref.from) +
+      `![${ref.alt}](${encodeURI(folder)}/${encodeURIComponent(name)})` +
+      out.slice(ref.to)
+  }
+  return { text: out, names: [...names] }
+}
+
+/** Total size in bytes of the named pictures that exist in the assets folder. */
+export async function imagesSize(fs: FileSystem, root: string, names: string[]): Promise<number> {
+  let total = 0
+  for (const name of names) {
+    const path = joinPath(joinPath(root, ASSETS_DIR), name)
+    try {
+      total += (await fs.fileTimes?.(path))?.size ?? (await fs.readBinary(path)).length
+    } catch {
+      // A missing picture adds nothing.
+    }
+  }
+  return total
+}

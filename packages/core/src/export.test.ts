@@ -136,3 +136,29 @@ describe('exportMarkdown', () => {
     expect(out.sheets).toBe(2)
   })
 })
+
+describe('exportHtml pictures in a folder', () => {
+  it('links to a folder instead of embedding, and reports sizes', async () => {
+    const { saveImage } = await import('./images')
+    const fs = new MemoryFileSystem({ '/lib/a.md': '![x](.assets/p.png)' })
+    await saveImage(fs, '/lib', 'p.png', new Uint8Array([1, 2, 3, 4]))
+    const tree = await loadLibrary(fs, '/lib')
+    const folder = await exportHtml(fs, tree, ['/lib/a.md'], {}, 'Out-images')
+    expect(folder.html).toContain('src="Out-images/p.png"')
+    expect(folder.html).not.toContain('base64')
+    expect(folder.images).toEqual(['p.png'])
+    expect(folder.imageBytes).toBe(4)
+    const embedded = await exportHtml(fs, tree, ['/lib/a.md'])
+    expect(embedded.html).toContain('base64')
+    expect(embedded.imageBytes).toBe(4)
+  })
+})
+
+describe('embeddedGrowth', () => {
+  it('compares the pictures with the page around them', async () => {
+    const { embeddedGrowth } = await import('./export')
+    expect(embeddedGrowth(0, 1000)).toBe(0)
+    // 3000 picture bytes become 4000 characters, in a page of 5000.
+    expect(embeddedGrowth(3000, 5000)).toBe(4)
+  })
+})

@@ -30,7 +30,7 @@ export {
 export type { SheetChange } from './operations'
 export { applyUndo } from './undo'
 export type { UndoAction } from './undo'
-export { escapeHtml, exportHtml, exportMarkdown, exportRuns, htmlDocument, markdownToHtml } from './export'
+export { escapeHtml, exportHtml, exportMarkdown, embeddedGrowth, FOLDER_SUGGESTION_GROWTH, exportRuns, htmlDocument, markdownToHtml } from './export'
 export type { ExportStyle, HtmlExport, MarkdownExport } from './export'
 export { replaceAllIn, replaceInLibrary, searchLibrary } from './search'
 export type { SearchHit } from './search'
@@ -100,6 +100,8 @@ export {
   unusedImages,
   assetNameFromUrl,
   embedImages,
+  imagesSize,
+  linkImagesToFolder,
   stripImages,
   findImages,
   imageDataUri,

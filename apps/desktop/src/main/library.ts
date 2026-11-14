@@ -1,6 +1,6 @@
 import { promises as nodeFs } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, protocol, shell, app } from 'electron'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, extname, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
   applyUndo,
@@ -353,12 +353,23 @@ export function registerLibraryIpc(): void {
     if (!(await fs.exists(path))) throw new Error('The sheet no longer exists')
     await fs.writeText(path, text)
   })
-  async function buildExport(paths: unknown): Promise<ExportPreview> {
+  /** Copies pictures from the library into `folder`, next to the exported file. */
+  async function copyImagesBeside(file: string, folder: string, names: string[]): Promise<void> {
+    if (!currentRoot) return
+    for (const name of names) {
+      const from = join(currentRoot, ASSETS_DIR, name)
+      if (!(await fs.exists(from))) continue
+      await fs.makeDir(join(dirname(file), folder))
+      await fs.writeBinary(join(dirname(file), folder, name), await fs.readBinary(from))
+    }
+  }
+
+  async function buildExport(paths: unknown, imagesFolder?: string): Promise<ExportPreview> {
     if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
     const chosen = paths.map((p) => inside(p, true))
     const tree = await load(currentRoot)
     const view = resolveView((await settings.load()).view)
-    return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent })
+    return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent }, imagesFolder)
   }
 
   ipcMain.handle('search:run', async (_event, query: unknown) => {
@@ -389,8 +400,8 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))
 
-  ipcMain.handle('export:save', async (event, paths: unknown) => {
-    const built = await buildExport(paths)
+  ipcMain.handle('export:save', async (event, paths: unknown, pictures: unknown) => {
+    let built = await buildExport(paths)
     const options: Electron.SaveDialogOptions = {
       title: 'Export as HTML',
       defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.html`,
@@ -401,7 +412,14 @@ export function registerLibraryIpc(): void {
       ? await dialog.showSaveDialog(window, options)
       : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
-    await fs.writeText(toPosix(result.filePath), built.html)
+    const file = toPosix(result.filePath)
+    if (pictures === 'folder' && built.images.length > 0) {
+      // The pictures sit in a folder beside the page instead of inside it.
+      const folder = `${basename(file, extname(file))}-images`
+      built = await buildExport(paths, folder)
+      await copyImagesBeside(file, folder, built.images)
+    }
+    await fs.writeText(file, built.html)
     return result.filePath
   })
 
@@ -409,7 +427,6 @@ export function registerLibraryIpc(): void {
     if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
     const chosen = paths.map((p) => inside(p, true))
     const tree = await load(currentRoot)
-    const root = currentRoot
     const preview = await exportMarkdown(fs, tree, chosen, 'x')
     const options: Electron.SaveDialogOptions = {
       title: 'Export as Markdown',
@@ -422,16 +439,11 @@ export function registerLibraryIpc(): void {
       : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
     const file = toPosix(result.filePath)
-    const folder = `${basename(file, '.md')}-images`
+    const folder = `${basename(file, extname(file))}-images`
     const built = await exportMarkdown(fs, tree, chosen, folder)
     await fs.writeText(file, built.markdown)
     // The pictures the text uses go beside it, so its links work anywhere.
-    for (const name of built.images) {
-      const from = join(root, ASSETS_DIR, name)
-      if (!(await fs.exists(from))) continue
-      await fs.makeDir(join(dirname(file), folder))
-      await fs.writeBinary(join(dirname(file), folder, name), await fs.readBinary(from))
-    }
+    await copyImagesBeside(file, folder, built.images)
     return result.filePath
   })
 
