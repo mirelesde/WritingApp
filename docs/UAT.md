@@ -305,6 +305,8 @@ Known gaps: maths appears as its TeX source; export styles do not apply to Word;
 
 **Click anywhere to write (13.19).** Open an empty sheet and click far below the first line, then in the empty space beside the text: the cursor is in the sheet and typing works. On a long sheet, clicking in the empty space under the last line puts the cursor at the end. Clicking on text still puts the cursor where you click.
 
+**First sheet opens (13.20).** Click a group that has sheets: its first sheet is selected in the list and open in the editor, and the sidebar keeps keyboard focus. Click an empty group: the "no sheet selected" message shows.
+
 ## 14. Regression sweep
 
 Quick checks that earlier features still work with today's changes.

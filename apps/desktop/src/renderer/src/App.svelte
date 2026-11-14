@@ -1266,6 +1266,12 @@
     selectedGroup = path
     filter = ''
     clearSheets()
+    // Open the first sheet, so choosing a group rarely leaves the editor empty.
+    const first = listed[0]
+    if (first) {
+      anchor = first.path
+      await setSelection([first.path], first.path, false)
+    }
   }
 
   function toggle(path: string): void {

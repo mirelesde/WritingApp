@@ -1242,6 +1242,10 @@ tested with the in-memory one)
     New Sheet adds to the selected group. Selecting the library root lists
     every sheet in it, which is slow for very large libraries (no
     virtualised list yet). No setting turns this off.
+75. **Selecting a group opens its first sheet.** **Done.** Choosing a group
+    or project in the sidebar selects the first sheet of its list and opens it
+    in the editor (without moving focus out of the sidebar), so "no sheet
+    selected" shows only for groups with no sheets.
 
 ## Later, in rough order
 
