@@ -43,6 +43,43 @@
   const size = (n: number): string =>
     n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`
 
+  type Format = 'pdf' | 'docx' | 'html' | 'markdown'
+  const FORMATS = [
+    { value: 'pdf', label: 'PDF' },
+    { value: 'docx', label: 'Word' },
+    { value: 'html', label: 'HTML' },
+    { value: 'markdown', label: 'Markdown' }
+  ]
+  const FORMAT_NAMES: Record<Format, string> = { pdf: 'PDF', docx: 'Word', html: 'HTML', markdown: 'Markdown' }
+  const REMEMBER_FORMAT = 'writingapp.exportFormat'
+  let format = $state<Format>(
+    (() => {
+      try {
+        const v = localStorage.getItem(REMEMBER_FORMAT)
+        return v === 'pdf' || v === 'docx' || v === 'html' || v === 'markdown' ? v : 'pdf'
+      } catch {
+        return 'pdf'
+      }
+    })()
+  )
+
+  function chooseFormat(v: string): void {
+    format = v as Format
+    editing = false
+    try {
+      localStorage.setItem(REMEMBER_FORMAT, format)
+    } catch {
+      // Not remembered; harmless.
+    }
+  }
+
+  function save(): void {
+    if (format === 'pdf') onsavepdf({ pageSize, margin, pageNumbers }, activeCss)
+    else if (format === 'docx') onsavedocx({ pageSize, margin, pageNumbers })
+    else if (format === 'html') onsave(pictures, activeCss)
+    else onsavemarkdown()
+  }
+
   let saveButton: HTMLButtonElement | undefined
 
   // --- Styles ---------------------------------------------------------------
@@ -164,30 +201,45 @@
     <header>
       <span class="name">{title} · {sheets === 1 ? '1 sheet' : `${sheets} sheets`}</span>
       <label class="pdf">
-        <Select label="Page size" value={pageSize} options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'Letter' }]} onchange={(v) => (pageSize = v as PdfOptions['pageSize'])} />
+        Format
+        <Select label="Format" value={format} options={FORMATS} onchange={chooseFormat} />
       </label>
-      <label class="pdf">
-        <Select label="Margins" value={margin} options={[{ value: 'narrow', label: 'Narrow margins' }, { value: 'normal', label: 'Normal margins' }, { value: 'wide', label: 'Wide margins' }]} onchange={(v) => (margin = v as PdfOptions['margin'])} />
-      </label>
-      <label class="pdf"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
-      <button disabled={saving} onclick={() => onsavepdf({ pageSize, margin, pageNumbers }, activeCss)}>
-        Save as PDF…
-      </button>
-      {#if imageBytes > 0}
-        <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
-          <Select label="Pictures in HTML" value={pictures} options={[{ value: 'embed', label: 'Pictures inside the file' }, { value: 'folder', label: 'Pictures in a folder' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
-        </label>
-        {#if suggest && pictures === 'embed'}
-          <span class="hint">Pictures make this {Math.round(growth * 100)}% bigger</span>
-        {/if}
-      {/if}
-      <button disabled={saving} onclick={() => onsavedocx({ pageSize, margin, pageNumbers })}>Save as Word…</button>
-      <button disabled={saving} onclick={onsavemarkdown}>Save as Markdown…</button>
       <button onclick={onclose}>Close</button>
-      <button class="primary" bind:this={saveButton} disabled={saving} onclick={() => onsave(pictures, activeCss)}>
-        Save as HTML…
+      <button class="primary" bind:this={saveButton} disabled={saving} onclick={save}>
+        Export as {FORMAT_NAMES[format]}…
       </button>
     </header>
+    {#if format === 'pdf' || format === 'docx' || format === 'html' || format === 'markdown'}
+      <div class="options">
+        {#if format === 'pdf' || format === 'docx'}
+          <label class="pdf">
+            <Select label="Page size" value={pageSize} options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'Letter' }]} onchange={(v) => (pageSize = v as PdfOptions['pageSize'])} />
+          </label>
+          <label class="pdf">
+            <Select label="Margins" value={margin} options={[{ value: 'narrow', label: 'Narrow margins' }, { value: 'normal', label: 'Normal margins' }, { value: 'wide', label: 'Wide margins' }]} onchange={(v) => (margin = v as PdfOptions['margin'])} />
+          </label>
+          <label class="pdf"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
+        {:else if format === 'html'}
+          {#if imageBytes > 0}
+            <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
+              <Select label="Pictures in HTML" value={pictures} options={[{ value: 'embed', label: 'Pictures inside the file' }, { value: 'folder', label: 'Pictures in a folder' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
+            </label>
+            {#if suggest && pictures === 'embed'}
+              <span class="hint">Pictures make this {Math.round(growth * 100)}% bigger</span>
+            {/if}
+          {:else}
+            <span class="hint muted">One self-contained page.</span>
+          {/if}
+        {:else}
+          <span class="hint muted">Plain Markdown; pictures are copied into a folder beside the file.</span>
+        {/if}
+        {#if format === 'docx' || format === 'markdown'}
+          <span class="grow"></span>
+          <span class="hint muted">The preview shows the {format === 'docx' ? 'PDF and HTML' : 'HTML'} look.</span>
+        {/if}
+      </div>
+    {/if}
+    {#if format === 'pdf' || format === 'html'}
     <div class="styles">
       <label>
         Style
@@ -199,7 +251,8 @@
         <button class="link" onclick={() => void window.api.openExportStylesFolder()}>Open folder</button>
       {/if}
     </div>
-    {#if editing}
+    {/if}
+    {#if editing && (format === 'pdf' || format === 'html')}
       <div class="editor">
         <div class="meta">
           <input class="input" bind:value={draftName} placeholder="Style name" aria-label="Style name" />
@@ -359,6 +412,17 @@
     flex: 1;
     border: none;
     background: #fff;
+  }
+  .options {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border);
+    min-height: 20px;
+  }
+  .hint.muted {
+    color: var(--muted);
   }
   .hint {
     font-size: 12px;

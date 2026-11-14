@@ -232,10 +232,12 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 
 | # | Steps | Expected |
 |---|-------|----------|
-| 10.W1 | Choose A4, Normal margins, Page numbers on, then Save as Word…. Open the file in Word, Pages or LibreOffice. | Headings are real Heading styles (they show in the navigation pane); lists are real lists; the table has borders and a shaded header row; the footnote is a real footnote; the link is clickable; the picture is embedded and fits the page; page numbers are centred in the footer. |
+| 10.W1 | In the Export dialog choose Format > Word, A4, Normal margins, Page numbers on, then Export as Word…. Open the file in Word, Pages or LibreOffice. | Headings are real Heading styles (they show in the navigation pane); lists are real lists; the table has borders and a shaded header row; the footnote is a real footnote; the link is clickable; the picture is embedded and fits the page; page numbers are centred in the footer. |
 | 10.W2 | Repeat with Letter and Wide margins. | The page size and margins change accordingly. |
 | 10.W3 | Export a group of several sheets. | One document, sheets separated by a rule. |
 | 10.W4 | Import the file you just saved. | The text comes back as it was (the round trip). |
+
+The dialog has one Format picker (PDF, Word, HTML, Markdown) and one Export button; the row below shows only that format's options (page size, margins and page numbers for PDF and Word; the pictures choice for HTML; nothing for Markdown), and the Style row shows only for PDF and HTML. The last format is remembered.
 
 Known gaps: maths appears as its TeX source; export styles do not apply to Word; SVG and WebP pictures appear as their alt text.
 
