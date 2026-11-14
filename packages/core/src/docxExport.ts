@@ -116,6 +116,9 @@ class Builder {
   nextRel = 10
   nextDoc = 1
   textWidth: number
+  /** Headings after the `(cnt)` line, for the cached entries of the table of contents field. */
+  contents: { depth: number; text: string }[] = []
+  hasContents = false
 
   constructor(private options: DocxOptions, textWidth: number) {
     this.textWidth = textWidth
@@ -213,7 +216,12 @@ class Builder {
     for (const t of tokens) {
       switch (t.type) {
         case 'heading': out.push(this.para(this.inline(t.tokens), `Heading${Math.min(6, t.depth ?? 1)}`)); break
-        case 'paragraph': out.push(this.para(this.inline(t.tokens), style)); break
+        case 'paragraph':
+          if (!this.hasContents && level === 0 && !style && (t.raw ?? '').trim() === '(cnt)') {
+            this.hasContents = true
+            out.push(...this.contentsField())
+          } else out.push(this.para(this.inline(t.tokens), style))
+          break
         case 'text': out.push(this.para(this.inline(t.tokens ?? [{ type: 'text', text: t.text }]), style)); break
         case 'blockquote': out.push(...this.blocks(t.tokens ?? [], 'Quote', level)); break
         case 'code': {
@@ -229,6 +237,30 @@ class Builder {
       }
     }
     return out
+  }
+
+  /**
+   * A real Word table of contents field. Word fills in the page numbers when the
+   * file is opened (settings.xml asks it to update fields); the entries stored here
+   * are what apps that do not update fields show. It lists only what follows,
+   * through a bookmark that runs to the end of the document.
+   */
+  contentsField(): string[] {
+    const r = (x: string): string => `<w:r>${x}</w:r>`
+    const begin =
+      r('<w:fldChar w:fldCharType="begin"/>') +
+      r('<w:instrText xml:space="preserve"> TOC \\o "1-6" \\h \\z \\u \\b writingapp_contents </w:instrText>') +
+      r('<w:fldChar w:fldCharType="separate"/>')
+    const top = Math.min(...this.contents.map((h) => h.depth))
+    const entries = this.contents.map((h) => this.run(h.text) + '')
+    const paras = entries.map((e, i) => {
+      const indent = `<w:ind w:left="${360 * Math.min(this.contents[i]!.depth - top, 5)}"/>`
+      return this.para((i === 0 ? begin : '') + e, undefined, indent)
+    })
+    if (paras.length === 0) paras.push(this.para(begin))
+    paras.push(this.para(r('<w:fldChar w:fldCharType="end"/>')))
+    paras.push('<w:bookmarkStart w:id="9001" w:name="writingapp_contents"/>')
+    return paras
   }
 
   list(list: Tok, level: number): string[] {
@@ -301,7 +333,16 @@ export function markdownToDocx(markdown: string, options: DocxOptions = {}): Uin
       text = text.slice(0, def.from) + text.slice(to)
     }
   }
-  const body = b.blocks(markdownTokens(text) as unknown as Tok[])
+  const tokens = markdownTokens(text) as unknown as Tok[]
+  const marker = tokens.findIndex((t) => t.type === 'paragraph' && (t.raw ?? '').trim() === '(cnt)')
+  if (marker >= 0) {
+    b.contents = tokens
+      .slice(marker + 1)
+      .filter((t) => t.type === 'heading' && (t.text ?? '').replace(/[*_`~]/g, '').trim() !== '')
+      .map((t) => ({ depth: Math.min(6, t.depth ?? 1), text: decode((t.text ?? '').replace(/[*_`~]/g, '').trim()) }))
+  }
+  const body = b.blocks(tokens)
+  if (b.hasContents) body.push('<w:bookmarkEnd w:id="9001"/>')
   if (body.length === 0) body.push(b.para(''))
   const noteXml = [...b.noteIds.entries()].map(([id, n]) => {
     const tokens = markdownTokens(b.noteText.get(id) ?? '') as unknown as Tok[]
@@ -319,6 +360,7 @@ export function markdownToDocx(markdown: string, options: DocxOptions = {}): Uin
     '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>',
     ...(options.pageNumbers ? ['<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'] : []),
     ...(hasNotes ? ['<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>'] : []),
+    ...(b.hasContents ? ['<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>'] : []),
     ...b.rels
   ]
   const types = [
@@ -329,6 +371,7 @@ export function markdownToDocx(markdown: string, options: DocxOptions = {}): Uin
     '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>',
     '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>',
     ...(options.pageNumbers ? ['<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>'] : []),
+    ...(b.hasContents ? ['<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>'] : []),
     ...(hasNotes ? ['<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>'] : []),
     '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
   ]
@@ -352,6 +395,11 @@ export function markdownToDocx(markdown: string, options: DocxOptions = {}): Uin
   if (hasNotes) {
     files['word/footnotes.xml'] = strToU8(
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:footnotes ${NS}><w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote>${noteXml.join('')}</w:footnotes>`
+    )
+  }
+  if (b.hasContents) {
+    files['word/settings.xml'] = strToU8(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/></w:settings>`
     )
   }
   if (options.pageNumbers) {

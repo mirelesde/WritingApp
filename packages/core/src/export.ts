@@ -303,6 +303,8 @@ export async function exportMarkdown(
   root: GroupNode,
   selection: string[],
   imagesFolder: string,
+  /** Replace `(cnt)` with a list of headings. Word export keeps it, to write a real table of contents. */
+  expandMarker = true,
 ): Promise<MarkdownExport> {
   const runs = exportRuns(root, selection)
   if (runs.length === 0) throw new Error('Nothing to export: select sheets or a group')
@@ -321,7 +323,7 @@ export async function exportMarkdown(
     }
     runTexts.push(texts)
   }
-  const expanded = expandContents(runTexts.flat(), false)
+  const expanded = expandMarker ? expandContents(runTexts.flat(), false) : runTexts.flat()
   let at = 0
   const parts = runTexts.map((texts) => expanded.slice(at, (at += texts.length)).join('\n\n'))
   return {

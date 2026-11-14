@@ -481,7 +481,7 @@ export function registerLibraryIpc(): void {
     if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
     const options = parsePdfOptions(rawOptions)
     const chosen = paths.map((p) => inside(p, true))
-    const built = await exportMarkdown(fs, await load(currentRoot), chosen, ASSETS_DIR)
+    const built = await exportMarkdown(fs, await load(currentRoot), chosen, ASSETS_DIR, false)
     const saveOptions: Electron.SaveDialogOptions = {
       title: 'Export as Word',
       defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.docx`,

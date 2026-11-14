@@ -16,6 +16,20 @@ describe('markdownToDocx', () => {
     expect(strFromU8(files['docProps/core.xml']!)).toContain('T &amp; U')
   })
 
+  it('writes (cnt) as a Word table of contents field that lists only what follows', () => {
+    const files = unzipSync(markdownToDocx('# Before\n\n(cnt)\n\n# One\n\n## Two\n'))
+    for (const name of Object.keys(files)) if (name.endsWith('.xml') || name.endsWith('.rels')) expect(() => parseXml(strFromU8(files[name]!))).not.toThrow()
+    const doc = strFromU8(files['word/document.xml']!)
+    expect(doc).toContain('TOC \\o "1-6"')
+    expect(doc).toContain('w:name="writingapp_contents"')
+    const field = doc.slice(doc.indexOf('TOC '), doc.indexOf('fldCharType="end"'))
+    expect(field).toContain('One')
+    expect(field).toContain('Two')
+    expect(field).not.toContain('Before')
+    expect(strFromU8(files['word/settings.xml']!)).toContain('updateFields')
+    expect(strFromU8(files['[Content_Types].xml']!)).toContain('settings.xml')
+  })
+
   it('round-trips the common formatting', async () => {
     const md = [
       '# Title',
