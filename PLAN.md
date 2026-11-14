@@ -1316,6 +1316,24 @@ tested with the in-memory one)
     headers; styles are still CSS only, so these extras are dialog choices that
     are not saved inside a style.
 
+82. **Stability pass.** **Done** (five commits, each live-checked except as noted).
+    *Find*: a regular expression that repeats a repeat, like `(a+)+$`, is
+    refused with a message, because it could run for minutes and the app cannot
+    interrupt it (this guard is static, so some slow patterns, such as
+    `(a|aa)+$` or long chains of `.*`, are still allowed). *Recovery*: text
+    saved by the journal for a sheet that was since deleted, renamed or moved
+    is now offered back ("Restore as a sheet", never overwriting, falling
+    back to the library's top level if the folder is gone) instead of being
+    thrown away. *Closing*: a window waits for its text to be saved before it
+    closes (up to four seconds), quitting carries on across several windows,
+    and a flush writes the journal at once, so a failed save loses nothing.
+    *Files*: a sheet that cannot be read, or is over 50 MB, no longer stops the
+    library loading (it is listed by file name), Find and Replace All skip it,
+    and opening a file over 50 MB gives an error. *PDF*: printing is stopped
+    after two minutes with a message; a failed first pass now only costs the
+    page numbers in the contents. Not checked live: the PDF timeout itself
+    (unit-tested only) and closing with the disk failing.
+
 ## Later, in rough order
 
 - Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).

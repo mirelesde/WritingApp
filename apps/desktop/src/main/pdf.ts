@@ -5,6 +5,10 @@ import { BrowserWindow } from 'electron'
 import { hasContentsLinks, pagesBySlug, setsPageSize, withPageNumbers } from '@writingapp/core'
 import type { PdfOptions } from '../preload/api'
 import { readOutline } from './pdfOutline'
+import { withTimeout } from './timeout'
+
+/** A print that takes longer than this has hung (a 1,000-page book takes well under a minute). */
+const PRINT_TIMEOUT_MS = 120_000
 
 const MARGIN_INCHES = { narrow: 0.6, normal: 1, wide: 1.4 } as const
 
@@ -25,9 +29,9 @@ export function parsePdfOptions(value: unknown): PdfOptions {
 export async function renderPdf(html: string, options: PdfOptions): Promise<Buffer> {
   if (!hasContentsLinks(html)) return print(html, options, false)
   const draft = withPageNumbers(html, null)
-  const first = await print(draft, options, true)
   let pages: Record<string, number> = {}
   try {
+    const first = await print(draft, options, true)
     pages = pagesBySlug(html, await readOutline(first))
   } catch {
     // Without the page numbers the contents still lists every heading.
@@ -44,24 +48,28 @@ async function print(html: string, options: PdfOptions, outline: boolean): Promi
     webPreferences: { javascript: false, sandbox: true, contextIsolation: true }
   })
   try {
-    await window.loadFile(file)
-    const margin = MARGIN_INCHES[options.margin]
-    return await window.webContents.printToPDF({
-      pageSize: options.pageSize,
-      margins: { top: margin, bottom: margin, left: margin, right: margin },
-      displayHeaderFooter: options.pageNumbers || options.runningTitle === true,
-      headerTemplate: options.runningTitle
-        ? '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="title"></span></div>'
-        : '<span></span>',
-      footerTemplate: options.pageNumbers
-        ? '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="pageNumber"></span> / <span class="totalPages"></span></div>'
-        : '<span></span>',
-      preferCSSPageSize: setsPageSize(html),
-      printBackground: false,
-      ...(outline ? { generateDocumentOutline: true, generateTaggedPDF: true } : {})
-    })
+    return await withTimeout(render(window, file, html, options, outline), PRINT_TIMEOUT_MS, 'Making the PDF took too long, so it was stopped. Try fewer sheets.')
   } finally {
     window.destroy()
     await nodeFs.rm(dir, { recursive: true, force: true })
   }
+}
+
+async function render(window: BrowserWindow, file: string, html: string, options: PdfOptions, outline: boolean): Promise<Buffer> {
+  await window.loadFile(file)
+  const margin = MARGIN_INCHES[options.margin]
+  return await window.webContents.printToPDF({
+    pageSize: options.pageSize,
+    margins: { top: margin, bottom: margin, left: margin, right: margin },
+    displayHeaderFooter: options.pageNumbers || options.runningTitle === true,
+    headerTemplate: options.runningTitle
+      ? '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="title"></span></div>'
+      : '<span></span>',
+    footerTemplate: options.pageNumbers
+      ? '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="pageNumber"></span> / <span class="totalPages"></span></div>'
+      : '<span></span>',
+    preferCSSPageSize: setsPageSize(html),
+    printBackground: false,
+    ...(outline ? { generateDocumentOutline: true, generateTaggedPDF: true } : {})
+    })
 }
