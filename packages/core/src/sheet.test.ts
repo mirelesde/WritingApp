@@ -64,3 +64,15 @@ describe('sheetPreview', () => {
     expect(preview.length).toBeLessThanOrEqual(201)
   })
 })
+
+describe('markers on sheet cards', () => {
+  it('drops emphasis, highlights and links from titles', () => {
+    expect(sheetTitle('# **Bold** and ==lit== [[Wiki|Alias]] [site](http://x.org)')).toBe('Bold and lit Alias site')
+    expect(sheetTitle('*Italic* title')).toBe('Italic title')
+  })
+
+  it('drops highlights, wiki links, footnote marks, fences, rules and escapes from previews', () => {
+    expect(sheetPreview('T\n==lit== and [[Page]] and a note[^1] and \\*star')).toBe('lit and Page and a note and *star')
+    expect(sheetPreview('T\n```js\ncode\n```\n---\nend')).toBe('code end')
+  })
+})

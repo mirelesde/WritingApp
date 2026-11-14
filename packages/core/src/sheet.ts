@@ -4,13 +4,23 @@ import { findTables } from './table'
 
 export const UNTITLED = 'Untitled'
 
+/** Inline Markdown marks a reader would not see: links, emphasis, highlights, code, wiki links, footnote marks, escapes. */
+function inlinePlain(text: string): string {
+  return text
+    .replace(/!?\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2')
+    .replace(/\[\^[^\]]+\]/g, '')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\\([\\`*_{}[\]()#+\-.!~=<>|$])|(\*\*|__|~~|==|[*`])/g, (_m, escaped: string | undefined) => escaped ?? '')
+    .replace(/(^|\s)_+|_+(?=\s|$)/g, '$1')
+}
+
 /**
  * A sheet's title is its first non-blank line, without the Markdown
- * heading marker if it has one.
+ * heading marker or emphasis marks if it has them.
  */
 export function sheetTitle(content: string): string {
   for (const line of content.split(/\r?\n/)) {
-    const title = line.replace(/^\s{0,3}#{1,6}\s+/, '').trim()
+    const title = inlinePlain(line.replace(/^\s{0,3}#{1,6}\s+/, '')).trim()
     if (title !== '') return title
   }
   return UNTITLED
@@ -22,9 +32,11 @@ const PREVIEW_LENGTH = 200
 function plainText(line: string): string {
   return line
     .replace(/^\s{0,3}(#{1,6}\s+|>\s?|[-*+]\s+(\[[ xX]\]\s+)?|\d+[.)]\s+)/, '')
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/(\*\*|__|~~|[*`])/g, '')
-    .replace(/(^|\s)_+|_+(?=\s|$)/g, '$1')
+    .replace(/^\s{0,3}(`{3,}|~{3,}).*$/, '')
+    .replace(/^\s{0,3}([-*_]\s*){3,}$/, '')
+    .replace(/^\s{0,3}(=+|-+)\s*$/, '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/^.*$/, inlinePlain)
 }
 
 /** The lines with each table (and its caption) replaced by a single "(Table)" line. */
