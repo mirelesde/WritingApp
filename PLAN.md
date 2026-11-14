@@ -946,6 +946,15 @@ tested with the in-memory one)
   accepts a list of sheet paths; `searchLibrary` and the dialog would need
   a scope. Open question: whether "Sheet" belongs there or stays with the
   editor's own find bar (Cmd/Ctrl+F), which already has Replace.
+- **Shortcuts with no menu item or palette entry (to decide).** These work
+  but are not listed anywhere, so a user cannot discover them: Cmd/Ctrl+Enter
+  (toggle a task), Cmd/Ctrl+Alt+Up and Down (previous and next heading),
+  Cmd/Ctrl+Alt+F (find and replace in the sheet), and Cmd/Ctrl+C, X, V and D
+  in the sheet list and the tree (copy, cut, paste, duplicate). Option:
+  add palette entries (and Format or Edit menu items where they fit) showing
+  the shortcut; the editor-only ones would use the display-only `shown()`
+  helper so the editor keeps the keys. Cmd/Ctrl+D must stay off the native
+  menu, since the editor uses it.
 - Get signing certificates (Apple Developer ID, a Windows code-signing
   certificate) and run the release workflow once end to end.
 - Try export, watching and builds on Windows and Linux.
