@@ -48,6 +48,46 @@ export function previewImage(src: string, alt: string): void {
   document.body.append(shade)
 }
 
+/** Opens a small field over the thumbnail to change its alt text; Enter saves, Escape cancels. */
+function editAlt(view: EditorView, box: HTMLElement, current: string): void {
+  if (box.querySelector('.cm-image-alt-input')) return
+  const input = document.createElement('input')
+  input.className = 'cm-image-alt-input'
+  input.value = current
+  input.placeholder = 'Alt text'
+  input.setAttribute('aria-label', 'Alt text')
+  let done = false
+  const finish = (save: boolean): void => {
+    if (done) return
+    done = true
+    if (save) {
+      const from = view.posAtDOM(box)
+      const text = input.value.replace(/[[\]\n\r]+/g, ' ').replace(/\s+/g, ' ').trim()
+      // The alt text sits right after the opening `![`.
+      if (text !== current && view.state.sliceDoc(from, from + 2) === '![') {
+        view.dispatch({ changes: { from: from + 2, to: from + 2 + current.length, insert: text }, userEvent: 'input' })
+      }
+    }
+    input.remove()
+    view.focus()
+  }
+  input.addEventListener('keydown', (event) => {
+    event.stopPropagation()
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      finish(true)
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      finish(false)
+    }
+  })
+  input.addEventListener('mousedown', (event) => event.stopPropagation())
+  input.addEventListener('blur', () => finish(true))
+  box.append(input)
+  input.focus()
+  input.select()
+}
+
 class ThumbWidget extends WidgetType {
   constructor(
     readonly name: string,
@@ -61,7 +101,7 @@ class ThumbWidget extends WidgetType {
   eq(other: ThumbWidget): boolean {
     return other.name === this.name && other.alt === this.alt
   }
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const box = document.createElement('span')
     box.className = 'cm-image-thumb'
     const img = document.createElement('img')
@@ -78,8 +118,19 @@ class ThumbWidget extends WidgetType {
       box.append(label)
     })
     box.append(img)
+    const badge = document.createElement('span')
+    badge.className = 'cm-image-alt-badge'
+    badge.textContent = this.alt ? 'Alt' : '+ Alt'
+    badge.title = this.alt ? `Alt text: ${this.alt} (click to edit)` : 'Add alt text'
+    badge.addEventListener('mousedown', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      editAlt(view, box, this.alt)
+    })
+    box.append(badge)
     box.addEventListener('mousedown', (event) => {
       event.preventDefault()
+      if ((event.target as HTMLElement).closest('.cm-image-alt-input')) return
       if (!box.classList.contains('cm-image-missing')) previewImage(this.src, this.alt)
     })
     return box
@@ -117,6 +168,7 @@ export const imageThumbs = [
   EditorView.theme({
     '.cm-image-thumb': {
       display: 'inline-block',
+      position: 'relative',
       cursor: 'zoom-in',
       width: '88px',
       height: '88px',
@@ -126,6 +178,35 @@ export const imageThumbs = [
       overflow: 'hidden',
       border: '1px solid var(--border)',
       background: 'var(--pane)'
+    },
+    '.cm-image-alt-badge': {
+      position: 'absolute',
+      right: '4px',
+      bottom: '4px',
+      padding: '1px 6px',
+      borderRadius: '8px',
+      fontSize: '10px',
+      fontFamily: 'system-ui, sans-serif',
+      background: 'rgba(0, 0, 0, 0.62)',
+      color: '#fff',
+      cursor: 'pointer',
+      opacity: '0',
+      transition: 'opacity 0.12s'
+    },
+    '.cm-image-thumb:hover .cm-image-alt-badge': { opacity: '1' },
+    '.cm-image-alt-input': {
+      position: 'absolute',
+      left: '4px',
+      right: '4px',
+      bottom: '4px',
+      font: '12px system-ui, sans-serif',
+      padding: '3px 5px',
+      border: '1px solid var(--accent)',
+      borderRadius: '4px',
+      background: 'var(--bg)',
+      color: 'var(--text)',
+      outline: 'none',
+      boxSizing: 'border-box'
     },
     '.cm-image-thumb img': { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     '.cm-image-thumb.cm-image-missing': {

@@ -190,6 +190,7 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 7.8 | Remove the last link to a picture, then File > Clean Up Unused Images…. | The picture is listed; confirming moves it to the system trash. |
 | 7.9 | Save as Markdown… with pictures. | The pictures are copied to a `<name>-images` folder beside the file and links are rewritten. |
 | 7.10 | Link a picture that does not exist. | A dashed box with a warning mark and the file name replaces the thumbnail (no preview on click); the sheet still opens and edits normally. |
+| 7.11 | Hover a thumbnail, click "Alt" (or "+ Alt"), type, press Enter; repeat with Escape and with text containing brackets. | Enter rewrites the alt text in the Markdown; Escape leaves it; brackets become spaces; the cursor returns to the editor. |
 
 ## 8. Regression sweep
 
