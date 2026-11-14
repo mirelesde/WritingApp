@@ -7,10 +7,11 @@ import {
   markdownToDocx,
   applyUndo,
   snapshotSidecar,
-  createGroup,
+  createGroupUndoable,
   createFromTemplate,
   replaceInLibrary,
   createSheet,
+  createSheetUndoable,
   importedMarkdown,
   dailyNote,
   listTemplates,
@@ -35,7 +36,7 @@ import {
   importImages,
   unusedImages,
   saveImage,
-  renameGroup,
+  renameGroupUndoable,
   syncSheetName,
   resolveView,
   splitSheet,
@@ -520,7 +521,8 @@ export function registerLibraryIpc(): void {
     change(async () => {
       const parent = inside(group, true)
       const at = typeof index === 'number' ? index : undefined
-      return { created: await createSheet(fs, parent, '', at) }
+      const made = await createSheetUndoable(fs, parent, '', at)
+      return { created: made.path, undo: { label: 'New Sheet', actions: made.undo } }
     })
   )
 
@@ -593,7 +595,8 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('op:createGroup', (_event, parent: unknown, name: unknown) =>
     change(async () => {
       const dir = inside(parent, true)
-      return { created: await createGroup(fs, dir, typeof name === 'string' ? name : undefined) }
+      const made = await createGroupUndoable(fs, dir, typeof name === 'string' ? name : undefined)
+      return { created: made.path, undo: { label: dir === currentRoot ? 'New Project' : 'New Group', actions: made.undo } }
     })
   )
 
@@ -601,8 +604,8 @@ export function registerLibraryIpc(): void {
     change(async () => {
       const from = inside(path)
       if (typeof name !== 'string') throw new Error('A group needs a name')
-      const to = await renameGroup(fs, from, name)
-      return { moved: [[from, to]] }
+      const renamed = await renameGroupUndoable(fs, from, name)
+      return { moved: [[from, renamed.path]], undo: renamed.undo.length > 0 ? { label: 'Rename', actions: renamed.undo } : undefined }
     })
   )
 

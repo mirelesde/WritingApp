@@ -8,7 +8,8 @@ import { SIDECAR_NAME } from './sidecar'
  */
 export type UndoAction =
   | { kind: 'write'; path: string; text: string }
-  | { kind: 'trash'; path: string }
+  /** Trash a file; with `ifText`, only while it still holds exactly that (so a sheet someone has since written in is not lost). */
+  | { kind: 'trash'; path: string; ifText?: string }
   | { kind: 'sidecar'; dir: string; text: string }
   | { kind: 'makeDir'; path: string }
   | { kind: 'rename'; from: string; to: string }
@@ -30,7 +31,11 @@ export async function applyUndo(fs: FileSystem, actions: UndoAction[]): Promise<
     else if (action.kind === 'makeDir') await fs.makeDir(action.path)
     else if (action.kind === 'rename') await fs.rename(action.from, action.to)
     else if (action.kind === 'trash') {
-      if (await fs.exists(action.path)) await fs.trash(action.path)
+      if (!(await fs.exists(action.path))) continue
+      if (action.ifText !== undefined && (await fs.readText(action.path)) !== action.ifText) {
+        throw new Error('That sheet has text in it now, so it was left alone. Move it to the trash instead.')
+      }
+      await fs.trash(action.path)
     } else await fs.writeText(joinPath(action.dir, SIDECAR_NAME), action.text)
   }
 }

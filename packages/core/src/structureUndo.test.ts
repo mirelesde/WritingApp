@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary, type GroupNode } from './library'
-import { createSheet, deleteNodeUndoable, moveNodesUndoable } from './operations'
+import { createGroupUndoable, createSheet, createSheetUndoable, deleteNodeUndoable, moveNodesUndoable, renameGroupUndoable } from './operations'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 import { applyUndo, snapshotSidecar } from './undo'
 
@@ -140,5 +140,44 @@ describe('undoing an import', () => {
       snapshot
     ])
     expect(await shape(fs)).toEqual(before)
+  })
+})
+
+describe('undoing creating and renaming', () => {
+  it('takes a new sheet back out and restores the order', async () => {
+    const fs = setup()
+    const before = await shape(fs)
+    const { path, undo } = await createSheetUndoable(fs, '/Lib/Book', '', 1)
+    expect((await shape(fs)).length).toBe(before.length + 1)
+    await applyUndo(fs, undo)
+    expect(await fs.exists(path)).toBe(false)
+    expect(await shape(fs)).toEqual(before)
+  })
+
+  it('leaves a new sheet alone once it has text', async () => {
+    const fs = setup()
+    const { path, undo } = await createSheetUndoable(fs, '/Lib/Book', '')
+    await fs.writeText(path, 'written since')
+    await expect(applyUndo(fs, undo)).rejects.toThrow(/text in it/)
+    expect(await fs.exists(path)).toBe(true)
+  })
+
+  it('removes a new group, and puts a renamed one back', async () => {
+    const fs = setup()
+    const before = await shape(fs)
+    const made = await createGroupUndoable(fs, '/Lib/Book', 'Fresh')
+    expect(await shape(fs)).toContain('Book/Fresh/')
+    await applyUndo(fs, made.undo)
+    expect(await shape(fs)).toEqual(before)
+
+    const renamed = await renameGroupUndoable(fs, '/Lib/Book/Part', 'Chapter')
+    expect(await shape(fs)).toContain('Book/Chapter/')
+    await applyUndo(fs, renamed.undo)
+    expect(await shape(fs)).toEqual(before)
+  })
+
+  it('has nothing to undo when the name is unchanged', async () => {
+    const fs = setup()
+    expect((await renameGroupUndoable(fs, '/Lib/Book/Part', 'Part')).undo).toEqual([])
   })
 })

@@ -348,3 +348,9 @@ Quick checks that earlier features still work with today's changes.
 2. Fold > Go to Next Heading and Go to Previous Heading move the cursor between headings.
 3. File > Find and Replace… opens the Find bar on the sheet with the Replace row showing.
 4. Open the command palette (Cmd/Ctrl+Shift+P) and type "paste", "heading", "task" or "replace": each command appears with its shortcut. Copy Sheets then Paste Sheets duplicates the selected sheet.
+
+## 13.24 Undo create and rename
+
+1. Make a new sheet, then File > Undo Library Change: it disappears and the order is as before. Make another, type in it, then undo: a message says it has text and it stays.
+2. Make a new group or project, then undo: it is gone.
+3. Rename a group, then undo: the old name and position return.

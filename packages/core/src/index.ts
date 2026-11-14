@@ -11,7 +11,9 @@ export type { GroupNode, LibraryNode, LoadOptions, SheetCache, SheetCacheEntry, 
 export { sheetFileName, slugify } from './filename'
 export {
   createGroup,
+  createGroupUndoable,
   createSheet,
+  createSheetUndoable,
   deleteNode,
   deleteNodeUndoable,
   changeKeywords,
@@ -23,6 +25,7 @@ export {
   moveNodesUndoable,
   copyNodes,
   renameGroup,
+  renameGroupUndoable,
   syncSheetName,
   reorderNode,
   splitSheet,

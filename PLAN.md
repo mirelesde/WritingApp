@@ -1195,7 +1195,7 @@ tested with the in-memory one)
   certificate) and run the release workflow once end to end.
 - Try export, watching and builds on Windows and Linux, and look at the UI there (see the gaps under "UI consistency").
 - Whether "Join" is different from merge.
-- Undo for creating and renaming; undo that survives a restart.
+- Undo that survives a restart.
 
 73. **Word (.docx) import and export.** **Done**, hand-written so core stays
     platform-free (`fflate` for the zip, a small XML reader in `xml.ts`).
@@ -1272,6 +1272,17 @@ tested with the in-memory one)
     X, V, D in the list and tree). The editor-only keys use the display-only
     `shown()` helper on macOS so the editor keeps them; Copy, Cut, Paste and
     Duplicate have no native menu items, since the text roles own those keys.
+
+79. **Undo for creating and renaming.** **Done.** New Sheet, New Group, New
+    Project and renaming a group or project go on the same Undo Library Change
+    stack as moves and deletes (File > Undo Library Change, Cmd/Ctrl+Alt+Z).
+    Undoing a new sheet puts the group's order back and moves the file to the
+    trash, but only while it is still empty: once text is in it the undo
+    refuses with a message instead of discarding the writing. Undoing a new
+    group removes it. Undoing a rename restores the old name and position.
+    Sheet files are renamed automatically to follow their titles; those
+    renames are deliberately not undoable steps, or every title edit would
+    bury the last real undo.
 
 ## Later, in rough order
 

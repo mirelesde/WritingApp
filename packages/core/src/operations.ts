@@ -131,6 +131,42 @@ export async function createSheet(
   return joinPath(dir, name)
 }
 
+/** Like `createSheet`, with the steps that take it back out: the file goes, the group's order returns. */
+export async function createSheetUndoable(
+  fs: FileSystem,
+  groupPath: string,
+  content = '',
+  index?: number,
+): Promise<{ path: string; undo: UndoAction[] }> {
+  const before = await snapshotSidecar(fs, trimSlashes(groupPath))
+  const path = await createSheet(fs, groupPath, content, index)
+  return { path, undo: [{ kind: 'trash', path, ifText: content }, before] }
+}
+
+/** Like `createGroup`, with the steps that remove it again (an emptied-out group only). */
+export async function createGroupUndoable(
+  fs: FileSystem,
+  parent: string,
+  name?: string,
+  index?: number,
+): Promise<{ path: string; undo: UndoAction[] }> {
+  const before = await snapshotSidecar(fs, trimSlashes(parent))
+  const path = await createGroup(fs, parent, name, index)
+  return { path, undo: [{ kind: 'trash', path }, before] }
+}
+
+/** Like `renameGroup`, with the steps that put the old name back. */
+export async function renameGroupUndoable(
+  fs: FileSystem,
+  path: string,
+  newName: string,
+): Promise<{ path: string; undo: UndoAction[] }> {
+  const dir = parentPath(trimSlashes(path))
+  const before = await snapshotSidecar(fs, dir)
+  const to = await renameGroup(fs, path, newName)
+  return { path: to, undo: to === trimSlashes(path) ? [] : [{ kind: 'rename', from: to, to: trimSlashes(path) }, before] }
+}
+
 /**
  * Creates a group (or, at the library root, a project) and returns its
  * path. A name already in use gets " 2", " 3", ... added.
