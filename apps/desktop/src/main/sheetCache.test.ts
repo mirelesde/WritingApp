@@ -18,7 +18,7 @@ describe('sheet cache file', () => {
     expect(parseSheetCache('{not json', '/Lib').size).toBe(0)
     expect(parseSheetCache('[]', '/Lib').size).toBe(0)
     const text = JSON.stringify({
-      version: 3,
+      version: 4,
       root: '/Lib',
       entries: [['/Lib/a.md', entry], ['/Lib/b.md', { title: 1 }], 'x'],
     })
