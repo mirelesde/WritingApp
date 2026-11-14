@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
   import { applyExportStyle, embeddedGrowth, FOLDER_SUGGESTION_GROWTH } from '@writingapp/core'
   import type { ExportStyleDef } from '@writingapp/core'
-  import type { PdfOptions } from '../../preload/api'
+  import type { EpubDialogOptions, PdfOptions } from '../../preload/api'
   import { errorMessage } from './organise'
 
   let {
@@ -16,6 +16,7 @@
     onsavepdf,
     onsavemarkdown,
     onsavedocx,
+    onsaveepub,
     onclose
   }: {
     title: string
@@ -28,6 +29,7 @@
     onsavepdf: (options: PdfOptions, css: string) => void
     onsavemarkdown: () => void
     onsavedocx: (options: PdfOptions) => void
+    onsaveepub: (options: EpubDialogOptions, css: string) => void
     onclose: () => void
   } = $props()
 
@@ -43,20 +45,21 @@
   const size = (n: number): string =>
     n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`
 
-  type Format = 'pdf' | 'docx' | 'html' | 'markdown'
+  type Format = 'pdf' | 'docx' | 'epub' | 'html' | 'markdown'
   const FORMATS = [
     { value: 'pdf', label: 'PDF' },
     { value: 'docx', label: 'Word' },
+    { value: 'epub', label: 'EPUB' },
     { value: 'html', label: 'HTML' },
     { value: 'markdown', label: 'Markdown' }
   ]
-  const FORMAT_NAMES: Record<Format, string> = { pdf: 'PDF', docx: 'Word', html: 'HTML', markdown: 'Markdown' }
+  const FORMAT_NAMES: Record<Format, string> = { pdf: 'PDF', docx: 'Word', epub: 'EPUB', html: 'HTML', markdown: 'Markdown' }
   const REMEMBER_FORMAT = 'writingapp.exportFormat'
   let format = $state<Format>(
     (() => {
       try {
         const v = localStorage.getItem(REMEMBER_FORMAT)
-        return v === 'pdf' || v === 'docx' || v === 'html' || v === 'markdown' ? v : 'pdf'
+        return v === 'pdf' || v === 'docx' || v === 'epub' || v === 'html' || v === 'markdown' ? v : 'pdf'
       } catch {
         return 'pdf'
       }
@@ -73,9 +76,53 @@
     }
   }
 
+  // EPUB details. The author is remembered; the title starts as the export's own.
+  const REMEMBER_AUTHOR = 'writingapp.epubAuthor'
+  const REMEMBER_LANGUAGE = 'writingapp.epubLanguage'
+  const remembered = (key: string, fallback: string): string => {
+    try {
+      return localStorage.getItem(key) ?? fallback
+    } catch {
+      return fallback
+    }
+  }
+  let bookTitle = $state('')
+  let bookAuthor = $state(remembered(REMEMBER_AUTHOR, ''))
+  let bookLanguage = $state(remembered(REMEMBER_LANGUAGE, 'en'))
+  let coverName = $state<string | null>(null)
+  const LANGUAGES = [
+    { value: 'en', label: 'English' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'it', label: 'Italian' },
+    { value: 'pt', label: 'Portuguese' },
+    { value: 'nl', label: 'Dutch' }
+  ]
+
+  async function chooseCover(): Promise<void> {
+    try {
+      const name = await window.api.chooseEpubCover()
+      if (name) coverName = name
+    } catch (e) {
+      problem = errorMessage(e)
+    }
+  }
+
+  function saveEpub(): void {
+    try {
+      localStorage.setItem(REMEMBER_AUTHOR, bookAuthor)
+      localStorage.setItem(REMEMBER_LANGUAGE, bookLanguage)
+    } catch {
+      // Not remembered; harmless.
+    }
+    onsaveepub({ title: bookTitle.trim() || title, author: bookAuthor.trim(), language: bookLanguage, cover: coverName !== null }, activeCss)
+  }
+
   function save(): void {
     if (format === 'pdf') onsavepdf({ pageSize, margin, pageNumbers }, activeCss)
     else if (format === 'docx') onsavedocx({ pageSize, margin, pageNumbers })
+    else if (format === 'epub') saveEpub()
     else if (format === 'html') onsave(pictures, activeCss)
     else onsavemarkdown()
   }
@@ -209,7 +256,7 @@
         Export as {FORMAT_NAMES[format]}…
       </button>
     </header>
-    {#if format === 'pdf' || format === 'docx' || format === 'html' || format === 'markdown'}
+    {#if format === 'pdf' || format === 'docx' || format === 'epub' || format === 'html' || format === 'markdown'}
       <div class="options">
         {#if format === 'pdf' || format === 'docx'}
           <label class="pdf">
@@ -219,6 +266,14 @@
             <Select label="Margins" value={margin} options={[{ value: 'narrow', label: 'Narrow margins' }, { value: 'normal', label: 'Normal margins' }, { value: 'wide', label: 'Wide margins' }]} onchange={(v) => (margin = v as PdfOptions['margin'])} />
           </label>
           <label class="pdf"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
+        {:else if format === 'epub'}
+          <input class="input book" bind:value={bookTitle} placeholder={title} aria-label="Book title" />
+          <input class="input book" bind:value={bookAuthor} placeholder="Author" aria-label="Author" />
+          <label class="pdf">
+            <Select label="Language" value={bookLanguage} options={LANGUAGES} onchange={(v) => (bookLanguage = v)} />
+          </label>
+          <button onclick={() => void chooseCover()}>{coverName ? `Cover: ${coverName}` : 'Cover…'}</button>
+          {#if coverName}<button class="link" onclick={() => (coverName = null)}>No cover</button>{/if}
         {:else if format === 'html'}
           {#if imageBytes > 0}
             <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
@@ -233,13 +288,13 @@
         {:else}
           <span class="hint muted">Plain Markdown; pictures are copied into a folder beside the file.</span>
         {/if}
-        {#if format === 'docx' || format === 'markdown'}
+        {#if format === 'docx' || format === 'markdown' || format === 'epub'}
           <span class="grow"></span>
           <span class="hint muted">The preview shows the {format === 'docx' ? 'PDF and HTML' : 'HTML'} look.</span>
         {/if}
       </div>
     {/if}
-    {#if format === 'pdf' || format === 'html'}
+    {#if format === 'pdf' || format === 'html' || format === 'epub'}
     <div class="styles">
       <label>
         Style
@@ -252,7 +307,7 @@
       {/if}
     </div>
     {/if}
-    {#if editing && (format === 'pdf' || format === 'html')}
+    {#if editing && (format === 'pdf' || format === 'html' || format === 'epub')}
       <div class="editor">
         <div class="meta">
           <input class="input" bind:value={draftName} placeholder="Style name" aria-label="Style name" />
@@ -314,6 +369,9 @@
     background: none;
     color: var(--muted);
     padding: 5px 4px;
+  }
+  .options .book {
+    width: 170px;
   }
   .editor {
     display: flex;

@@ -354,3 +354,10 @@ Quick checks that earlier features still work with today's changes.
 1. Make a new sheet, then File > Undo Library Change: it disappears and the order is as before. Make another, type in it, then undo: a message says it has text and it stays.
 2. Make a new group or project, then undo: it is gone.
 3. Rename a group, then undo: the old name and position return.
+
+## 13.25 EPUB export
+
+1. Select a group with several sheets, open Export, choose Format > EPUB. A row shows title, author, language and Cover….
+2. Fill in a title and author, pick a cover picture, and Export as EPUB….
+3. Run `epubcheck` on the file if you have it: no errors expected.
+4. Open it in Apple Books (or another reader): the cover shows, the contents list the headings, each sheet starts a new chapter, pictures and tables show, and the style you chose is applied. Footnotes jump to their notes.

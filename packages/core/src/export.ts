@@ -273,7 +273,7 @@ export async function exportHtml(
   }
 }
 
-function findGroup(node: GroupNode, path: string): GroupNode | undefined {
+export function findGroup(node: GroupNode, path: string): GroupNode | undefined {
   if (node.path === path) return node
   for (const child of node.children) {
     if (child.kind === 'group') {

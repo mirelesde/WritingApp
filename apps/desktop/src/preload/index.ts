@@ -43,6 +43,8 @@ const api: Api = {
   saveExportMarkdown: (paths) => ipcRenderer.invoke('export:saveMarkdown', paths),
   saveExportDocx: (paths, options) => ipcRenderer.invoke('export:saveDocx', paths, options),
   saveExportPdf: (paths, options, css) => ipcRenderer.invoke('export:savePdf', paths, options, css),
+  chooseEpubCover: () => ipcRenderer.invoke('export:chooseCover'),
+  saveExportEpub: (paths, options, css) => ipcRenderer.invoke('export:saveEpub', paths, options, css),
   exportStyles: () => ipcRenderer.invoke('exportStyles:list'),
   saveExportStyle: (name, description, css, id) =>
     ipcRenderer.invoke('exportStyles:save', name, description, css, id),

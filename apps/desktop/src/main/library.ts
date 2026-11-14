@@ -17,6 +17,7 @@ import {
   listTemplates,
   saveAsTemplate,
   deleteNodeUndoable,
+  exportEpub,
   exportHtml,
   exportMarkdown,
   changeKeywords,
@@ -49,6 +50,9 @@ import {
 } from '@writingapp/core'
 import type { LibraryInfo, OpResult } from '../preload/api'
 import type { ExportPreview } from '../preload/api'
+
+/** The cover picture the writer last chose for an EPUB; the renderer never names a path itself. */
+let epubCover: { path: string; name: string } | null = null
 import { parsePdfOptions, renderPdf } from './pdf'
 import { createNodeFileSystem } from './nodeFileSystem'
 import { isInside, isSheetInside, toPosix } from './paths'
@@ -497,6 +501,48 @@ export function registerLibraryIpc(): void {
       if (await fs.exists(from)) images[name] = await fs.readBinary(from)
     }
     await nodeFs.writeFile(result.filePath, markdownToDocx(built.markdown, { title: built.title, ...options, images }))
+    return result.filePath
+  })
+
+  ipcMain.handle('export:chooseCover', async (event) => {
+    const options: Electron.OpenDialogOptions = {
+      title: 'Cover picture',
+      buttonLabel: 'Use as cover',
+      properties: ['openFile'],
+      filters: [{ name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
+    const file = result.filePaths[0]
+    if (result.canceled || !file || !imageMime(basename(file))) return null
+    epubCover = { path: file, name: basename(file) }
+    return epubCover.name
+  })
+
+  ipcMain.handle('export:saveEpub', async (event, paths: unknown, rawOptions: unknown, css: unknown) => {
+    if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
+    const o = (rawOptions && typeof rawOptions === 'object' ? rawOptions : {}) as Record<string, unknown>
+    const text = (v: unknown, max: number): string => (typeof v === 'string' ? v.slice(0, max) : '')
+    const chosen = paths.map((p) => inside(p, true))
+    const view = resolveView((await settings.load()).view)
+    const cover = o.cover === true && epubCover ? epubCover : null
+    const built = await exportEpub(fs, await load(currentRoot), chosen, {
+      title: text(o.title, 300),
+      author: text(o.author, 300),
+      language: text(o.language, 20) || 'en',
+      css: typeof css === 'string' ? css : '',
+      indentParagraphs: view.paragraphIndent,
+      cover: cover ? { bytes: await fs.readBinary(toPosix(cover.path)), name: cover.name } : undefined
+    })
+    const saveOptions: Electron.SaveDialogOptions = {
+      title: 'Export as EPUB',
+      defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.epub`,
+      filters: [{ name: 'EPUB book', extensions: ['epub'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window ? await dialog.showSaveDialog(window, saveOptions) : await dialog.showSaveDialog(saveOptions)
+    if (result.canceled || !result.filePath) return null
+    await nodeFs.writeFile(result.filePath, built.bytes)
     return result.filePath
   })
 

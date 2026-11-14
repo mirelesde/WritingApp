@@ -1284,16 +1284,28 @@ tested with the in-memory one)
     renames are deliberately not undoable steps, or every title edit would
     bury the last real undo.
 
+80. **EPUB export.** **Done.** Export dialog > Format > EPUB writes an EPUB 3
+    book from the selected sheets and groups (`epub.ts` in core, zip by
+    `fflate`). Each sheet is a chapter file (glued sheets share one); the
+    navigation document and the older NCX contents are built from the headings
+    down to level 3, with a sheet that has none listed by its title. The dialog
+    asks for title, author (remembered), language and an optional cover
+    picture. The chosen export style's CSS and the paragraph-indent setting
+    apply. Library pictures are packed into the book; maths is kept as MathML;
+    a `(cnt)` line is dropped, since the book has its own contents. Checked
+    here: every part is well-formed XML (core tests, and `xmllint` on a real
+    export), the mimetype entry is first and stored. Not checked: epubcheck
+    (not installed) and real readers (Apple Books, Kobo, Kindle via Send to
+    Kindle), so run epubcheck and open one export in a reader before relying
+    on it. Gaps: no inline contents page, no per-chapter titles beyond the
+    headings, WebP pictures are included though some older readers cannot show
+    them, no fonts embedded.
+
 ## Later, in rough order
 
 - Export styles beyond item 69: title page, per-style page setup.
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
-- **EPUB export.** Another export target next to HTML and PDF: one book
-  from a group, sheets as chapters, headings as the table of contents,
-  title and author from a small dialog. An EPUB is a zip of XHTML, so the
-  HTML export can be reused; needs a zip writer, a cover option, and a
-  validity check (epubcheck) before release.
 - Publishing to WordPress and Ghost.
 
 ## Open questions

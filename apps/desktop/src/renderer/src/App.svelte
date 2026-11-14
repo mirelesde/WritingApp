@@ -21,7 +21,7 @@
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
-  import type { EditMenuInfo, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
+  import type { EditMenuInfo, EpubDialogOptions, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
   import { applyView } from './view'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
@@ -1537,6 +1537,22 @@
     }
   }
 
+  async function saveExportEpub(options: EpubDialogOptions, css: string): Promise<void> {
+    exportSaving = true
+    try {
+      const saved = await window.api.saveExportEpub(exportPaths, { ...options }, css)
+      if (saved) {
+        exportPreview = null
+        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
+      }
+    } catch (e) {
+      notice = errorMessage(e)
+      exportPreview = null
+    } finally {
+      exportSaving = false
+    }
+  }
+
   async function saveExportPdf(options: PdfOptions, css: string): Promise<void> {
     exportSaving = true
     try {
@@ -2542,6 +2558,7 @@
     onsavepdf={saveExportPdf}
     onsavemarkdown={saveExportMarkdown}
     onsavedocx={saveExportDocx}
+    onsaveepub={saveExportEpub}
     onclose={() => (exportPreview = null)}
   />
 {/if}

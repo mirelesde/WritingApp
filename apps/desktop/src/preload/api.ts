@@ -93,6 +93,15 @@ export interface ExportPreview {
 }
 
 /** Page layout for a PDF export. */
+/** What the EPUB export asks for beyond the selection. */
+export interface EpubDialogOptions {
+  title: string
+  author: string
+  language: string
+  /** Use the picture chosen with chooseEpubCover. */
+  cover: boolean
+}
+
 export interface PdfOptions {
   pageSize: 'A4' | 'Letter'
   margin: 'narrow' | 'normal' | 'wide'
@@ -181,6 +190,10 @@ export interface Api {
   /** Asks where to save, then writes the selection as a Word document with its pictures embedded. Null if cancelled. */
   saveExportDocx(paths: string[], options: PdfOptions): Promise<string | null>
   saveExportPdf(paths: string[], options: PdfOptions, css?: string): Promise<string | null>
+  /** Asks for a cover picture to use in the next EPUB; returns its file name, or null if cancelled. */
+  chooseEpubCover(): Promise<string | null>
+  /** Asks where to save, then writes the selection as an EPUB book. Null if cancelled. */
+  saveExportEpub(paths: string[], options: EpubDialogOptions, css?: string): Promise<string | null>
   /** The built-in export styles, then the writer's own. */
   exportStyles(): Promise<ExportStyleDef[]>
   /** Saves a style of the writer's own (over `id` if given); returns its id. */
