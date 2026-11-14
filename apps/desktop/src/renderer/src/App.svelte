@@ -21,7 +21,7 @@
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
-  import type { LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
+  import type { EditMenuInfo, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
   import { applyView } from './view'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
@@ -29,6 +29,8 @@
   import RecoveryDialog from './RecoveryDialog.svelte'
   import CleanUpImages from './CleanUpImages.svelte'
   import KeywordsDialog from './KeywordsDialog.svelte'
+  import ContextMenu from './ContextMenu.svelte'
+  import { editMenuItems, nodeMenuItems, type MenuItem } from './contextMenu'
   import CommandPalette from './CommandPalette.svelte'
   import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -1050,8 +1052,26 @@
     if (result?.label) showInfo(`Undid ${result.label.toLowerCase()}`)
   }
 
+  /** The right-click menu being shown, if any. */
+  let contextMenu = $state<{ x: number; y: number; items: MenuItem[]; onpick: (item: MenuItem) => void } | null>(null)
+  /** The menu for right-clicked text; spelling help arrives from the main process. */
+  function textMenu(info: EditMenuInfo): void {
+    contextMenu = {
+      x: info.x,
+      y: info.y,
+      items: editMenuItems(info, isMac),
+      onpick: (item) => {
+        const value = item.value ?? ''
+        if (item.action === 'replace-misspelling') void window.api.replaceMisspelling(value)
+        else if (item.action === 'add-to-dictionary') void window.api.addToDictionary(value)
+        else if (item.action === 'select-all') void window.api.editCommand('selectAll')
+        else if (item.action) void window.api.editCommand(item.action as 'undo' | 'redo' | 'cut' | 'copy' | 'paste')
+      }
+    }
+  }
+
   /** Right-click menu: act on what was clicked, selecting it first if it is not already. */
-  async function nodeMenu(kind: 'sheet' | 'group' | 'root', path: string): Promise<void> {
+  async function nodeMenu(kind: 'sheet' | 'group' | 'root', path: string, at: { x: number; y: number }): Promise<void> {
     if (!library) return
     if (kind === 'sheet') {
       if (!selection.includes(path)) await setSelection([path], path)
@@ -1059,9 +1079,17 @@
       selectGroup(path)
       await tick()
     }
-    const action = await window.api.showNodeMenu(kind, path, nodeClip !== null)
-    if (!action) return
-    if (action === 'new-sheet') await newSheet()
+    contextMenu = {
+      ...at,
+      items: nodeMenuItems(kind, nodeClip !== null, isMac),
+      onpick: (item) => void nodeAction(kind, path, item.action)
+    }
+  }
+
+  async function nodeAction(kind: 'sheet' | 'group' | 'root', path: string, action: string | undefined): Promise<void> {
+    if (action === 'reveal') await window.api.revealPath(path)
+    else if (action === 'copy-path') await window.api.copyPath(path)
+    else if (action === 'new-sheet') await newSheet()
     else if (action === 'new-group') await newGroup(kind === 'root')
     else if (action === 'open-tab') await openInTab(path)
     else if (action === 'open-window') await window.api.newWindow(path)
@@ -1864,6 +1892,7 @@
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
     const unsubscribeChanged = window.api.onLibraryChanged((info) => void externalChange(info))
     const unsubscribeMenu = window.api.onMenuCommand(handleCommand)
+    const unsubscribeText = window.api.onEditMenu(textMenu)
     // Last chance to save when the window closes.
     const saveOnClose = (): void => void autosaver.flush()
     window.addEventListener('beforeunload', saveOnClose)
@@ -1871,6 +1900,7 @@
       unsubscribeOpened()
       unsubscribeChanged()
       unsubscribeMenu()
+      unsubscribeText()
       unsubscribeView()
       window.removeEventListener('beforeunload', saveOnClose)
     }
@@ -1936,7 +1966,7 @@
         class:selected={selectedGroup === library.tree.path}
         oncontextmenu={(e) => {
           e.preventDefault()
-          if (library) void nodeMenu('root', library.tree.path)
+          if (library) void nodeMenu('root', library.tree.path, { x: e.clientX, y: e.clientY })
         }}
       >
         <button
@@ -1959,7 +1989,7 @@
           oncommitrename={commitRename}
           oncancelrename={finishRename}
           oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
-          oncontext={(path) => void nodeMenu(path === library?.tree.path ? 'root' : 'group', path)}
+          oncontext={(path, at) => void nodeMenu(path === library?.tree.path ? 'root' : 'group', path, at)}
           dnd={treeDnd}
         />
       </ul>
@@ -2085,7 +2115,7 @@
                 onclick={(e) => clickSheet(sheet.path, e)}
                 oncontextmenu={(e) => {
                   e.preventDefault()
-                  void nodeMenu('sheet', sheet.path)
+                  void nodeMenu('sheet', sheet.path, { x: e.clientX, y: e.clientY })
                 }}
               >
                 <span class="sheet-head">
@@ -2269,6 +2299,20 @@
     total={recoveryTotal}
     onrestore={() => void finishRecovery(true)}
     ondiscard={() => void finishRecovery(false)}
+  />
+{/if}
+
+{#if contextMenu}
+  {@const menu = contextMenu}
+  <ContextMenu
+    x={menu.x}
+    y={menu.y}
+    items={menu.items}
+    onchoose={(item) => {
+      contextMenu = null
+      menu.onpick(item)
+    }}
+    onclose={() => (contextMenu = null)}
   />
 {/if}
 

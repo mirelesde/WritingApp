@@ -91,6 +91,16 @@ export interface PdfOptions {
   pageNumbers: boolean
 }
 
+/** What a right-click on text tells the menu. */
+export interface EditMenuInfo {
+  x: number
+  y: number
+  misspelledWord: string
+  suggestions: string[]
+  isEditable: boolean
+  hasSelection: boolean
+}
+
 /** What the main process offers the UI as `window.api`. */
 export interface Api {
   /** The remembered library, or null if there is none or it cannot be opened. */
@@ -187,12 +197,16 @@ export interface Api {
   listThemes(): Promise<ColorTheme[]>
   /** Opens the themes folder, creating it with an example theme if it is empty. */
   openThemesFolder(): Promise<void>
-  /** Shows the native right-click menu for a node; resolves with what the renderer must do, or null. */
-  showNodeMenu(
-    kind: 'sheet' | 'group' | 'root',
-    path: string,
-    canPaste?: boolean
-  ): Promise<'new-sheet' | 'new-group' | 'open-tab' | 'open-window' | 'keywords' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
+  /** Called when text is right-clicked: where, what is under the pointer, and spelling help. */
+  onEditMenu(callback: (info: EditMenuInfo) => void): () => void
+  /** Runs an edit command on the focused text. */
+  editCommand(command: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll'): Promise<void>
+  replaceMisspelling(word: string): Promise<void>
+  addToDictionary(word: string): Promise<void>
+  /** Shows a library file or folder in the system file manager. */
+  revealPath(path: string): Promise<void>
+  /** Puts a library path on the clipboard. */
+  copyPath(path: string): Promise<void>
   /** Opens another window on the same library, on `sheet` when given, with its corner near `at` (screen pixels). */
   newWindow(sheet?: string, at?: { x: number; y: number }): Promise<void>
   /** The sheet this window was opened for, once; null for an ordinary window. */

@@ -2,8 +2,7 @@ import { app, shell, BrowserWindow, Menu, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { attachEditMenu } from './editMenu'
-import { registerNodeMenuIpc } from './nodeMenu'
+import { attachContextMenu, registerContextActions } from './contextActions'
 import { registerThemeIpc } from './themes'
 import { registerExportStyleIpc } from './exportStyles'
 import { loadView, registerViewIpc, viewMenu } from './view'
@@ -55,7 +54,7 @@ function createWindow(sheet?: string, where?: { x: number; y: number }): void {
     }
   })
 
-  attachEditMenu(mainWindow.webContents)
+  attachContextMenu(mainWindow.webContents)
   const id = mainWindow.webContents.id
   if (sheet) pendingSheet.set(id, sheet)
   mainWindow.on('closed', () => pendingSheet.delete(id))
@@ -375,7 +374,7 @@ app.whenReady().then(async () => {
   registerLibraryIpc()
   registerAssetProtocol()
   registerViewIpc()
-  registerNodeMenuIpc()
+  registerContextActions()
   registerThemeIpc()
   registerExportStyleIpc()
   ipcMain.handle('window:new', (_event, sheet: unknown, where: unknown) => {

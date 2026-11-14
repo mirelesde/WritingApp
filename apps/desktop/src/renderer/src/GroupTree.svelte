@@ -15,7 +15,7 @@
     oncommitrename: (path: string, name: string) => void
     oncancelrename: () => void
     oncolor: (path: string, color: string | null) => void
-    oncontext: (path: string) => void
+    oncontext: (path: string, at: { x: number; y: number }) => void
     dnd: TreeDnd
     /** Show only the group's subgroups, not the group itself (its name is shown elsewhere). */
     hideRoot?: boolean
@@ -96,7 +96,7 @@
     ondragend={() => dnd.end()}
     oncontextmenu={(e) => {
       e.preventDefault()
-      oncontext(group.path)
+      oncontext(group.path, { x: e.clientX, y: e.clientY })
     }}
     ondragover={(e) => {
       const rect = e.currentTarget.getBoundingClientRect()

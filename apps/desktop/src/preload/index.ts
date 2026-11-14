@@ -60,7 +60,18 @@ const api: Api = {
   },
   listThemes: () => ipcRenderer.invoke('themes:list'),
   openThemesFolder: () => ipcRenderer.invoke('themes:openFolder'),
-  showNodeMenu: (kind, path, canPaste) => ipcRenderer.invoke('menu:node', kind, path, canPaste),
+  onEditMenu(callback) {
+    const listener = (_event: unknown, info: Parameters<typeof callback>[0]): void => callback(info)
+    ipcRenderer.on('context:edit', listener)
+    return () => {
+      ipcRenderer.removeListener('context:edit', listener)
+    }
+  },
+  editCommand: (command) => ipcRenderer.invoke('context:editCommand', command),
+  replaceMisspelling: (word) => ipcRenderer.invoke('context:replaceMisspelling', word),
+  addToDictionary: (word) => ipcRenderer.invoke('context:addToDictionary', word),
+  revealPath: (path) => ipcRenderer.invoke('context:reveal', path),
+  copyPath: (path) => ipcRenderer.invoke('context:copyPath', path),
   newWindow: (sheet, at) => ipcRenderer.invoke('window:new', sheet, at),
   initialSheet: () => ipcRenderer.invoke('window:initialSheet'),
   closeWindow: () => ipcRenderer.invoke('window:close'),
