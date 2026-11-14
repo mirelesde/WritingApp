@@ -3,7 +3,7 @@ import type { SheetNode } from './library'
 import { sortSheets } from './sheetSort'
 
 const sheet = (title: string, extra: Partial<SheetNode> = {}): SheetNode => ({
-  kind: 'sheet', name: `${title}.md`, path: `/${title}.md`, title, preview: '', glued: false, words: 0, images: [], ...extra
+  kind: 'sheet', name: `${title}.md`, path: `/${title}.md`, title, preview: '', glued: false, words: 0, images: [], links: [], ...extra
 })
 const titles = (s: SheetNode[]): string[] => s.map((x) => x.title)
 

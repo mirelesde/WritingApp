@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseSheetCache, serializeSheetCache } from './sheetCache'
 
-const entry = { title: 'A', preview: 'p', words: 3, images: ['a.png'], modified: 10, size: 20 }
+const entry = { title: 'A', preview: 'p', words: 3, images: ['a.png'], links: ['B'], modified: 10, size: 20 }
 
 describe('sheet cache file', () => {
   it('round-trips', () => {
@@ -18,7 +18,7 @@ describe('sheet cache file', () => {
     expect(parseSheetCache('{not json', '/Lib').size).toBe(0)
     expect(parseSheetCache('[]', '/Lib').size).toBe(0)
     const text = JSON.stringify({
-      version: 2,
+      version: 3,
       root: '/Lib',
       entries: [['/Lib/a.md', entry], ['/Lib/b.md', { title: 1 }], 'x'],
     })

@@ -115,3 +115,5 @@ export {
   toBase64,
 } from './images'
 export type { Hasher, ImageIndexEntry, ImageRef, ImportedImage, UnusedImage } from './images'
+export { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLink, titleKey } from './wikiLinks'
+export type { Backlink, WikiLink } from './wikiLinks'
