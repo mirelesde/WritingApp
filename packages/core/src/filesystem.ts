@@ -20,8 +20,11 @@ export interface FileSystem {
    * destination already exists or its parent folder does not.
    */
   rename(from: string, to: string): Promise<void>
-  /** When a file was last changed and created, in ms since 1970. Optional: sheets then have no dates. */
-  fileTimes?(path: string): Promise<{ modified: number; created: number }>
+  /**
+   * When a file was last changed and created, in ms since 1970, and its size in bytes. Optional: sheets
+   * then have no dates. With `size`, an unchanged file is not read again on the next load.
+   */
+  fileTimes?(path: string): Promise<{ modified: number; created: number; size?: number }>
   /** Moves a file or folder to the system trash, so it is recoverable. */
   trash(path: string): Promise<void>
 }

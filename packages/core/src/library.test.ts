@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadLibrary, type GroupNode } from './library'
+import { loadLibrary, type GroupNode, type SheetCache } from './library'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
 const sidecar = (order: string[], glued: string[] = []) =>
@@ -93,5 +93,68 @@ describe('loadLibrary', () => {
 
   it('rejects when the root does not exist', async () => {
     await expect(loadLibrary(new MemoryFileSystem(), '/nope')).rejects.toThrow()
+  })
+})
+
+describe('loadLibrary cache', () => {
+  /** A MemoryFileSystem that reports a modified time and size, and counts reads of sheets. */
+  function counting(files: Record<string, string>) {
+    const mem = new MemoryFileSystem(files)
+    const versions = new Map<string, number>()
+    const reads: string[] = []
+    const fs = Object.assign(Object.create(mem) as MemoryFileSystem, {
+      async readText(path: string) {
+        if (path.endsWith('.md')) reads.push(path)
+        return mem.readText(path)
+      },
+      async writeText(path: string, text: string) {
+        versions.set(path, (versions.get(path) ?? 0) + 1)
+        return mem.writeText(path, text)
+      },
+      async fileTimes(path: string) {
+        const text = await mem.readText(path)
+        return { modified: 1000 + (versions.get(path) ?? 0), created: 1, size: text.length }
+      },
+    })
+    return { fs, reads }
+  }
+
+  it('reads each sheet once and then only the ones that changed', async () => {
+    const { fs, reads } = counting({ '/Lib/p/a.md': '# A\nfirst', '/Lib/p/b.md': '# B\nsecond' })
+    const cache: SheetCache = new Map()
+    const stats = { read: 0, cached: 0 }
+    await loadLibrary(fs, '/Lib', { cache, stats })
+    expect(stats).toEqual({ read: 2, cached: 0 })
+
+    reads.length = 0
+    const again = await loadLibrary(fs, '/Lib', { cache, stats })
+    expect(reads).toEqual([])
+    expect(stats).toEqual({ read: 0, cached: 2 })
+    expect(((again.children[0] as GroupNode).children[0] as { title: string }).title).toBe('A')
+
+    await fs.writeText('/Lib/p/a.md', '# A changed\nfirst')
+    const third = await loadLibrary(fs, '/Lib', { cache, stats })
+    expect(reads).toEqual(['/Lib/p/a.md'])
+    expect(stats).toEqual({ read: 1, cached: 1 })
+    expect(((third.children[0] as GroupNode).children[0] as { title: string }).title).toBe('A changed')
+  })
+
+  it('forgets sheets that are gone', async () => {
+    const { fs } = counting({ '/Lib/p/a.md': '# A', '/Lib/p/b.md': '# B' })
+    const cache: SheetCache = new Map()
+    await loadLibrary(fs, '/Lib', { cache })
+    expect(cache.size).toBe(2)
+    await fs.trash('/Lib/p/b.md')
+    await loadLibrary(fs, '/Lib', { cache })
+    expect([...cache.keys()]).toEqual(['/Lib/p/a.md'])
+  })
+
+  it('always reads when the file system gives no sizes', async () => {
+    const mem = new MemoryFileSystem({ '/Lib/p/a.md': '# A' })
+    const cache: SheetCache = new Map()
+    const stats = { read: 0, cached: 0 }
+    await loadLibrary(mem, '/Lib', { cache, stats })
+    await loadLibrary(mem, '/Lib', { cache, stats })
+    expect(stats).toEqual({ read: 1, cached: 0 })
   })
 })

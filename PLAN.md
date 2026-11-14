@@ -749,9 +749,7 @@ Ulysses has and we do not; 72 to 81 are suggestions of our own.
 71. **Dictionary and thesaurus lookup.** Part of item 56; listed here so it
     is not forgotten if 56 is split.
 
-72. **Load performance.** The library reads every file on open. Cache
-    titles, previews and counts (by modified time) or load them lazily, so a
-    library of thousands of sheets opens fast. Do this before it hurts.
+72. ~~**Load performance.**~~ **Done.** Loading reads sheets in parallel (32 at a time) and skips any file whose modified time and size match the cache (`loadLibrary`'s `cache` option; `groupWordCount` now uses the loaded word counts). The main process keeps the cache between loads and saves it per library in the app's data folder (`sheet-cache/`), so the next launch starts warm. On a synthetic 3,000-sheet, 23 MB library a load went from about 750 ms to about 130 ms. Cold first load, and loads on slow or synced disks, still read every file once.
 73. **Search upgrades.** Whole-word and regular-expression options, plus the
     Look-in scope in "Still open". Cheap on top of what exists.
 74. **Sample library on first run.** A small "Welcome" project that teaches

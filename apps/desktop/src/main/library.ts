@@ -1,6 +1,7 @@
 import { promises as nodeFs } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, shell, app } from 'electron'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import {
   applyUndo,
   createGroup,
@@ -27,6 +28,7 @@ import {
   unglueSheets,
   type FileSystem,
   type GroupNode,
+  type SheetCache,
   type SheetChange,
   type UndoAction
 } from '@writingapp/core'
@@ -37,6 +39,7 @@ import { createNodeFileSystem } from './nodeFileSystem'
 import { isInside, isSheetInside, toPosix } from './paths'
 import { watchFolder } from './watcher'
 import { createSettingsStore, withRecent } from './settings'
+import { parseSheetCache, serializeSheetCache } from './sheetCache'
 
 const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
 let settings: ReturnType<typeof createSettingsStore>
@@ -48,9 +51,61 @@ let stopWatching: (() => void) | undefined
 const undoStack: { label: string; actions: UndoAction[] }[] = []
 const UNDO_DEPTH = 20
 
+// What loading learned about each sheet, so unchanged files are not read again. Saved
+// beside the app's settings, one file per library, so the next launch starts warm too.
+const sheetCache: SheetCache = new Map()
+let cacheRoot: string | undefined
+let cacheReady: Promise<void> = Promise.resolve()
+let cacheSaveTimer: ReturnType<typeof setTimeout> | undefined
+
+function cacheFile(root: string): string {
+  const id = createHash('sha1').update(root).digest('hex')
+  return join(app.getPath('userData'), 'sheet-cache', `${id}.json`)
+}
+
+async function restoreCache(root: string): Promise<void> {
+  sheetCache.clear()
+  try {
+    const saved = parseSheetCache(await nodeFs.readFile(cacheFile(root), 'utf8'), root)
+    if (cacheRoot === root) for (const [key, entry] of saved) sheetCache.set(key, entry)
+  } catch {
+    // No saved cache yet.
+  }
+}
+
+function scheduleCacheSave(root: string): void {
+  clearTimeout(cacheSaveTimer)
+  cacheSaveTimer = setTimeout(async () => {
+    if (root !== cacheRoot) return
+    try {
+      const file = cacheFile(root)
+      await nodeFs.mkdir(join(file, '..'), { recursive: true })
+      const temp = `${file}.tmp`
+      await nodeFs.writeFile(temp, serializeSheetCache(root, sheetCache), 'utf8')
+      await nodeFs.rename(temp, file)
+    } catch {
+      // The cache is an optimisation; losing it costs one slow start.
+    }
+  }, 1500)
+}
+
+/** `loadLibrary` that skips sheets unchanged since the last load. */
+async function load(root: string): Promise<GroupNode> {
+  if (cacheRoot !== root) {
+    cacheRoot = root
+    cacheReady = restoreCache(root)
+  }
+  await cacheReady
+  const before = sheetCache.size
+  const stats = { read: 0, cached: 0 }
+  const tree = await loadLibrary(fs, root, { cache: sheetCache, stats })
+  if (stats.read > 0 || sheetCache.size !== before) scheduleCacheSave(root)
+  return tree
+}
+
 async function open(path: string): Promise<LibraryInfo | null> {
   try {
-    const tree = await loadLibrary(fs, path)
+    const tree = await load(path)
     if (tree.path !== currentRoot) {
       undoStack.length = 0
       stopWatching?.()
@@ -232,14 +287,14 @@ export function registerLibraryIpc(): void {
   async function buildExport(paths: unknown): Promise<ExportPreview> {
     if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
     const chosen = paths.map((p) => inside(p, true))
-    const tree = await loadLibrary(fs, currentRoot)
+    const tree = await load(currentRoot)
     const view = resolveView((await settings.load()).view)
     return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent })
   }
 
   ipcMain.handle('search:run', async (_event, query: unknown) => {
     if (typeof query !== 'string' || !currentRoot) return []
-    return searchLibrary(fs, await loadLibrary(fs, currentRoot), query)
+    return searchLibrary(fs, await load(currentRoot), query)
   })
 
   ipcMain.handle('op:replaceAll', async (_event, query: unknown, replacement: unknown, only: unknown) => {
@@ -247,7 +302,7 @@ export function registerLibraryIpc(): void {
     const paths = Array.isArray(only) ? only.map((p) => inside(p)) : undefined
     let replaced = 0
     const result = await change(async (root) => {
-      const outcome = await replaceInLibrary(fs, await loadLibrary(fs, root), query, replacement, paths)
+      const outcome = await replaceInLibrary(fs, await load(root), query, replacement, paths)
       replaced = outcome.count
       return outcome.count > 0
         ? { undo: { label: `Replace “${query.trim()}”`, actions: outcome.undo } }
@@ -258,9 +313,9 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('stats:group', async (_event, path: unknown) => {
     if (!currentRoot) return 0
-    const tree = await loadLibrary(fs, currentRoot)
+    const tree = await load(currentRoot)
     const target = findGroupNode(tree, inside(path, true))
-    return target ? groupWordCount(fs, target) : 0
+    return target ? groupWordCount(target) : 0
   })
 
   ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))

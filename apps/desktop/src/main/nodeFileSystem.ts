@@ -52,7 +52,7 @@ export function createNodeFileSystem(trashItem: (path: string) => Promise<void>)
 
     async fileTimes(path) {
       const stats = await nodeFs.stat(path)
-      return { modified: stats.mtimeMs, created: stats.birthtimeMs }
+      return { modified: stats.mtimeMs, created: stats.birthtimeMs, size: stats.size }
     },
 
     async makeDir(path) {

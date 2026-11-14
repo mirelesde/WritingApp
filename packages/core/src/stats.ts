@@ -1,5 +1,4 @@
 import { stripComments } from './comments'
-import type { FileSystem } from './filesystem'
 import type { GroupNode } from './library'
 
 /** Reading speed used for the reading-time estimate, in words per minute. */
@@ -35,14 +34,9 @@ export function textStats(text: string): TextStats {
   }
 }
 
-/** Total words in every sheet of a group, including its sub-groups. */
-export async function groupWordCount(fs: FileSystem, group: GroupNode): Promise<number> {
+/** Total words in every sheet of a group, including its sub-groups, as the loaded tree counted them. */
+export function groupWordCount(group: GroupNode): number {
   let total = 0
-  for (const child of group.children) {
-    total +=
-      child.kind === 'group'
-        ? await groupWordCount(fs, child)
-        : countWords(await fs.readText(child.path))
-  }
+  for (const child of group.children) total += child.kind === 'group' ? groupWordCount(child) : child.words
   return total
 }

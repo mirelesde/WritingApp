@@ -50,7 +50,7 @@ describe('groupWordCount', () => {
       '/Lib/proj/sub/b.md': '# Four five',
     })
     const root = await loadLibrary(fs, '/Lib')
-    expect(await groupWordCount(fs, root)).toBe(5)
-    expect(await groupWordCount(fs, root.children[0] as never)).toBe(5)
+    expect(groupWordCount(root)).toBe(5)
+    expect(groupWordCount(root.children[0] as never)).toBe(5)
   })
 })
