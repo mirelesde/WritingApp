@@ -97,9 +97,9 @@
   }
 </script>
 
-<div class="backdrop" role="presentation" onmousedown={oncancel}>
+<div class="dlg-backdrop" role="presentation" onmousedown={oncancel}>
   <div
-    class="dialog"
+    class="dlg dialog"
     role="dialog"
     aria-modal="true"
     aria-label="Find in library"
@@ -109,6 +109,7 @@
   >
     <div class="field">
       <input
+        class="input"
         use:focusInput
         bind:value={query}
         oninput={typed}
@@ -129,6 +130,7 @@
     <div class="replace">
       {#if showReplace}
         <input
+          class="input"
           bind:value={replacement}
           placeholder="Replace with"
           aria-label="Replace with"
@@ -175,25 +177,11 @@
 </div>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 12vh;
-    background: rgb(0 0 0 / 0.25);
-    z-index: 10;
-  }
   .dialog {
     width: min(620px, calc(100vw - 32px));
     max-height: 70vh;
     display: flex;
     flex-direction: column;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
     overflow: hidden;
   }
   .field {
@@ -217,9 +205,11 @@
   button.opt {
     display: block;
     width: auto;
-    padding: 4px 7px;
+    padding: 4px 8px;
     font-size: 12px;
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--text) 7%, transparent);
     color: var(--muted);
   }
   button.opt.wide {
@@ -229,22 +219,12 @@
     white-space: nowrap;
   }
   button.opt.on {
-    background: var(--accent);
+    background: color-mix(in srgb, var(--text) 7%, transparent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--accent);
   }
   input {
     margin: 10px;
-    padding: 8px 10px;
-    font: inherit;
-    color: inherit;
-    background: var(--pane);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    outline: none;
-  }
-  input:focus {
-    border-color: var(--accent);
   }
   ul {
     list-style: none;
@@ -268,7 +248,7 @@
   }
   button.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .title {
     font-weight: 600;
@@ -303,11 +283,13 @@
   .replace button {
     width: auto;
     display: block;
-    border: 1px solid var(--border);
-    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    padding: 5px 12px;
+    font-size: 13px;
   }
   .replace button.link {
-    border: none;
+    background: none;
     padding: 0 2px;
     color: var(--muted);
   }
@@ -334,7 +316,8 @@
     padding: 2px 8px;
     font-size: 12px;
     color: var(--muted);
-    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
   }
   .none {
     padding: 8px 10px;

@@ -31,9 +31,9 @@
   }
 </script>
 
-<div class="backdrop" role="presentation" onmousedown={oncancel}>
+<div class="dlg-backdrop" role="presentation" onmousedown={oncancel}>
   <div
-    class="dialog"
+    class="dlg dialog"
     role="dialog"
     aria-modal="true"
     aria-label="Command palette"
@@ -42,6 +42,7 @@
     onkeydown={keydown}
   >
     <input
+      class="input"
       use:focusInput
       bind:value={query}
       oninput={() => (index = 0)}
@@ -71,39 +72,15 @@
 </div>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 12vh;
-    background: rgb(0 0 0 / 0.25);
-    z-index: 40;
-  }
   .dialog {
     width: min(560px, calc(100vw - 32px));
     max-height: 70vh;
     display: flex;
     flex-direction: column;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
     overflow: hidden;
   }
   input {
     margin: 10px;
-    padding: 8px 10px;
-    font: inherit;
-    color: inherit;
-    background: var(--pane);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    outline: none;
-  }
-  input:focus {
-    border-color: var(--accent);
   }
   ul {
     list-style: none;
@@ -128,7 +105,7 @@
   }
   button.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .section {
     font-size: 12px;

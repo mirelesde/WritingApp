@@ -67,9 +67,9 @@
   }
 </script>
 
-<div class="backdrop" role="presentation">
+<div class="dlg-backdrop centered modal" role="presentation">
   <div
-    class="dialog"
+    class="dlg dialog"
     role="dialog"
     aria-modal="true"
     aria-labelledby="kw-title"
@@ -92,7 +92,7 @@
       {/each}
     </div>
 
-    <input
+    <input class="input"
       use:focusInput
       type="text"
       placeholder="Add a keyword, then press Return"
@@ -128,14 +128,6 @@
 </div>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    display: grid;
-    place-items: center;
-    background: rgba(0, 0, 0, 0.35);
-  }
   .dialog {
     width: min(480px, 92vw);
     max-height: 80vh;
@@ -144,16 +136,8 @@
     flex-direction: column;
     gap: 10px;
     padding: 20px 22px;
-    border-radius: 12px;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-    outline: none;
   }
   h2 {
-    margin: 0;
-    font-size: 16px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -176,15 +160,13 @@
     gap: 5px;
     padding: 2px 4px 2px 10px;
     border-radius: 999px;
-    border: 1px solid var(--accent);
-    background: var(--hover);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--text);
     font: inherit;
     font-size: 12.5px;
   }
   .chip.partial {
-    border-style: dashed;
-    opacity: 0.8;
+    color: var(--muted);
   }
   .chip small {
     color: var(--muted);
@@ -192,14 +174,19 @@
   }
   .chip.suggestion {
     padding: 2px 10px;
-    border-color: var(--border);
-    cursor: pointer;
+    border: none;
+    color: var(--muted);
+    cursor: default;
+  }
+  .chip.suggestion:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 13%, transparent);
   }
   .x {
     border: 0;
     background: none;
     color: var(--muted);
-    cursor: pointer;
+    cursor: default;
     padding: 0 6px;
     font-size: 14px;
     line-height: 1;
@@ -210,37 +197,5 @@
   .none {
     color: var(--muted);
     font-size: 13px;
-  }
-  input {
-    font: inherit;
-    font-size: 13px;
-    padding: 7px 10px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--list);
-    color: var(--text);
-  }
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 4px;
-  }
-  .buttons button {
-    font: inherit;
-    font-size: 13px;
-    padding: 6px 14px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--hover);
-    color: var(--text);
-  }
-  .buttons button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--bg);
-  }
-  .buttons button:disabled {
-    opacity: 0.5;
   }
 </style>

@@ -58,7 +58,7 @@
     user-select: none;
   }
   .indicator.problem {
-    color: #c0392b;
+    color: var(--danger);
   }
   svg {
     width: 14px;

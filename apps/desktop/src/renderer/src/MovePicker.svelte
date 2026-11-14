@@ -31,9 +31,9 @@
   }
 </script>
 
-<div class="backdrop" role="presentation" onmousedown={oncancel}>
+<div class="dlg-backdrop" role="presentation" onmousedown={oncancel}>
   <div
-    class="dialog"
+    class="dlg dialog"
     role="dialog"
     aria-modal="true"
     aria-label={heading}
@@ -43,6 +43,7 @@
   >
     <p class="heading">{heading}</p>
     <input
+      class="input"
       use:focusInput
       bind:value={query}
       oninput={() => (index = 0)}
@@ -68,24 +69,11 @@
 </div>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 15vh;
-    background: rgb(0 0 0 / 0.25);
-  }
   .dialog {
     width: min(460px, calc(100vw - 32px));
     max-height: 60vh;
     display: flex;
     flex-direction: column;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
     overflow: hidden;
   }
   .heading {
@@ -95,17 +83,7 @@
     font-size: 12px;
   }
   input {
-    margin: 4px 10px 8px;
-    padding: 8px 10px;
-    font: inherit;
-    color: inherit;
-    background: var(--pane);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    outline: none;
-  }
-  input:focus {
-    border-color: var(--accent);
+    margin: 10px;
   }
   ul {
     list-style: none;
@@ -125,7 +103,7 @@
   }
   button.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .none {
     padding: 8px 10px;

@@ -149,18 +149,18 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="backdrop" onkeydown={keydown}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="Export preview">
+<div class="dlg-backdrop centered" onkeydown={keydown}>
+  <div class="dlg dialog" role="dialog" aria-modal="true" aria-label="Export preview">
     <header>
       <span class="name">{title} · {sheets === 1 ? '1 sheet' : `${sheets} sheets`}</span>
       <label class="pdf">
-        <select bind:value={pageSize} aria-label="Page size">
+        <select class="input" bind:value={pageSize} aria-label="Page size">
           <option value="A4">A4</option>
           <option value="Letter">Letter</option>
         </select>
       </label>
       <label class="pdf">
-        <select bind:value={margin} aria-label="Margins">
+        <select class="input" bind:value={margin} aria-label="Margins">
           <option value="narrow">Narrow margins</option>
           <option value="normal">Normal margins</option>
           <option value="wide">Wide margins</option>
@@ -172,7 +172,7 @@
       </button>
       {#if imageBytes > 0}
         <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
-          <select
+          <select class="input"
             value={pictures}
             onchange={(e) => (chosen = e.currentTarget.value as 'embed' | 'folder')}
             aria-label="Pictures in HTML"
@@ -194,7 +194,7 @@
     <div class="styles">
       <label>
         Style
-        <select value={styleId} onchange={(e) => choose(e.currentTarget.value)} aria-label="Export style" disabled={editing}>
+        <select class="input" value={styleId} onchange={(e) => choose(e.currentTarget.value)} aria-label="Export style" disabled={editing}>
           {#if styles.some((x) => x.builtin)}
             <optgroup label="Built in">
               {#each styles.filter((x) => x.builtin) as x (x.id)}<option value={x.id}>{x.name}</option>{/each}
@@ -216,10 +216,10 @@
     {#if editing}
       <div class="editor">
         <div class="meta">
-          <input bind:value={draftName} placeholder="Style name" aria-label="Style name" />
-          <input bind:value={draftDescription} placeholder="Description (optional)" aria-label="Style description" />
+          <input class="input" bind:value={draftName} placeholder="Style name" aria-label="Style name" />
+          <input class="input" bind:value={draftDescription} placeholder="Description (optional)" aria-label="Style description" />
         </div>
-        <textarea
+        <textarea class="input"
           bind:value={draftCss}
           oninput={typedCss}
           spellcheck="false"
@@ -272,7 +272,6 @@
     gap: 6px;
   }
   button.link {
-    border: none;
     background: none;
     color: var(--muted);
     padding: 5px 4px;
@@ -291,22 +290,12 @@
   }
   .editor input {
     flex: 1;
-    padding: 5px 8px;
-    font: inherit;
-    color: inherit;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 5px;
   }
   .editor textarea {
     height: 180px;
     resize: vertical;
     padding: 8px;
     font: 12.5px/1.45 ui-monospace, Menlo, Consolas, monospace;
-    color: inherit;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 5px;
     tab-size: 2;
   }
   .editor .actions {
@@ -318,30 +307,17 @@
     flex: 1;
   }
   .problem {
-    color: #c0392b;
+    color: var(--danger);
     font-size: 12px;
   }
   button.danger {
-    color: #c0392b;
-  }
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: rgb(0 0 0 / 0.35);
-    z-index: 10;
+    color: var(--danger);
   }
   .dialog {
     width: min(860px, calc(100vw - 48px));
     height: calc(100vh - 48px);
     display: flex;
     flex-direction: column;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
     overflow: hidden;
   }
   header {
@@ -360,19 +336,23 @@
   }
   button {
     font: inherit;
+    font-size: 13px;
     padding: 5px 12px;
     color: inherit;
-    background: var(--pane);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: default;
+  }
+  button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--text) 13%, transparent);
   }
   button.primary {
     background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   button:disabled {
-    opacity: 0.6;
+    opacity: 0.45;
   }
   .pdf {
     display: flex;
@@ -381,14 +361,7 @@
     font-size: 12px;
     color: var(--muted);
   }
-  select {
-    font: inherit;
-    color: inherit;
-    background: var(--pane);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 6px;
-  }
+
   iframe {
     flex: 1;
     border: none;

@@ -2358,10 +2358,11 @@
   }
   .primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    padding: 5px 12px;
     cursor: default;
   }
   .layout {
@@ -2439,7 +2440,7 @@
   }
   .pane:focus .sheet.selected {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .pane:focus .sheet.selected .sheet-preview {
     color: inherit;
@@ -2656,7 +2657,7 @@
     border: 1px solid transparent;
     background: color-mix(in srgb, var(--text) 7%, transparent);
     color: var(--muted);
-    cursor: pointer;
+    cursor: default;
   }
   .kw-button.active {
     color: var(--accent);
@@ -2736,7 +2737,7 @@
   .notice {
     margin: 0;
     padding: 8px 14px;
-    color: #c0392b;
+    color: var(--danger);
     font-size: 12px;
   }
   .hint {
@@ -2810,10 +2811,10 @@
     z-index: 21;
     min-width: 200px;
     padding: 5px;
-    border-radius: 9px;
+    border-radius: var(--radius-lg);
     background: var(--bg);
     border: 1px solid var(--border);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-popover);
   }
   .style-menu hr {
     border: none;
@@ -2827,7 +2828,7 @@
     width: 100%;
     padding: 5px 9px;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text);
     font: inherit;

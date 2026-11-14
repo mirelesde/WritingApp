@@ -91,9 +91,9 @@
   </div>
 {/snippet}
 
-<div class="backdrop" role="presentation" onmousedown={onclose}>
+<div class="dlg-backdrop" role="presentation" onmousedown={onclose}>
   <div
-    class="dialog"
+    class="dlg dialog"
     role="dialog"
     aria-modal="true"
     aria-label="Preferences"
@@ -104,7 +104,6 @@
   >
     <header>
       <h2>Preferences</h2>
-      <button class="close" aria-label="Close" onclick={onclose}>×</button>
     </header>
 
     <section>
@@ -147,6 +146,7 @@
         <span>Colour theme<small>Theme files live in a folder you can open</small></span>
         <div class="theme-pick">
           <select
+            class="input"
             aria-label="Colour theme"
             value={view.colorTheme}
             onchange={(e) => onchange({ colorTheme: e.currentTarget.value })}
@@ -328,15 +328,6 @@
     border: none;
     background: none;
   }
-  .theme-pick select {
-    font: inherit;
-    font-size: 13px;
-    color: var(--text);
-    background: var(--hover);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 3px 6px;
-  }
   .link {
     border: none;
     background: none;
@@ -345,31 +336,15 @@
     font-size: 13px;
     padding: 0;
   }
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 10vh;
-    background: rgb(0 0 0 / 0.25);
-    z-index: 40;
-  }
   .dialog {
     width: min(520px, calc(100vw - 32px));
     max-height: 84vh;
     overflow-y: auto;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
     padding: 6px 20px 14px;
-    outline: none;
   }
   header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 10px 0 4px;
   }
   h2 {
@@ -383,20 +358,6 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
-  }
-  .close {
-    width: 26px;
-    height: 26px;
-    border: none;
-    border-radius: 6px;
-    background: none;
-    font-size: 18px;
-    line-height: 1;
-    color: var(--muted);
-  }
-  .close:hover {
-    background: var(--hover);
-    color: var(--text);
   }
   .row {
     display: flex;

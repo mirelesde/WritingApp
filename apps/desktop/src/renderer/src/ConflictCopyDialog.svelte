@@ -26,9 +26,9 @@
   }
 </script>
 
-<div class="backdrop" role="presentation">
+<div class="dlg-backdrop centered modal" role="presentation">
   <div
-    class="dialog"
+    class="dlg dialog"
     role="dialog"
     aria-modal="true"
     aria-labelledby="copy-title"
@@ -65,14 +65,6 @@
 </div>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    display: grid;
-    place-items: center;
-    background: rgba(0, 0, 0, 0.35);
-  }
   .dialog {
     width: min(900px, 94vw);
     max-height: 90vh;
@@ -80,16 +72,6 @@
     flex-direction: column;
     gap: 10px;
     padding: 20px 22px;
-    border-radius: 12px;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-    outline: none;
-  }
-  h2 {
-    margin: 0;
-    font-size: 16px;
   }
   h2 small {
     font-weight: 400;
@@ -103,24 +85,5 @@
   }
   .counts {
     font-size: 12px;
-  }
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  button {
-    font: inherit;
-    font-size: 13px;
-    padding: 6px 14px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--hover);
-    color: var(--text);
-  }
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--bg);
   }
 </style>

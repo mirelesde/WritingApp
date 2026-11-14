@@ -29,8 +29,8 @@
   }
 </script>
 
-<div class="backdrop" role="presentation">
-  <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="recovery-title" tabindex="-1" use:focusFirst>
+<div class="dlg-backdrop centered modal" role="presentation">
+  <div class="dlg dialog" role="alertdialog" aria-modal="true" aria-labelledby="recovery-title" tabindex="-1" use:focusFirst>
     <h2 id="recovery-title">
       Recovered unsaved changes to “{name}”
       {#if total > 1}<small>{position} of {total}</small>{/if}
@@ -59,14 +59,6 @@
 </div>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    display: grid;
-    place-items: center;
-    background: rgba(0, 0, 0, 0.35);
-  }
   .dialog {
     width: min(860px, 92vw);
     max-height: 86vh;
@@ -74,16 +66,6 @@
     flex-direction: column;
     gap: 10px;
     padding: 20px 22px;
-    border-radius: 12px;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-    outline: none;
-  }
-  h2 {
-    margin: 0;
-    font-size: 16px;
   }
   h2 small {
     font-weight: 400;
@@ -126,24 +108,5 @@
     background: var(--list);
     border: 1px solid var(--border);
     border-radius: 8px;
-  }
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  button {
-    font: inherit;
-    font-size: 13px;
-    padding: 6px 14px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--hover);
-    color: var(--text);
-  }
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--bg);
   }
 </style>

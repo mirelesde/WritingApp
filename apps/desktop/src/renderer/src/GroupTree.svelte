@@ -232,7 +232,7 @@
   }
   :global(.pane:focus) .row.selected {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   button {
     background: none;

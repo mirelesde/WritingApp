@@ -31,6 +31,17 @@
   --editor-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --editor-size: 18px;
   --topbar-height: 40px;
+  /* Shape and layering shared by every dialog, menu and control. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --shadow-popover: 0 12px 40px rgb(0 0 0 / 0.3);
+  --scrim: rgb(0 0 0 / 0.3);
+  --on-accent: #fff;
+  --danger: #c0392b;
+  --z-peek: 30;
+  --z-dialog: 40;
+  --z-modal: 60;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
@@ -52,6 +63,8 @@
     --quote: #6cb0ff;
     --mark: rgba(255, 214, 10, 0.28);
     --accent: #6fb3ac;
+    --danger: #ff7b6e;
+    --on-accent: #0f1f1e;
     --code-keyword: #d58cf0;
     --code-string: #98c379;
     --code-number: #e8a35c;
@@ -155,6 +168,97 @@ html.hang-marks .cm-hang-gap {
 button {
   font: inherit;
   color: inherit;
+}
+
+/* Controls: quiet, like the sheet filter in the sidebar. A tinted fill instead
+   of a border; the accent shows only for focus and for the main action. */
+.btn,
+.dlg .buttons > button {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+  cursor: default;
+}
+.btn:hover:not(:disabled),
+.dlg .buttons > button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 13%, transparent);
+}
+.btn.primary,
+.dlg .buttons > button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn.primary:hover:not(:disabled),
+.dlg .buttons > button.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, black);
+}
+.btn.danger {
+  color: var(--danger);
+}
+.btn:disabled,
+.dlg .buttons > button:disabled {
+  opacity: 0.45;
+}
+.btn:focus-visible,
+.dlg .buttons > button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.input {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 6px 9px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--accent);
+}
+.input::placeholder {
+  color: var(--muted);
+}
+
+/* Dialogs: one shell. Palettes sit near the top; a modal alert is centred. */
+.dlg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+  background: var(--scrim);
+}
+.dlg-backdrop.centered {
+  align-items: center;
+  padding-top: 0;
+}
+.dlg-backdrop.modal {
+  z-index: var(--z-modal);
+}
+.dlg {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-popover);
+  outline: none;
+}
+.dlg h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.dlg .buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* Tables: an editable grid in place of the Markdown. */
