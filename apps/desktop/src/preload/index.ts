@@ -79,6 +79,14 @@ const api: Api = {
   newWindow: (sheet, at) => ipcRenderer.invoke('window:new', sheet, at),
   initialSheet: () => ipcRenderer.invoke('window:initialSheet'),
   closeWindow: () => ipcRenderer.invoke('window:close'),
+  onFlushRequest(callback) {
+    const listener = (): void => callback()
+    ipcRenderer.on('window:flush', listener)
+    return () => {
+      ipcRenderer.removeListener('window:flush', listener)
+    }
+  },
+  flushed: () => ipcRenderer.send('window:flushed'),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

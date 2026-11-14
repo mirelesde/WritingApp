@@ -2082,7 +2082,12 @@
     // Last chance to save when the window closes.
     const saveOnClose = (): void => void autosaver.flush()
     window.addEventListener('beforeunload', saveOnClose)
+    // The main process holds the window open until this finishes.
+    const unsubscribeFlush = window.api.onFlushRequest(() => {
+      void autosaver.flush().finally(() => window.api.flushed())
+    })
     return () => {
+      unsubscribeFlush()
       unsubscribeOpened()
       unsubscribeChanged()
       unsubscribeMenu()

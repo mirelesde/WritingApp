@@ -161,13 +161,14 @@ describe('createAutosaver journal', () => {
     expect(clears).toEqual(['/a.md'])
   })
 
-  it('does not journal text that was saved before the journal delay passed', async () => {
-    const { autosaver, puts, clears } = withJournal()
+  it('a flush journals the text first, then clears it once it is saved', async () => {
+    const { autosaver, puts, clears, writes } = withJournal()
     autosaver.change('/a.md', 'quick')
     await autosaver.flush()
     await vi.advanceTimersByTimeAsync(300)
-    expect(puts).toEqual([])
-    expect(clears).toEqual([])
+    expect(puts).toEqual([['/a.md', 'quick']])
+    expect(writes).toEqual([['/a.md', 'quick']])
+    expect(clears).toEqual(['/a.md'])
   })
 
   it('keeps the journal when a save fails', async () => {
@@ -192,5 +193,21 @@ describe('createAutosaver journal', () => {
     await vi.advanceTimersByTimeAsync(300)
     autosaver.discard('/a.md')
     expect(clears).toEqual(['/a.md'])
+  })
+
+  it('journals unsaved text at once when flushed, even if the save fails', async () => {
+    const put = vi.fn(async () => {})
+    const autosaver = createAutosaver({
+      save: async () => {
+        throw new Error('disk full')
+      },
+      journal: { put, clear: async () => {} },
+      delay: 800,
+      journalDelay: 250
+    })
+    autosaver.change('/a.md', 'typed a moment ago')
+    await autosaver.flush()
+    expect(put).toHaveBeenCalledWith('/a.md', 'typed a moment ago')
+    autosaver.discard('/a.md')
   })
 })

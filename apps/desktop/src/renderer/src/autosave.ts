@@ -66,7 +66,7 @@ export function createAutosaver({
 
   function schedule(ms: number): void {
     clearTimeout(timer)
-    timer = setTimeout(() => void flush(), ms)
+    timer = setTimeout(() => void flushNow(), ms)
   }
 
   async function write(path: string, text: string): Promise<void> {
@@ -86,7 +86,8 @@ export function createAutosaver({
     }
   }
 
-  function flush(): Promise<void> {
+  /** The save that follows a pause in typing. */
+  function flushNow(): Promise<void> {
     clearTimeout(timer)
     for (const [path, text] of [...unsaved]) {
       writing++
@@ -96,6 +97,15 @@ export function createAutosaver({
     }
     status()
     return tail
+  }
+
+  /** Saves everything outstanding now, for callers that cannot wait for a pause (closing, searching). */
+  function flush(): Promise<void> {
+    // The text goes to the journal first, without waiting: if the window closes
+    // or the write fails, the journal still has it.
+    clearTimeout(journalTimer)
+    writeJournal()
+    return flushNow()
   }
 
   return {

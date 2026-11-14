@@ -386,3 +386,9 @@ Quick checks that earlier features still work with today's changes.
 1. Type in a sheet, then quit the app abruptly (force quit) within a second of typing, before it saves. While it is closed, delete or rename that sheet in Finder.
 2. Reopen the app. A dialog says the sheet "has since been deleted, renamed or moved" and shows the recovered text alone.
 3. "Restore as a sheet" makes the sheet again in its old folder (or at the top of the library if the folder is gone), with a different name if that one is taken, and says where it went. "Throw it away" discards the text.
+
+## 13.30 Closing right after typing
+
+1. Type a few words and press ⌘W (or click the red close button, or press ⌘Q) within a fraction of a second. Reopen the app: the words are there, and no recovery dialog appears.
+2. With two windows open and unsaved typing in both, press ⌘Q: both save, both close, the app quits.
+3. Make the save fail (put the library on a disk image and eject it, or make the folder read-only), type, then close. The window closes within a few seconds, and the next launch offers the text back in the recovery dialog.

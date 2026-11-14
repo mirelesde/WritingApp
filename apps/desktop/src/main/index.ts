@@ -27,6 +27,12 @@ const pendingSheet = new Map<number, string>()
  * Opens a window on the library. Every window shares the one library, so
  * a window needs no setup beyond this; `sheet` is what it opens first.
  */
+/** How long closing a window waits for unsaved text to reach disk. */
+const SAVE_ON_CLOSE_MS = 4000
+/** Windows waiting to close, by web contents id, and what finishes the close. */
+const closers = new Map<number, () => void>()
+let quitting = false
+
 function createWindow(sheet?: string, where?: { x: number; y: number }): void {
   // Cascade from the window in front, so a new one does not hide it exactly.
   const front = BrowserWindow.getFocusedWindow()
@@ -57,7 +63,28 @@ function createWindow(sheet?: string, where?: { x: number; y: number }): void {
   attachContextMenu(mainWindow.webContents)
   const id = mainWindow.webContents.id
   if (sheet) pendingSheet.set(id, sheet)
-  mainWindow.on('closed', () => pendingSheet.delete(id))
+  mainWindow.on('closed', () => {
+    pendingSheet.delete(id)
+    closers.delete(id)
+    // A quit that was held back while this window saved carries on with the rest.
+    if (quitting) app.quit()
+  })
+  // Closing waits for the editor to finish saving (a keystroke a moment ago may
+  // still be on its way to disk), but never for more than a few seconds.
+  let saved = false
+  const closeNow = (): void => {
+    saved = true
+    if (!mainWindow.isDestroyed()) mainWindow.close()
+  }
+  mainWindow.on('close', (event) => {
+    const contents = mainWindow.webContents
+    if (saved || contents.isDestroyed() || contents.isCrashed() || contents.isLoading()) return
+    event.preventDefault()
+    if (closers.has(id)) return
+    closers.set(id, closeNow)
+    contents.send('window:flush')
+    setTimeout(closeNow, SAVE_ON_CLOSE_MS)
+  })
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -397,6 +424,8 @@ app.whenReady().then(async () => {
     pendingSheet.delete(event.sender.id)
     return sheet
   })
+  ipcMain.on('window:flushed', (event) => closers.get(event.sender.id)?.())
+  app.on('before-quit', () => (quitting = true))
   ipcMain.handle('window:close', (event) => BrowserWindow.fromWebContents(event.sender)?.close())
   const rebuild = (): void => Menu.setApplicationMenu(buildMenu())
   await loadView(rebuild)

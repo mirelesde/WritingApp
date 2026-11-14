@@ -248,6 +248,10 @@ export interface Api {
   initialSheet(): Promise<string | null>
   /** Closes this window. */
   closeWindow(): Promise<void>
+  /** The window is closing: save everything now, then call `flushed`. */
+  onFlushRequest(callback: () => void): () => void
+  /** Tells the window it may close; its text has been saved. */
+  flushed(): void
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when files in the open library change outside the app, with the library as it is now. */
