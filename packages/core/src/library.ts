@@ -44,6 +44,9 @@ export interface LoadOptions {
   stats?: { read: number; cached: number }
 }
 
+/** Sheets bigger than this (bytes) are listed without being read: no manuscript is this large, so it is not one. */
+export const MAX_READ_BYTES = 50 * 1024 * 1024
+
 /** How many sheets are read at once; enough to keep a disk busy without running out of file handles. */
 const READ_CONCURRENCY = 32
 
@@ -138,7 +141,24 @@ async function loadSheet(ctx: LoadContext, path: string): Promise<SheetInfo & { 
     ctx.seen.set(path, hit)
     return { title: hit.title, preview: hit.preview, words: hit.words, images: hit.images, links: hit.links, modified, created }
   }
-  const content = await fs.readText(path)
+  // A sheet that cannot be read (permissions, deleted mid-load) or is far too big to be
+  // prose must not stop the library loading: it appears under its file name, unread.
+  const fallback: SheetInfo = {
+    title: baseName(path).replace(/\.md$/i, ''),
+    preview: '',
+    words: 0,
+    images: [],
+    links: [],
+  }
+  if (size !== undefined && size > MAX_READ_BYTES) {
+    return { ...fallback, preview: 'Too large to preview', ...(modified !== undefined ? { modified } : {}), ...(created !== undefined ? { created } : {}) }
+  }
+  let content: string
+  try {
+    content = await fs.readText(path)
+  } catch {
+    return { ...fallback, ...(modified !== undefined ? { modified } : {}), ...(created !== undefined ? { created } : {}) }
+  }
   ctx.stats.read++
   const info: SheetInfo = {
     title: sheetTitle(content),

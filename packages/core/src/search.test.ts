@@ -133,3 +133,21 @@ describe('patterns that could freeze the app', () => {
     expect(Date.now() - t).toBeLessThan(500)
   })
 })
+
+describe('search and replace skip sheets that cannot be read', () => {
+  it('finds and replaces in the others', async () => {
+    const mem = new MemoryFileSystem({ '/Lib/a.md': 'needle one', '/Lib/b.md': 'needle two' })
+    const fs = Object.create(mem) as MemoryFileSystem
+    fs.readText = async (p: string) => {
+      if (p.endsWith('b.md')) throw new Error('EACCES')
+      return mem.readText(p)
+    }
+    const tree = await loadLibrary(mem, '/Lib')
+    const hits = await searchLibrary(fs, tree, 'needle')
+    expect(hits.map((h) => h.title)).toEqual(['needle one'])
+    const done = await replaceInLibrary(fs, tree, 'needle', 'pin')
+    expect(done.sheets).toBe(1)
+    expect(await mem.readText('/Lib/a.md')).toBe('pin one')
+    expect(await mem.readText('/Lib/b.md')).toBe('needle two')
+  })
+})

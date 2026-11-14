@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary, type GroupNode, type SheetCache } from './library'
+import type { FileSystem } from './filesystem'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
 const sidecar = (order: string[], glued: string[] = []) =>
@@ -158,5 +159,49 @@ describe('loadLibrary cache', () => {
     await loadLibrary(mem, '/Lib', { cache, stats })
     await loadLibrary(mem, '/Lib', { cache, stats })
     expect(stats).toEqual({ read: 1, cached: 0 })
+  })
+})
+
+describe('loadLibrary with sheets that cannot be read', () => {
+  it('lists an unreadable sheet by its file name instead of failing the whole load', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/ok.md': '# Fine\n\ntext', '/Lib/locked.md': 'secret' })
+    const broken = Object.create(fs) as MemoryFileSystem
+    broken.readText = async (path: string) => {
+      if (path.endsWith('locked.md')) throw new Error('EACCES: permission denied')
+      return fs.readText(path)
+    }
+    const tree = await loadLibrary(broken, '/Lib')
+    const titles = tree.children.map((c) => (c.kind === 'sheet' ? c.title : c.name)).sort()
+    expect(titles).toEqual(['Fine', 'locked'])
+  })
+
+  it('does not cache an unreadable sheet, so the next load tries again', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/locked.md': 'text' })
+    let fail = true
+    const flaky = Object.create(fs) as MemoryFileSystem
+    flaky.readText = async (path: string) => {
+      if (fail) throw new Error('busy')
+      return fs.readText(path)
+    }
+    (flaky as FileSystem).fileTimes = async () => ({ modified: 1, created: 1, size: 4 })
+    const cache: SheetCache = new Map()
+    await loadLibrary(flaky, '/Lib', { cache })
+    expect(cache.size).toBe(0)
+    fail = false
+    const tree = await loadLibrary(flaky, '/Lib', { cache })
+    const sheet = tree.children[0]
+    expect(sheet && sheet.kind === 'sheet' ? sheet.title : '').toBe('text')
+  })
+
+  it('lists an enormous file without reading it', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/huge.md': 'x' })
+    const sized = Object.create(fs) as MemoryFileSystem
+    (sized as FileSystem).fileTimes = async () => ({ modified: 1, created: 1, size: 80 * 1024 * 1024 })
+    sized.readText = async () => {
+      throw new Error('should not be read')
+    }
+    const tree = await loadLibrary(sized, '/Lib')
+    const sheet = tree.children[0]
+    expect(sheet).toMatchObject({ kind: 'sheet', title: 'huge', preview: 'Too large to preview', words: 0 })
   })
 })

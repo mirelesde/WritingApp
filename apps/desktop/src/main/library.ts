@@ -26,6 +26,7 @@ import {
   setGroupColor,
   groupWordCount,
   loadLibrary,
+  MAX_READ_BYTES,
   searchLibrary,
   type SearchOptions,
   mergeSheets,
@@ -362,6 +363,9 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('sheet:read', async (_event, path: unknown) => {
     if (typeof path !== 'string' || !currentRoot || !isSheetInside(currentRoot, path)) {
       throw new Error('Not a sheet in the open library')
+    }
+    if ((await nodeFs.stat(path)).size > MAX_READ_BYTES) {
+      throw new Error('That file is too large to open as a sheet')
     }
     return nodeFs.readFile(path, 'utf8')
   })

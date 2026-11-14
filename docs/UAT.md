@@ -392,3 +392,9 @@ Quick checks that earlier features still work with today's changes.
 1. Type a few words and press ⌘W (or click the red close button, or press ⌘Q) within a fraction of a second. Reopen the app: the words are there, and no recovery dialog appears.
 2. With two windows open and unsaved typing in both, press ⌘Q: both save, both close, the app quits.
 3. Make the save fail (put the library on a disk image and eject it, or make the folder read-only), type, then close. The window closes within a few seconds, and the next launch offers the text back in the recovery dialog.
+
+## 13.31 Unreadable and enormous files
+
+1. In a library folder, add a file you cannot read (`chmod 000 locked.md`) and a very large one (`head -c 60000000 /dev/zero | tr '\0' a > huge.md`). The library still loads. The locked file is listed under its file name with no preview; the huge one says "Too large to preview".
+2. Opening the huge file shows an error saying it is too large; the app stays responsive. Find in Library and Replace All skip both files and still work on the rest.
+3. `chmod 644` the locked file: it shows its real title and text after the library reloads.

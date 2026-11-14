@@ -1,5 +1,5 @@
 import type { FileSystem } from './filesystem'
-import type { GroupNode, SheetNode } from './library'
+import { MAX_READ_BYTES, type GroupNode, type SheetNode } from './library'
 
 export interface SearchHit {
   path: string
@@ -15,6 +15,17 @@ export interface SearchHit {
 }
 
 const CONTEXT = 40
+
+/** A sheet's text, or undefined if it cannot be read or is too big to be one (it is skipped, not fatal). */
+async function readForSearch(fs: FileSystem, path: string): Promise<string | undefined> {
+  try {
+    const times = await fs.fileTimes?.(path)
+    if (times?.size !== undefined && times.size > MAX_READ_BYTES) return undefined
+    return await fs.readText(path)
+  } catch {
+    return undefined
+  }
+}
 
 export interface SearchOptions {
   caseSensitive?: boolean
@@ -162,7 +173,8 @@ async function searchSheet(
   matcher: RegExp,
   where: string,
 ): Promise<SearchHit | undefined> {
-  const text = await fs.readText(sheet.path)
+  const text = await readForSearch(fs, sheet.path)
+  if (text === undefined) return undefined
   const matches = allMatches(matcher, text)
   const found = matches[0]
   if (!found) return undefined
@@ -235,7 +247,8 @@ export async function replaceInLibrary(
     for (const child of group.children) {
       if (child.kind === 'group') await visit(child)
       else if ((!chosen || chosen.has(child.path)) && inScope(child.path, options.within)) {
-        const text = await fs.readText(child.path)
+        const text = await readForSearch(fs, child.path)
+        if (text === undefined) continue
         const next = replaceAllIn(text, query, replacement, options)
         if (next.count === 0) continue
         await fs.writeText(child.path, next.text)
