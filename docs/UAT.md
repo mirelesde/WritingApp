@@ -247,7 +247,23 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 11.13 | Drag a tab off the window onto the desktop. | It becomes a new window near the drop point and leaves the first window's bar. |
 | 11.14 | With two windows, drag a tab onto the other window. | It is added there and removed from the first. |
 
-## 12. Regression sweep
+## 12. Keywords and filters
+
+| # | Do | Expect |
+|---|----|--------|
+| 12.1 | Select a sheet, Sheet > Keywords… (Cmd/Ctrl+Alt+K), type `plot`, press Return, then Return again. | The dialog closes and the card shows a `plot` chip. |
+| 12.2 | Select two sheets and open Keywords…. | The title says "for 2 sheets"; a keyword on only one shows dashed with 1/2. |
+| 12.3 | In the dialog, click a keyword under "Used in this library". | It is added to every selected sheet. |
+| 12.4 | Click × on a keyword, then Done. | It is removed from the selected sheets. |
+| 12.5 | Library > Undo Library Change after a keyword edit. | The keywords go back. |
+| 12.6 | Type `#plot` in the sheet filter. | The list shows every sheet in the library with that keyword, each with its group name. |
+| 12.7 | Type `#plot dragon`. | Only those with the keyword whose title or preview has "dragon". |
+| 12.8 | Click the # button beside the filter and pick a keyword. | `#keyword` is added to the filter; picking again removes it. |
+| 12.9 | Click a result in a keyword-filtered list. | The sheet opens and the list stays filtered. |
+| 12.10 | Move, duplicate, split, merge or rename a sheet that has keywords. | The keywords follow (merge keeps all of them). |
+| 12.11 | Right-click a sheet, Keywords…. | The dialog opens for it. |
+
+## 13. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 

@@ -81,6 +81,8 @@ export interface SheetNode {
   preview: string
   /** True if this sheet is glued to the next sibling. */
   glued: boolean
+  /** The sheet's keywords, sorted. */
+  keywords: string[]
   /** Words in the sheet. */
   words: number
   /** The library pictures the sheet mentions, by file name. */
@@ -155,7 +157,7 @@ async function loadGroup(ctx: LoadContext, path: string, name: string): Promise<
   const sidecarPath = joinPath(path, SIDECAR_NAME)
   const sidecarText = (await fs.exists(sidecarPath)) ? await fs.readText(sidecarPath) : undefined
   const sidecar = parseSidecar(sidecarText)
-  const { children, glued } = reconcileFolder(sidecar, entries)
+  const { children, glued, keywords } = reconcileFolder(sidecar, entries)
   const gluedNames = new Set(glued)
 
   const nodes = await Promise.all(
@@ -168,6 +170,7 @@ async function loadGroup(ctx: LoadContext, path: string, name: string): Promise<
         name: child.name,
         path: childPath,
         glued: gluedNames.has(child.name),
+        keywords: keywords[child.name] ?? [],
         ...info,
       }
     }),

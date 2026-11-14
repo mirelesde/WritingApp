@@ -62,6 +62,7 @@ export type MenuCommand =
   | 'close-tab'
   | 'next-tab'
   | 'previous-tab'
+  | 'edit-keywords'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
@@ -136,6 +137,8 @@ export interface Api {
   merge(paths: string[]): Promise<OpResult>
   /** Glues sheets so they read as one run. */
   glue(paths: string[]): Promise<OpResult>
+  /** Adds and removes keywords on sheets (any groups); one undo step. Rejects if nothing would change. */
+  changeKeywords(paths: string[], add: string[], remove?: string[]): Promise<OpResult>
   /** Colours a project or group's icon; null clears it. */
   setColor(path: string, color: string | null): Promise<OpResult>
   /** Detaches sheets from the runs they are in. */
@@ -189,7 +192,7 @@ export interface Api {
     kind: 'sheet' | 'group' | 'root',
     path: string,
     canPaste?: boolean
-  ): Promise<'new-sheet' | 'new-group' | 'open-tab' | 'open-window' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
+  ): Promise<'new-sheet' | 'new-group' | 'open-tab' | 'open-window' | 'keywords' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
   /** Opens another window on the same library, on `sheet` when given, with its corner near `at` (screen pixels). */
   newWindow(sheet?: string, at?: { x: number; y: number }): Promise<void>
   /** The sheet this window was opened for, once; null for an ordinary window. */

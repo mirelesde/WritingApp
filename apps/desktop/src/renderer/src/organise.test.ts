@@ -57,6 +57,7 @@ const group = (path: string, ...children: GroupNode['children']): GroupNode => (
 })
 const sheet = (path: string): GroupNode['children'][number] => ({
   kind: 'sheet',
+  keywords: [],
   images: [], links: [],
   name: path.split('/').pop()!,
   path,

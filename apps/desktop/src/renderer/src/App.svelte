@@ -15,7 +15,11 @@
     type SearchOptions,
     type SheetNode,
     type SheetSort,
-    type ViewSettings
+    type ViewSettings,
+    allSheets as librarySheets,
+    filterToken,
+    libraryKeywords,
+    parseFilter
   } from '@writingapp/core'
   import type { LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
   import { applyView } from './view'
@@ -24,6 +28,7 @@
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
   import RecoveryDialog from './RecoveryDialog.svelte'
   import CleanUpImages from './CleanUpImages.svelte'
+  import KeywordsDialog from './KeywordsDialog.svelte'
   import CommandPalette from './CommandPalette.svelte'
   import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -230,12 +235,56 @@
     return time === undefined ? '' : dateFormat.format(time)
   }
   /** What the list shows: every sheet, or those whose title or preview contain the filter. */
+  const parsedFilter = $derived(parseFilter(filter))
+  /** True while the filter names keywords: the list then spans the whole library, not just the group. */
+  const keywordMode = $derived(parsedFilter.keywords.length > 0)
+  const knownKeywords = $derived(library ? libraryKeywords(library.tree) : [])
   const shown = $derived.by(() => {
-    const needle = filter.trim().toLowerCase()
-    const ordered = sortSheets(sheets, sortBy)
-    if (!needle) return ordered
-    return ordered.filter((s) => `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
+    const needle = parsedFilter.text.toLowerCase()
+    const wanted = parsedFilter.keywords.map((k) => k.toLowerCase())
+    const pool = keywordMode && library ? librarySheets(library.tree) : sheets
+    const ordered = sortSheets(pool, sortBy)
+    return ordered.filter(
+      (s) =>
+        wanted.every((k) => s.keywords.some((own) => own.toLowerCase() === k)) &&
+        (!needle || `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
+    )
   })
+  let keywordPicker = $state(false)
+  /** Adds or removes `#keyword` in the filter box. */
+  function toggleFilterKeyword(keyword: string): void {
+    const token = filterToken(keyword)
+    const words = filter.split(/\s+/).filter((w) => w !== '')
+    const at = words.findIndex((w) => w.toLowerCase() === token.toLowerCase())
+    if (at >= 0) words.splice(at, 1)
+    else words.push(token)
+    filter = words.join(' ') + (at >= 0 || words.length === 0 ? '' : ' ')
+    keywordPicker = false
+  }
+  /** The groups a sheet is in, for a card in a library-wide list. */
+  function whereIs(path: string): string {
+    if (!library) return ''
+    const rel = path.slice(library.tree.path.length + 1).split('/')
+    return rel.slice(0, -1).join(' / ')
+  }
+
+  // Keywords dialog: edits the selected sheets.
+  let keywordEdit = $state<{ path: string; title: string; keywords: string[] }[] | null>(null)
+  function openKeywords(): void {
+    if (!library) return
+    const wanted = new Set(selection)
+    const chosen = librarySheets(library.tree).filter((s) => wanted.has(s.path))
+    if (chosen.length === 0) {
+      notice = 'Select a sheet first.'
+      return
+    }
+    keywordEdit = chosen.map((s) => ({ path: s.path, title: s.title, keywords: [...s.keywords] }))
+  }
+  async function applyKeywords(add: string[], remove: string[]): Promise<void> {
+    const paths = keywordEdit?.map((s) => s.path) ?? []
+    keywordEdit = null
+    await runOp(() => window.api.changeKeywords(paths, add, remove))
+  }
   const sheetPaths = $derived(sheets.map((s) => s.path))
   /** The sheets in the order the list shows them, for keyboard and range selection. */
   const listPaths = $derived(shown.map((s) => s.path))
@@ -793,6 +842,10 @@
   }
 
   function clickSheet(path: string, e: MouseEvent): Promise<void> {
+    if (keywordMode && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      anchor = path
+      return revealSheet(path, false)
+    }
     if (e.shiftKey && anchor) return setSelection(pathRange(listPaths, anchor, path), path)
     anchor = path
     if (e.metaKey || e.ctrlKey) {
@@ -1012,6 +1065,7 @@
     else if (action === 'new-group') await newGroup(kind === 'root')
     else if (action === 'open-tab') await openInTab(path)
     else if (action === 'open-window') await window.api.newWindow(path)
+    else if (action === 'keywords') openKeywords()
     else if (action === 'rename') void startRename(path)
     else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
       if (kind === 'group') treeEl?.focus()
@@ -1669,6 +1723,7 @@
     else if (command === 'split') void splitAtCursor()
     else if (command === 'merge') void mergeSelected()
     else if (command === 'glue') void glueSelected(true)
+    else if (command === 'edit-keywords') openKeywords()
     else if (command === 'unglue') void glueSelected(false)
     else if (command === 'undo-sheet-change') void undoSheetChange()
     else void newGroup(command === 'new-project')
@@ -1755,6 +1810,7 @@
       menu('File', 'Preferences…', 'preferences', `${keyMod},`),
       menu('Sheet', 'Split at Cursor', 'split', `${keyMod}${keyShift}↩`),
       menu('Sheet', 'Merge Sheets', 'merge', `${keyMod}${keyShift}J`),
+      menu('Sheet', 'Keywords…', 'edit-keywords', `${keyMod}⌥K`),
       menu('Sheet', 'Glue Sheets', 'glue', `${keyMod}${keyShift}G`),
       menu('Sheet', 'Unglue Sheets', 'unglue', `${keyMod}⌥G`),
       menu('Sheet', 'Undo Library Change', 'undo-sheet-change', `${keyMod}⌥Z`),
@@ -1961,7 +2017,7 @@
         <div class="filter">
           <input
             type="search"
-            placeholder="Filter"
+            placeholder={knownKeywords.length > 0 ? 'Filter, or #keyword' : 'Filter'}
             aria-label="Filter sheets"
             bind:value={filter}
             onkeydown={(e) => {
@@ -1972,7 +2028,34 @@
               }
             }}
           />
+          {#if knownKeywords.length > 0}
+            <button
+              class="kw-button"
+              class:active={keywordMode}
+              aria-label="Filter by keyword"
+              aria-haspopup="menu"
+              aria-expanded={keywordPicker}
+              title="Filter by keyword"
+              onclick={() => (keywordPicker = !keywordPicker)}>#</button
+            >
+          {/if}
+          {#if keywordPicker}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="scrim" onmousedown={() => (keywordPicker = false)}></div>
+            <div class="style-menu kw-menu" role="menu" tabindex="-1" aria-label="Keywords">
+              {#each knownKeywords as item (item.keyword)}
+                <button
+                  role="menuitemcheckbox"
+                  aria-checked={parsedFilter.keywords.some((k) => k.toLowerCase() === item.keyword.toLowerCase())}
+                  class:current={parsedFilter.keywords.some((k) => k.toLowerCase() === item.keyword.toLowerCase())}
+                  onclick={() => toggleFilterKeyword(item.keyword)}>{item.keyword} <small>{item.count}</small></button
+                >
+              {/each}
+            </div>
+          {/if}
         </div>
+      {:else if keywordMode}
+        <p class="placeholder small">No Sheets</p>
       {/if}
       {#if sheets.length === 0}
         <p class="placeholder small">No Sheets</p>
@@ -1995,8 +2078,8 @@
                   sheetHint?.path === sheet.path &&
                   sheetHint.after}
                 tabindex="-1"
-                draggable="true"
-                ondragstart={(e) => sheetDragStart(sheet.path, e)}
+                draggable={!keywordMode}
+                ondragstart={(e) => !keywordMode && sheetDragStart(sheet.path, e)}
                 ondragend={endDrag}
                 ondragover={(e) => sheetDragOver(sheet.path, e)}
                 onclick={(e) => clickSheet(sheet.path, e)}
@@ -2010,6 +2093,12 @@
                   {#if sortNote(sheet)}<span class="sheet-note">{sortNote(sheet)}</span>{/if}
                 </span>
                 <span class="sheet-preview" class:blank={sheet.preview === ''}>{sheet.preview || '(No Content)'}</span>
+                {#if keywordMode}<span class="sheet-where">{whereIs(sheet.path) || 'Library'}</span>{/if}
+                {#if sheet.keywords.length > 0}
+                  <span class="sheet-keywords">
+                    {#each sheet.keywords as keyword (keyword)}<span class="kw">{keyword}</span>{/each}
+                  </span>
+                {/if}
               </button>
             </li>
           {/each}
@@ -2180,6 +2269,15 @@
     total={recoveryTotal}
     onrestore={() => void finishRecovery(true)}
     ondiscard={() => void finishRecovery(false)}
+  />
+{/if}
+
+{#if keywordEdit}
+  <KeywordsDialog
+    sheets={keywordEdit}
+    known={knownKeywords}
+    onapply={(add, remove) => void applyKeywords(add, remove)}
+    oncancel={() => (keywordEdit = null)}
   />
 {/if}
 
@@ -2545,9 +2643,63 @@
     -webkit-box-orient: vertical;
   }
   .filter {
+    position: relative;
+    display: flex;
+    gap: 6px;
     padding: 0 10px 8px;
   }
+  .kw-button {
+    font: inherit;
+    font-size: 12.5px;
+    padding: 0 9px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .kw-button.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .kw-menu {
+    left: auto;
+    right: 10px;
+    top: 100%;
+    transform: none;
+    min-width: 170px;
+    max-height: 260px;
+    overflow: auto;
+  }
+  .kw-menu small {
+    margin-left: 6px;
+    color: var(--muted);
+  }
+  .sheet-where {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    opacity: 0.65;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sheet-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .kw {
+    padding: 0 7px;
+    font-size: 11px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+    opacity: 0.8;
+  }
   .filter input {
+    flex: 1;
+    min-width: 0;
     width: 100%;
     font: inherit;
     font-size: 12.5px;

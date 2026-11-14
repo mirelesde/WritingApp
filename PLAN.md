@@ -768,9 +768,22 @@ asked for directly.
     folder in the library, a Trash entry in the tree, Restore and Empty
     Trash, and undo that survives a restart. Needs a decision on sync
     behaviour and on how sidecar order is restored.
-26. **Keywords (tags) and filters.** Tags per sheet in the sidecar, a
-    filter by tag in the library pane, and tag search. (Moved up from
-    "Later".)
+26. ~~**Keywords (tags) and filters.**~~ **Done (first version).** Keywords are
+    kept per sheet in its folder's sidecar (`keywords`, by file name), so the
+    Markdown stays clean. They follow a sheet through rename, move, duplicate,
+    split (both halves) and merge (union), and undo restores them. Sheet >
+    Keywords… (and the sheet context menu) edits the selected sheets: chips,
+    suggestions from the library, partial keywords shown dashed. Cards show
+    their keywords. The sheet filter understands `#keyword` (`#two_words` for a
+    space, several allowed, plus plain text); a keyword filter searches the whole
+    library, not only the open group, and a # button lists the library's
+    keywords. Gaps and ideas:
+    - Keywords live by file name: a sheet renamed or moved outside the app loses them.
+    - No keyword rename or delete across the library, no keyword counts in the sidebar.
+    - Search (Find in Library) and Quick Open do not match keywords yet.
+    - A keyword-filtered list cannot be reordered by drag; no OR between keywords.
+    - Not shown in the inspector (the tabbed inspector, L11, is still to do).
+    - Export does not include keywords.
 27. **Version history.** Look at a sheet as it was at a point in time, compare it
     with now, and restore it. The files are plain Markdown on disk, so the
     library stays readable without the app; history is extra, kept beside

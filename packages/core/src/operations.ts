@@ -1,6 +1,7 @@
 import type { DirEntry, FileSystem } from './filesystem'
 import { sheetFileName, slugify } from './filename'
 import { sheetTitle } from './sheet'
+import { cleanKeywords } from './keywords'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
 import { GROUP_COLORS, parseSidecar, reconcileFolder, SIDECAR_NAME, type Sidecar } from './sidecar'
 import { snapshotSidecar, type UndoAction } from './undo'
@@ -24,6 +25,8 @@ interface Folder {
   entries: DirEntry[]
   /** The folder's colour name, if it has one. */
   color?: string
+  /** Keywords by sheet name. */
+  keywords: Map<string, string[]>
 }
 
 async function readFolder(fs: FileSystem, dir: string): Promise<Folder> {
@@ -31,8 +34,14 @@ async function readFolder(fs: FileSystem, dir: string): Promise<Folder> {
   const sidecarPath = joinPath(dir, SIDECAR_NAME)
   const text = (await fs.exists(sidecarPath)) ? await fs.readText(sidecarPath) : undefined
   const sidecar = parseSidecar(text)
-  const { children, glued } = reconcileFolder(sidecar, entries)
-  return { order: children.map((c) => c.name), glued: new Set(glued), entries, color: sidecar.color }
+  const { children, glued, keywords } = reconcileFolder(sidecar, entries)
+  return {
+    order: children.map((c) => c.name),
+    glued: new Set(glued),
+    entries,
+    color: sidecar.color,
+    keywords: new Map(Object.entries(keywords)),
+  }
 }
 
 async function writeFolder(fs: FileSystem, dir: string, folder: Folder): Promise<void> {
@@ -41,13 +50,32 @@ async function writeFolder(fs: FileSystem, dir: string, folder: Folder): Promise
     order: folder.order,
     glued: folder.order.filter((name) => folder.glued.has(name)),
     ...(folder.color ? { color: folder.color } : {}),
+    ...(keywordRecord(folder) ? { keywords: keywordRecord(folder)! } : {}),
   }
   await fs.writeText(joinPath(dir, SIDECAR_NAME), JSON.stringify(sidecar, null, 2) + '\n')
+}
+
+/** The keywords of the folder's listed sheets as stored, or undefined if there are none. */
+function keywordRecord(folder: Folder): Record<string, string[]> | undefined {
+  const record: Record<string, string[]> = {}
+  for (const name of folder.order) {
+    const own = folder.keywords.get(name)
+    if (own && own.length > 0) record[name] = own
+  }
+  return Object.keys(record).length > 0 ? record : undefined
+}
+
+/** Gives a sheet's keywords a new name to live under, or drops them when `to` is undefined. */
+function renameKeywords(folder: Folder, from: string, to: string | undefined): void {
+  const own = folder.keywords.get(from)
+  folder.keywords.delete(from)
+  if (own && to !== undefined) folder.keywords.set(to, own)
 }
 
 function removeName(folder: Folder, name: string): void {
   const i = folder.order.indexOf(name)
   if (i < 0) return
+  folder.keywords.delete(name)
   if (i > 0) folder.glued.delete(folder.order[i - 1]!)
   folder.glued.delete(name)
   folder.order.splice(i, 1)
@@ -169,6 +197,7 @@ export async function syncSheetName(fs: FileSystem, path: string): Promise<strin
   if (i >= 0) {
     folder.order[i] = name
     if (folder.glued.delete(oldName)) folder.glued.add(name)
+    renameKeywords(folder, oldName, name)
   }
   await writeFolder(fs, dir, folder)
   return joinPath(dir, name)
@@ -267,9 +296,11 @@ export async function moveNodes(
 
   if (sourceDir === target) {
     const before = [...source.order]
+    const kept = new Map(source.keywords)
     for (const from of ordered) removeName(source, baseName(from))
     const start = clamp(index ?? source.order.length, source.order.length)
     ordered.forEach((from, i) => insertName(source, baseName(from), start + i))
+    source.keywords = kept
     if (source.order.join('\0') !== before.join('\0')) await writeFolder(fs, sourceDir, source)
     return froms
   }
@@ -287,9 +318,14 @@ export async function moveNodes(
   for (const from of ordered) {
     await fs.rename(from, joinPath(target, newNames.get(from)!))
   }
+  const carried = new Map(ordered.map((from) => [from, source.keywords.get(baseName(from))]))
   for (const from of ordered) removeName(source, baseName(from))
   const start = clamp(index ?? dest.order.length, dest.order.length)
   ordered.forEach((from, i) => insertName(dest, newNames.get(from)!, start + i))
+  for (const from of ordered) {
+    const own = carried.get(from)
+    if (own) dest.keywords.set(newNames.get(from)!, own)
+  }
   await writeFolder(fs, sourceDir, source)
   await writeFolder(fs, target, dest)
   return froms.map((from) => joinPath(target, newNames.get(from)!))
@@ -369,6 +405,7 @@ export async function copyNodes(
   }
   const created = new Map<string, string>()
   const written: string[] = []
+  const sourceFolders = new Map<string, Folder>()
   const start = clamp(index ?? dest.order.length, dest.order.length)
   for (const [i, from] of ordered.entries()) {
     const name = baseName(from)
@@ -379,6 +416,12 @@ export async function copyNodes(
     written.push(joinPath(target, newName))
     created.set(from, newName)
     insertName(dest, newName, start + i)
+    if (!isDir) {
+      const dir = parentPath(from)
+      if (!sourceFolders.has(dir)) sourceFolders.set(dir, await readFolder(fs, dir))
+      const own = sourceFolders.get(dir)!.keywords.get(name)
+      if (own) dest.keywords.set(newName, own)
+    }
   }
   await writeFolder(fs, target, dest)
   return {
@@ -434,6 +477,8 @@ export async function splitSheet(
   folder.glued.delete(name)
   insertName(folder, newName, at + 1)
   if (wasGlued) folder.glued.add(newName)
+  const own = folder.keywords.get(name)
+  if (own) folder.keywords.set(newName, own)
   await writeFolder(fs, dir, folder)
 
   return {
@@ -488,7 +533,9 @@ export async function mergeSheets(
       .join('\n\n') + '\n'
   await fs.writeText(files[0]!, merged)
   for (const file of files.slice(1)) await fs.trash(file)
+  const union = cleanKeywords(names.flatMap((name) => folder.keywords.get(name) ?? []))
   for (const name of names.slice(1)) removeName(folder, name)
+  if (union.length > 0) folder.keywords.set(names[0]!, union)
   if (adjacent && lastGlued) folder.glued.add(names[0]!)
   await writeFolder(fs, dir, folder)
 
@@ -551,4 +598,49 @@ export async function setGroupColor(
   else folder.color = color
   await writeFolder(fs, path, folder)
   return { undo: [sidecarBefore] }
+}
+
+/**
+ * Adds and removes keywords on sheets, which may be in different groups.
+ * `remove` matches ignoring case. Returns how many sheets changed; throws if none did.
+ */
+export async function changeKeywords(
+  fs: FileSystem,
+  paths: string[],
+  add: string[],
+  remove: string[] = [],
+): Promise<SheetChange & { changed: number }> {
+  const adding = cleanKeywords(add)
+  if (adding.length === 0 && remove.length === 0) throw new Error('No keywords to change')
+  const byDir = new Map<string, string[]>()
+  for (const path of new Set(paths.map(trimSlashes))) {
+    const dir = parentPath(path)
+    byDir.set(dir, [...(byDir.get(dir) ?? []), baseName(path)])
+  }
+  const undo: UndoAction[] = []
+  let changed = 0
+  for (const [dir, names] of byDir) {
+    const folder = await readFolder(fs, dir)
+    const before = await snapshotSidecar(fs, dir)
+    let touched = false
+    for (const name of names) {
+      const entry = folder.entries.find((e) => e.name === name)
+      if (entry?.kind !== 'file' || !folder.order.includes(name)) {
+        throw new Error(`Not a sheet in the library: ${joinPath(dir, name)}`)
+      }
+      const old = folder.keywords.get(name) ?? []
+      const next = cleanKeywords([...old.filter((k) => !remove.some((r) => r.toLowerCase() === k.toLowerCase())), ...adding])
+      if (next.join('\0') === old.join('\0')) continue
+      if (next.length > 0) folder.keywords.set(name, next)
+      else folder.keywords.delete(name)
+      changed++
+      touched = true
+    }
+    if (touched) {
+      await writeFolder(fs, dir, folder)
+      undo.push(before)
+    }
+  }
+  if (changed === 0) throw new Error('Those sheets already have these keywords')
+  return { undo, changed }
 }

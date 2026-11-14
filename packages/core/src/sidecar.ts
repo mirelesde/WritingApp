@@ -1,4 +1,5 @@
 import type { DirEntry } from './filesystem'
+import { cleanKeywords } from './keywords'
 
 /** Name of the per-folder file holding order and glue flags. */
 export const SIDECAR_NAME = '.writingapp.json'
@@ -12,6 +13,8 @@ export interface Sidecar {
   glued: string[]
   /** Optional colour name (a key of GROUP_COLORS) shown on this folder's icon. */
   color?: string
+  /** Keywords by sheet file name; sheets without any are left out. */
+  keywords?: Record<string, string[]>
 }
 
 /** The colours a project or group can take, by the name stored in its sidecar. */
@@ -30,6 +33,8 @@ export interface ReconciledFolder {
   children: DirEntry[]
   /** Names of sheets glued to the next child, which is always a sheet. */
   glued: string[]
+  /** Keywords of the visible sheets that have any. */
+  keywords: Record<string, string[]>
 }
 
 /** A child is visible if it is a folder or a .md file, and not a dotfile. */
@@ -53,9 +58,17 @@ export function parseSidecar(text: string | undefined): Sidecar {
     return empty
   }
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return empty
-  const { order, glued, color } = data as Record<string, unknown>
+  const { order, glued, color, keywords } = data as Record<string, unknown>
   const result: Sidecar = { version: 1, order: strings(order), glued: strings(glued) }
   if (typeof color === 'string' && Object.hasOwn(GROUP_COLORS, color)) result.color = color
+  if (typeof keywords === 'object' && keywords !== null && !Array.isArray(keywords)) {
+    const kept: Record<string, string[]> = {}
+    for (const [name, list] of Object.entries(keywords)) {
+      const clean = cleanKeywords(strings(list))
+      if (clean.length > 0) kept[name] = clean
+    }
+    if (Object.keys(kept).length > 0) result.keywords = kept
+  }
   return result
 }
 
@@ -65,6 +78,7 @@ export function parseSidecar(text: string | undefined): Sidecar {
  * - listed entries that still exist come first, in sidecar order;
  * - entries the sidecar does not list follow, in name order;
  * - listed entries that no longer exist are dropped;
+ * - keywords survive only for sheets that exist;
  * - a glue flag survives only if its sheet exists and the next child is
  *   also a sheet.
  */
@@ -97,7 +111,13 @@ export function reconcileFolder(sidecar: Sidecar, entries: DirEntry[]): Reconcil
     }
   })
 
-  return { children, glued }
+  const keywords: Record<string, string[]> = {}
+  for (const child of children) {
+    const own = child.kind === 'file' ? sidecar.keywords?.[child.name] : undefined
+    if (own && own.length > 0) keywords[child.name] = own
+  }
+
+  return { children, glued, keywords }
 }
 
 function compareNames(a: string, b: string): number {

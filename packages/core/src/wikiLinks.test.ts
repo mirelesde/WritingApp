@@ -3,7 +3,7 @@ import { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLin
 import type { GroupNode, SheetNode } from './library'
 
 const sheet = (title: string, links: string[] = []): SheetNode => ({
-  kind: 'sheet', name: `${title}.md`, path: `/lib/${title}.md`, title, preview: '', glued: false, words: 0, images: [], links
+  kind: 'sheet', name: `${title}.md`, path: `/lib/${title}.md`, title, preview: '', glued: false, keywords: [], words: 0, images: [], links
 })
 const tree = (...children: SheetNode[]): GroupNode => ({ kind: 'group', name: 'lib', path: '/lib', children })
 

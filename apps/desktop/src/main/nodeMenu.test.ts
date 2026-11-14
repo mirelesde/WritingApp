@@ -10,7 +10,7 @@ const labels = (kind: 'sheet' | 'group' | 'root'): string[] =>
 
 describe('node context menu', () => {
   it('offers the right items per kind', () => {
-    expect(labels('sheet')).toEqual(['Open in New Tab', 'Open in New Window', '—', 'Duplicate', '—', 'Cut', 'Copy', 'Paste', '—', 'Move to…', 'Move to Trash', '—', expect.stringMatching(/Finder|File Manager/), 'Copy Path'])
+    expect(labels('sheet')).toEqual(['Open in New Tab', 'Open in New Window', '—', 'Keywords…', '—', 'Duplicate', '—', 'Cut', 'Copy', 'Paste', '—', 'Move to…', 'Move to Trash', '—', expect.stringMatching(/Finder|File Manager/), 'Copy Path'])
     expect(labels('group')).toContain('Rename')
     expect(labels('group')).toContain('New Sheet')
     expect(labels('root')).not.toContain('Move to Trash')

@@ -26,6 +26,7 @@ describe('loadLibrary', () => {
       title: 'Notes',
       preview: 'Remember the ending.',
       glued: false,
+      keywords: [],
       words: 4,
       images: [], links: [],
     })

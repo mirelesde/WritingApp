@@ -81,7 +81,7 @@ describe('reconcileFolder', () => {
   })
 
   it('returns an empty folder for no entries', () => {
-    expect(reconcileFolder(sc(['a.md'], ['a.md']), [])).toEqual({ children: [], glued: [] })
+    expect(reconcileFolder(sc(['a.md'], ['a.md']), [])).toEqual({ children: [], glued: [], keywords: {} })
   })
 
   it('keeps a glue flag when the next child is a sheet', () => {

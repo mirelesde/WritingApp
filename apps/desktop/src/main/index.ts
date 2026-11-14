@@ -291,6 +291,12 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
+          label: 'Keywords…',
+          accelerator: 'CmdOrCtrl+Alt+K',
+          click: () => sendCommand('edit-keywords')
+        },
+        { type: 'separator' },
+        {
           label: 'Undo Library Change',
           accelerator: 'CmdOrCtrl+Alt+Z',
           click: () => sendCommand('undo-sheet-change')

@@ -14,6 +14,7 @@ export {
   createSheet,
   deleteNode,
   deleteNodeUndoable,
+  changeKeywords,
   glueSheets,
   setGroupColor,
   mergeSheets,
@@ -138,3 +139,14 @@ export {
   styleFileText,
 } from './exportStyles'
 export type { ExportStyleDef } from './exportStyles'
+export {
+  allSheets,
+  cleanKeywords,
+  compareKeywords,
+  filterToken,
+  hasKeyword,
+  libraryKeywords,
+  MAX_KEYWORD_LENGTH,
+  normalizeKeyword,
+  parseFilter,
+} from './keywords'

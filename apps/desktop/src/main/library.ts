@@ -16,6 +16,7 @@ import {
   deleteNodeUndoable,
   exportHtml,
   exportMarkdown,
+  changeKeywords,
   glueSheets,
   setGroupColor,
   groupWordCount,
@@ -662,6 +663,23 @@ export function registerLibraryIpc(): void {
         await glueSheets(
           fs,
           paths.map((p) => inside(p))
+        )
+      )
+    })
+  )
+
+  ipcMain.handle('op:keywords', (_event, paths: unknown, add: unknown, remove: unknown) =>
+    change(async () => {
+      const list = (v: unknown): string[] =>
+        Array.isArray(v) ? v.filter((k): k is string => typeof k === 'string') : []
+      if (!Array.isArray(paths)) throw new Error('Select sheets first')
+      return undoable(
+        'Keywords',
+        await changeKeywords(
+          fs,
+          paths.map((p) => inside(p)),
+          list(add),
+          list(remove)
         )
       )
     })
