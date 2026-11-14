@@ -648,7 +648,7 @@ asked for directly.
 
 **Medium to hard**
 
-23. **Images.** *In progress, in this order, one commit each:* (a) insert from a file (**done**), (b) paste from the clipboard (**done**), (c) drag and drop (**done**). Wanted:
+23. **Images.** *Done* (insert, paste, drag and drop, thumbnails, alt text, toolbar button, shared `.assets/` storage, clean-up, export), apart from the accepted limits listed below. Wanted:
     - **Shown as a thumbnail, not full size (user).** An image is drawn
       inline in the editor as a small fixed-size square thumbnail (cropped to
       fill the square, the way Ulysses does), so a sheet's text stays
@@ -728,6 +728,19 @@ asked for directly.
       every save, so removing a link (or undoing an insert) updates it; the
       Clean Up dialog still recomputes when opened. Undoing an insert or
       paste still leaves the file in `.assets/`, where Clean Up finds it.
+    - **Images: known limits, accepted (no plans to build now).** The
+      core feature is finished; these stay as limits: native dialogs and
+      the `Cmd/Ctrl+Alt+I` menu accelerator checked only underneath, never
+      clicked through; dragging pictures between sheets inside the app is
+      not handled; undoing an insert or paste leaves the file in `.assets/`
+      for Clean Up to find; duplicate detection is exact, so a resized or
+      re-saved copy is a different picture; no resizing, cropping or choice
+      of thumbnail crop; captions only in the Markdown; no merging of
+      existing duplicates (it edits sheets); no migration for same-folder
+      pictures from the dropped design; `http:` (not https) pictures get no
+      thumbnail and there is no setting to load web pictures automatically;
+      a drop outside the editor was guarded but not tried with a real drag;
+      the image behaviour still needs a section in the user guide.
     - Where images live was an open question; options below, with the
       choice made.
     - **Alternative A, next to each sheet: tried, then dropped** (in the folder or a
