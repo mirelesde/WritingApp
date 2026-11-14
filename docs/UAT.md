@@ -1,6 +1,6 @@
 # User acceptance scripts
 
-Manual checks for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, and import. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
+Manual checks for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
 
 Items marked **(not yet checked live)** are ones the developer could not drive in the test harness, so look at them closely.
 
@@ -156,14 +156,35 @@ Known gaps: `.docx`, importing a folder as a project, and dropping files onto th
 | 5.7 | Write bad TeX such as `$\frac{$`. | No crash; the TeX shows as plain text or in red. |
 | 5.8 | Export (HTML preview and PDF) a sheet with formulas. | Inline and block formulas appear as maths; prices stay as text. **(PDF not yet checked live)** |
 | 5.9 | Fold a section holding maths; hide Markdown marks on. | No errors; formulas still draw. |
+| 5.10 | Click a drawn formula, then arrow out of it. | Click shows the TeX with the cursor in it; arrowing away redraws it. Undo/redo works across both states. |
+| 5.11 | Put a formula in a table cell and in a footnote. | Not drawn as maths (known gap); nothing breaks. |
+| 5.12 | Open a sheet with 50+ formulas and type at its end. | Typing stays responsive. |
+| 5.13 | Select across a formula and copy, then paste elsewhere. | The pasted text is the `$…$` source. |
+| 5.14 | Word count, sheet previews and Find on a sheet with formulas. | Counts and search work on the TeX text; previews show the raw `$…$`. |
+| 5.15 | Open a very large fenced block (500+ lines) in a labelled language. | Scrolling and typing stay smooth. |
 
-## 6. Regression sweep
+Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or shortcut for maths; maths in table cells and footnotes is not drawn.
+
+## 6. Drag-and-drop drop lines
+
+| # | Steps | Expected |
+|---|-------|----------|
+| 6.1 | Drag a sheet card over the gap between two other cards. | A straight 3px accent bar appears above or below the target, as wide as the card minus its rounded corners. It does not curve over the corners. |
+| 6.2 | Drag over the top half, then the bottom half, of a card. | The bar sits on the top edge, then the bottom edge. |
+| 6.3 | Drag a sheet over a group row in the sidebar tree. | Over its upper or lower edge: a straight bar inset from the corners. Over its middle: the whole row is outlined (drop inside). |
+| 6.4 | Drop in each case. | The sheet lands where the bar was shown; bars disappear afterwards. **(real drag not yet checked live)** |
+| 6.5 | Repeat in dark mode. | The bar stays visible. |
+| 6.6 | Drag several selected sheets. | Same bars; all move together. |
+
+## 7. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 
+- Preferences: every switch changes behaviour at once and is remembered after a restart (Hide Markdown marks, Hang heading marks, Smart punctuation, theme).
 - Typing, undo/redo, and autosave ("Saved" indicator) in a sheet with folds and hidden marks on.
 - Cmd/Ctrl+Click on an ordinary Markdown link `[text](https://…)` still opens it in the browser.
 - Cmd/Ctrl+K inserts a link; the link chip still draws as one box.
+- Hide marks, folds, code colours and maths all on together in one long sheet: no flicker or console errors.
 - Footnotes, tables, images and task boxes still render and edit.
 - Find in the sheet (Cmd/Ctrl+F) and Find in Library (Cmd/Ctrl+Shift+F) still work.
 - Export (Cmd/Ctrl+E) of a sheet with wiki links: the links come out as plain text and nothing breaks.
