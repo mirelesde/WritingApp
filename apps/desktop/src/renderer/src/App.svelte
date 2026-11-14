@@ -2691,11 +2691,11 @@
     margin-top: 4px;
   }
   .kw {
-    padding: 0 7px;
-    font-size: 11px;
+    padding: 2px 9px;
+    font-size: 11.5px;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-    opacity: 0.8;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    color: var(--muted);
   }
   .filter input {
     flex: 1;
