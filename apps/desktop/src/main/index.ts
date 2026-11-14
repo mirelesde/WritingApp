@@ -205,6 +205,7 @@ function buildMenu(): Menu {
         { type: 'separator' },
         { label: 'Import…', click: () => sendCommand('import') },
         { label: 'Clean Up Unused Images…', click: () => sendCommand('clean-images') },
+        { label: 'Resolve Sync Conflicts…', click: () => sendCommand('resolve-conflicts') },
         {
           label: 'Export…',
           accelerator: 'CmdOrCtrl+E',

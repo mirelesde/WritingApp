@@ -386,8 +386,8 @@ Notes from building it:
   The sheet list updates; an open sheet reloads if it changed on disk and has
   no unsaved edits. With unsaved edits, the app's next save overwrites the
   outside change (last write wins). A sync-conflict copy (for example
-  "a (conflicted copy).md") shows up as an ordinary extra sheet; there is no
-  merge tool. A moved or renamed file outside the app drops it from the
+  "a (conflicted copy).md") shows up as an ordinary extra sheet, and the
+  sidebar offers a diff window to resolve it (item 31). A moved or renamed file outside the app drops it from the
   list and reorders by name for unknown files.
 - **Releases:** `.github/workflows/ci.yml` (typecheck, tests, lint) and
   `release.yml` (tag `v*` builds Mac dmg, Windows installer, Linux AppImage
@@ -825,9 +825,7 @@ asked for directly.
     - Duplicate titles: the first sheet in library order wins; the editor
       should say so and offer `[[Group/Title]]` to pick another.
     - Completion beyond titles: aliases, and links to sheets by path.
-31. **Sync conflict handling.** Detect conflict copies from iCloud or
-    Dropbox (`name (conflicted copy).md`) and offer a side-by-side merge.
-    Needs a diff view.
+31. ~~**Sync conflict handling.**~~ **Done.** Core `diff.ts` has a line diff grouped into hunks, a word diff, and `conflictCopyOf`/`findConflictCopies` (Dropbox, Nextcloud and Syncthing names). A sidebar banner and File > Resolve Sync Conflicts… open a side-by-side diff window (`DiffView`): changed words are highlighted, long unchanged stretches fold, and each difference is set to one side. Saving writes the result to the sheet and moves the copy to the trash (undoable). The "changed outside the app" dialog for unsaved edits uses the same view and gained "Use my choices". Limits: two-way diff only (no common ancestor), so a difference is never merged automatically; iCloud's numbered copies ("note 2.md") are not recognised; the crash-recovery dialog still shows plain text.
 32. **Global quick capture.** A system-wide hotkey that opens a small
     window and appends to an Inbox sheet. Depends on windows (item 29).
    Edited in place in the editor (Insert > Table, command palette): a table is drawn as an editable grid with a title caption, add/delete rows and columns, alignment and Tab/Enter navigation, and bold, italics, strikethrough and code show inside cells; the cursor entering it shows the raw Markdown. Writes clean aligned Markdown. Sheet previews show (Table) instead of the raw text. (It began as a dialog and was changed to in-place editing.)

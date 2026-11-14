@@ -5,6 +5,7 @@
     backlinksTo,
     linkTargets,
     listSheets,
+    findConflictCopies,
     resolveWikiLink,
     sheetPreview,
     sheetTitle,
@@ -19,6 +20,7 @@
   import { applyView } from './view'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
+  import ConflictCopyDialog from './ConflictCopyDialog.svelte'
   import RecoveryDialog from './RecoveryDialog.svelte'
   import CleanUpImages from './CleanUpImages.svelte'
   import CommandPalette from './CommandPalette.svelte'
@@ -158,6 +160,17 @@
     autosaver.change(path, mine)
   }
 
+  function useMerged(text: string): void {
+    if (!conflict) return
+    const { path, disk } = conflict
+    conflict = null
+    guard.trust(path, disk)
+    edits[path] = text
+    editors[path]?.replaceText(text)
+    autosaver.change(path, text)
+    showInfo('Combined the two versions')
+  }
+
   function useDisk(): void {
     if (!conflict) return
     const { path, disk } = conflict
@@ -269,6 +282,61 @@
     unusedTimer = setTimeout(async () => {
       if (library) unused = await window.api.unusedImages()
     }, 1500)
+  }
+
+  // --- Sync conflict copies ----------------------------------------------------
+
+  function allSheets(group: GroupNode): { name: string; path: string }[] {
+    return group.children.flatMap((c) => (c.kind === 'group' ? allSheets(c) : [{ name: c.name, path: c.path }]))
+  }
+  const conflictPairs = $derived(library ? findConflictCopies(allSheets(library.tree)) : [])
+  /** The pair being resolved, with both texts read from disk. */
+  let resolving = $state<{
+    original: { name: string; path: string; text: string }
+    copy: { name: string; path: string; text: string }
+  } | null>(null)
+  let skipped = $state<string[]>([])
+
+  async function openConflicts(): Promise<void> {
+    const pair = conflictPairs.find((p) => !skipped.includes(p.copy.path))
+    if (!pair) {
+      resolving = null
+      if (conflictPairs.length === 0) showInfo('No sync conflicts in this library')
+      return
+    }
+    try {
+      await autosaver.flush()
+      const [otext, ctext] = await Promise.all([
+        window.api.readSheet(pair.original.path),
+        window.api.readSheet(pair.copy.path)
+      ])
+      resolving = { original: { ...pair.original, text: otext }, copy: { ...pair.copy, text: ctext } }
+    } catch (e) {
+      notice = errorMessage(e)
+    }
+  }
+
+  async function resolveCopy(text: string): Promise<void> {
+    if (!resolving) return
+    const { original, copy } = resolving
+    resolving = null
+    try {
+      if (text !== original.text) {
+        await guard.save(original.path, text)
+        edits[original.path] = text
+        editors[original.path]?.replaceText(text)
+      }
+      await runOp(() => window.api.deleteNodes([copy.path]))
+      showInfo(`Resolved the conflict in “${original.name}”`)
+    } catch (e) {
+      notice = errorMessage(e)
+    }
+    void openConflicts()
+  }
+
+  function skipCopy(): void {
+    if (resolving) skipped = [...skipped, resolving.copy.path]
+    void openConflicts()
   }
 
   async function openCleanUp(): Promise<void> {
@@ -1417,6 +1485,10 @@
     else if (command === 'insert-footnote') insertFootnote()
     else if (command === 'insert-image') void insertImage()
     else if (command === 'clean-images') void openCleanUp()
+    else if (command === 'resolve-conflicts') {
+      skipped = []
+      void openConflicts()
+    }
     else if (command === 'go-to-footnote') goToFootnote()
     else if (command === 'import') void importFiles()
     else if (command === 'fold-section') foldHere(true)
@@ -1493,6 +1565,13 @@
           ? `Clean Up Unused Images… (${unused.length})`
           : 'Clean Up Unused Images…',
         'clean-images'
+      ),
+      menu(
+        'File',
+        conflictPairs.length > 0
+          ? `Resolve Sync Conflicts… (${conflictPairs.length})`
+          : 'Resolve Sync Conflicts…',
+        'resolve-conflicts'
       ),
       menu('File', 'Import…', 'import'),
       menu('File', 'Daily Note', 'daily-note', `${keyMod}⌥D`),
@@ -1659,6 +1738,11 @@
           dnd={treeDnd}
         />
       </ul>
+      {#if conflictPairs.length > 0}
+        <button class="conflict-banner" onclick={() => { skipped = []; void openConflicts() }}>
+          {conflictPairs.length} sync conflict{conflictPairs.length === 1 ? '' : 's'} — compare and resolve
+        </button>
+      {/if}
       {#if notice}
         <p class="notice" role="alert">{notice}</p>
       {:else if info}
@@ -1904,6 +1988,19 @@
     disk={conflict.disk}
     onkeep={keepMine}
     onuse={useDisk}
+    onmerge={useMerged}
+  />
+{/if}
+
+{#if resolving}
+  <ConflictCopyDialog
+    original={resolving.original}
+    copy={resolving.copy}
+    position={skipped.length + 1}
+    total={skipped.length + conflictPairs.filter((p) => !skipped.includes(p.copy.path)).length}
+    onresolve={(text) => void resolveCopy(text)}
+    onskip={skipCopy}
+    oncancel={() => (resolving = null)}
   />
 {/if}
 
@@ -2266,6 +2363,17 @@
     padding: 8px 14px;
     color: var(--muted);
     font-size: 12px;
+  }
+  .conflict-banner {
+    margin: 6px 10px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text);
   }
   .notice {
     margin: 0;

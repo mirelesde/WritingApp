@@ -195,7 +195,16 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 7.12 | Link a picture by `![alt](https://…)`. | A dashed "Load from host" box shows and nothing is fetched until clicked; clicking loads the thumbnail (a click then opens the preview); a dead link shows the missing box. |
 | 7.13 | Drag a picture file from the file manager onto the sidebar, the sheet list and the toolbar. | Nothing happens: the window does not turn into the picture. **(real drag not yet checked live)** |
 
-## 8. Regression sweep
+## 8. Sync conflicts
+
+| # | Steps | Expected |
+|---|---|---|
+| 8.1 | In a group, create `a.md` and a file `a (conflicted copy).md` with slightly different text (outside the app). | The sidebar shows "1 sync conflict — compare and resolve". |
+| 8.2 | Click it. | A diff window shows the sheet and the copy side by side; changed words are highlighted. |
+| 8.3 | Choose the copy for one difference, then click the primary button. | The sheet holds the mixed text, the copy is in the trash, the banner is gone. Undo Library Change restores the copy. |
+| 8.4 | Edit a sheet in the app, then change the same file outside it. | The "changed outside the app" dialog shows the diff; "Use my choices" saves the combined text. |
+
+## 9. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 

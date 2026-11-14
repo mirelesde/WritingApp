@@ -1,5 +1,6 @@
 <script lang="ts">
   import { textStats } from '@writingapp/core'
+  import DiffView from './DiffView.svelte'
 
   interface Props {
     /** The sheet's file name, for the heading. */
@@ -10,9 +11,14 @@
     disk: string
     onkeep: () => void
     onuse: () => void
+    /** Saves the text built by choosing a side for each difference. */
+    onmerge: (text: string) => void
   }
 
-  let { name, mine, disk, onkeep, onuse }: Props = $props()
+  let { name, mine, disk, onkeep, onuse, onmerge }: Props = $props()
+
+  let merged = $state('')
+  const mixed = $derived(merged !== mine && merged !== disk)
 
   const words = (text: string): string => `${textStats(text).words.toLocaleString()} words`
 
@@ -26,21 +32,12 @@
     <h2 id="conflict-title">“{name}” changed outside the app</h2>
     <p>
       Something else, such as a sync client or another editor, saved this sheet while you had
-      unsaved changes. Choose which version to keep.
+      unsaved changes. Pick a side for each difference, or keep one whole version.
     </p>
-    <div class="versions">
-      <section>
-        <h3>Your version <small>{words(mine)}</small></h3>
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <pre tabindex="0">{mine}</pre>
-      </section>
-      <section>
-        <h3>On disk <small>{words(disk)}</small></h3>
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <pre tabindex="0">{disk}</pre>
-      </section>
-    </div>
+    <p class="counts">Your version: {words(mine)} · On disk: {words(disk)}</p>
+    <DiffView a={mine} b={disk} labelA="Your version" labelB="On disk" bind:result={merged} />
     <div class="buttons">
+      {#if mixed}<button onclick={() => onmerge(merged)}>Use my choices</button>{/if}
       <button onclick={onuse}>Use the disk version</button>
       <button class="primary" onclick={onkeep}>Keep my version</button>
     </div>
@@ -79,37 +76,8 @@
     color: var(--muted);
     font-size: 13px;
   }
-  .versions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    min-height: 0;
-  }
-  section {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  h3 {
-    margin: 0 0 4px;
-    font-size: 13px;
-  }
-  h3 small {
-    font-weight: 400;
-    color: var(--muted);
-    margin-left: 6px;
-  }
-  pre {
-    margin: 0;
-    padding: 10px;
-    height: 40vh;
-    overflow: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font: 12.5px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-    background: var(--list);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+  .counts {
+    font-size: 12px;
   }
   .buttons {
     display: flex;

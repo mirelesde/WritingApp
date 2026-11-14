@@ -57,6 +57,7 @@ export type MenuCommand =
   | 'go-to-footnote'
   | 'insert-image'
   | 'clean-images'
+  | 'resolve-conflicts'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
