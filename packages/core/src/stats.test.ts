@@ -54,3 +54,10 @@ describe('groupWordCount', () => {
     expect(groupWordCount(root.children[0] as never)).toBe(5)
   })
 })
+
+describe('images in counts', () => {
+  it('does not count an image link as words', async () => {
+    const { countWords } = await import('./stats')
+    expect(countWords('one ![a cat](.assets/cat.png) two')).toBe(2)
+  })
+})

@@ -48,6 +48,7 @@ export type MenuCommand =
   | 'insert-table'
   | 'insert-footnote'
   | 'go-to-footnote'
+  | 'insert-image'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
@@ -102,6 +103,10 @@ export interface Api {
   /** Moves sheets or groups sharing one parent into `target` as a block. */
   move(paths: string[], target: string, index?: number): Promise<OpResult>
   /** Copies sheets or groups into a group; `label` names the undo step. */
+  /** Asks for picture files, copies them into the library, and returns the Markdown for each. */
+  chooseImages(): Promise<string[]>
+  /** Saves picture bytes (a pasted image) in the library and returns its Markdown. */
+  saveImage(name: string, data: Uint8Array): Promise<string>
   copy(paths: string[], target: string, index?: number, label?: 'Duplicate' | 'Paste'): Promise<OpResult>
   /** Splits a sheet, given its current text, at `offset`; the tail becomes the next sheet. */
   split(path: string, text: string, offset: number): Promise<OpResult>

@@ -1,4 +1,4 @@
-import { promises as nodeFs } from 'node:fs'
+import { constants, promises as nodeFs } from 'node:fs'
 import { dirname, basename, join } from 'node:path'
 import type { DirEntry, FileSystem } from '@writingapp/core'
 
@@ -21,6 +21,24 @@ export function createNodeFileSystem(trashItem: (path: string) => Promise<void>)
 
   return {
     readText: (path) => nodeFs.readFile(path, 'utf8'),
+
+    async readBinary(path) {
+      return new Uint8Array(await nodeFs.readFile(path))
+    },
+
+    async writeBinary(path, data) {
+      const temp = join(dirname(path), `.${basename(path)}.${process.pid}-${tempCounter++}.tmp`)
+      try {
+        await nodeFs.writeFile(temp, data)
+        await nodeFs.rename(temp, path)
+      } catch (error) {
+        await nodeFs.rm(temp, { force: true })
+        throw error
+      }
+    },
+
+    // COPYFILE_EXCL: never overwrite.
+    copyFile: (from, to) => nodeFs.copyFile(from, to, constants.COPYFILE_EXCL),
 
     // Write to a temporary dotfile, then rename over the target, so a crash
     // mid-write never leaves a half-written sheet.

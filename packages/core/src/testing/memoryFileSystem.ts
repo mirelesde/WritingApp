@@ -27,6 +27,21 @@ export class MemoryFileSystem implements FileSystem {
     this.files.set(path, text)
   }
 
+  // Bytes are kept in the same map as text, one character per byte, so folders,
+  // renames and trashing treat every file alike.
+  async readBinary(path: string): Promise<Uint8Array> {
+    return Uint8Array.from(await this.readText(path), (c) => c.charCodeAt(0) & 0xff)
+  }
+
+  async writeBinary(path: string, data: Uint8Array): Promise<void> {
+    await this.writeText(path, String.fromCharCode(...data))
+  }
+
+  async copyFile(from: string, to: string): Promise<void> {
+    if (await this.exists(to)) throw new Error(`Already exists: ${to}`)
+    await this.writeText(to, await this.readText(from))
+  }
+
   async list(path: string): Promise<DirEntry[]> {
     if (!this.dirs.has(path)) throw new Error(`No such folder: ${path}`)
     const entries: DirEntry[] = []

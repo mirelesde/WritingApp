@@ -21,6 +21,7 @@ import { tableWidgets } from './tableWidget'
 import { highlightSyntax, highlightTag } from './highlightMark'
 import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
+import { imageThumbs } from './imageThumbs'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
 import { headingMarks } from './headingMarks'
@@ -183,6 +184,7 @@ export function editorExtensions({
     taskBoxes,
     tableWidgets,
     footnotes,
+    imageThumbs,
     EditorView.lineWrapping,
     // GitHub-flavoured base: strikethrough, task lists, tables.
     // The markdown keymap (included) continues lists on Enter and

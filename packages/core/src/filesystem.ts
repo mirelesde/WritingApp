@@ -10,6 +10,15 @@ export interface FileSystem {
   readText(path: string): Promise<string>
   /** Creates or overwrites a file. The parent folder must exist. */
   writeText(path: string, text: string): Promise<void>
+  /** The raw bytes of a file, for images and other files that are not text. */
+  readBinary(path: string): Promise<Uint8Array>
+  /** Creates or overwrites a file with raw bytes. The parent folder must exist. */
+  writeBinary(path: string, data: Uint8Array): Promise<void>
+  /**
+   * Copies a file. The source may be anywhere the app can read, such as a picture the
+   * user chose; the destination's folder must exist. Rejects if the destination exists.
+   */
+  copyFile(from: string, to: string): Promise<void>
   list(path: string): Promise<DirEntry[]>
   /** True if a file or folder exists at the path. Never rejects. */
   exists(path: string): Promise<boolean>

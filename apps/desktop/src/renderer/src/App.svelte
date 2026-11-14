@@ -286,6 +286,13 @@
     if (path) editors[path]?.insertFootnoteAtCursor()
   }
 
+  async function insertImage(): Promise<void> {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (!path || !editors[path]) return
+    const markdown = await window.api.chooseImages()
+    editors[path]?.insertImagesAtCursor(markdown)
+  }
+
   function goToFootnote(): void {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (path && !editors[path]?.goToFootnoteAtCursor()) showInfo('This sheet has no footnotes.')
@@ -1304,6 +1311,7 @@
     else if (command === 'preferences') preferencesOpen = true
     else if (command === 'insert-table') insertTable()
     else if (command === 'insert-footnote') insertFootnote()
+    else if (command === 'insert-image') void insertImage()
     else if (command === 'go-to-footnote') goToFootnote()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
@@ -1392,6 +1400,7 @@
       menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
       menu('Format', 'Link', 'format-link', `${keyMod}K`),
       menu('Insert', 'Table', 'insert-table'),
+      menu('Insert', 'Image…', 'insert-image', `${keyMod}⌥I`),
       menu('Insert', 'Footnote', 'insert-footnote'),
       menu('Insert', 'Go to Footnote', 'go-to-footnote', `${keyMod}⌥J`),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),

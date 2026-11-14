@@ -1,3 +1,4 @@
+import { embedImages } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
@@ -124,6 +125,7 @@ pre { background: #8882; padding: 1em; overflow-x: auto; border-radius: 4px; }
 pre code { background: none; padding: 0; }
 img { max-width: 100%; }
 table { border-collapse: collapse; }
+img { max-width: 100%; }
 th, td { border: 1px solid #8887; padding: .3em .6em; }
 hr.break { border: 0; text-align: center; margin: 3em 0; }
 hr.break::after { content: '* * *'; letter-spacing: .5em; color: #888; }
@@ -193,7 +195,7 @@ export async function exportHtml(
   const parts: string[] = []
   for (const run of runs) {
     const texts: string[] = []
-    for (const sheet of run) texts.push(await fs.readText(sheet.path))
+    for (const sheet of run) texts.push(await embedImages(fs, root.path, await fs.readText(sheet.path)))
     parts.push(markdownToHtml(texts.map((t) => stripComments(t).trim()).join('\n\n')))
   }
   const body = parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n')

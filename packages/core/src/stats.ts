@@ -1,4 +1,5 @@
 import { stripComments } from './comments'
+import { stripImages } from './images'
 import type { GroupNode } from './library'
 
 /** Reading speed used for the reading-time estimate, in words per minute. */
@@ -18,7 +19,7 @@ export interface TextStats {
  */
 export function countWords(text: string): number {
   let count = 0
-  for (const token of stripComments(text).split(/\s+/)) {
+  for (const token of stripImages(stripComments(text)).split(/\s+/)) {
     if (/[\p{L}\p{N}]/u.test(token)) count++
   }
   return count

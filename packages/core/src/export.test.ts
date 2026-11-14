@@ -106,3 +106,15 @@ describe('inline marks in export', () => {
     expect(markdownToHtml('`==x==`')).not.toContain('<mark>')
   })
 })
+
+describe('images in export', () => {
+  it('embeds library pictures and leaves other images alone', async () => {
+    const { saveImage } = await import('./images')
+    const fs = new MemoryFileSystem({ '/lib/a.md': '![x](.assets/p.png) ![y](https://e.com/y.png)' })
+    await saveImage(fs, '/lib', 'p.png', new Uint8Array([72, 105]))
+    const tree = await loadLibrary(fs, '/lib')
+    const out = await exportHtml(fs, tree, ['/lib/a.md'])
+    expect(out.html).toContain('<img src="data:image/png;base64,SGk=" alt="x">')
+    expect(out.html).toContain('https://e.com/y.png')
+  })
+})

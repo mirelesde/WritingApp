@@ -93,3 +93,20 @@ export {
 } from './templates'
 export type { Template } from './templates'
 export { htmlToMarkdown, isRichPaste } from './htmlToMarkdown'
+export {
+  ASSETS_DIR,
+  assetName,
+  assetNameFromUrl,
+  embedImages,
+  stripImages,
+  findImages,
+  imageDataUri,
+  imageMarkdown,
+  imageMime,
+  IMAGE_EXTENSIONS,
+  importImages,
+  isImageName,
+  saveImage,
+  toBase64,
+} from './images'
+export type { ImageRef, ImportedImage } from './images'

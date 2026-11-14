@@ -9,6 +9,7 @@
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
   import { insertTable } from './tableWidget'
   import { goToFootnote, insertFootnote } from './footnotes'
+  import { insertImages } from './imageThumbs'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
@@ -103,6 +104,11 @@
   /** Inserts an empty table at the cursor and moves into it. */
   export function insertTableAtCursor(): void {
     if (view) insertTable(view)
+  }
+
+  /** Puts pictures (as Markdown) at the cursor. */
+  export function insertImagesAtCursor(markdown: string[]): void {
+    if (view) insertImages(view, markdown)
   }
 
   /** Adds a footnote at the cursor and opens it for typing. */

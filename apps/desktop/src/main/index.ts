@@ -12,8 +12,12 @@ import {
   loadRecent,
   openRecentLibrary,
   recentLibraries,
+  registerAssetProtocol,
+  registerAssetScheme,
   registerLibraryIpc
 } from './library'
+
+registerAssetScheme()
 
 function createWindow(): void {
   // Create the browser window.
@@ -274,6 +278,7 @@ function buildMenu(): Menu {
       label: 'Insert',
       submenu: [
         { label: 'Table', click: () => sendCommand('insert-table') },
+        { label: 'Image…', accelerator: 'CmdOrCtrl+Alt+I', click: () => sendCommand('insert-image') },
         { label: 'Footnote', click: () => sendCommand('insert-footnote') },
         { label: 'Go to Footnote', ...shown('CmdOrCtrl+Alt+J'), click: () => sendCommand('go-to-footnote') }
       ]
@@ -285,6 +290,7 @@ function buildMenu(): Menu {
 
 app.whenReady().then(async () => {
   registerLibraryIpc()
+  registerAssetProtocol()
   registerViewIpc()
   registerNodeMenuIpc()
   registerThemeIpc()
