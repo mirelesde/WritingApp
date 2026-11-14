@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Select from './Select.svelte'
   import {
     CHOICES,
     FONTS,
@@ -145,15 +146,7 @@
       <div class="row">
         <span>Colour theme<small>Theme files live in a folder you can open</small></span>
         <div class="theme-pick">
-          <select
-            class="input"
-            aria-label="Colour theme"
-            value={view.colorTheme}
-            onchange={(e) => onchange({ colorTheme: e.currentTarget.value })}
-          >
-            <option value="">None</option>
-            {#each themes as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
-          </select>
+          <Select label="Colour theme" value={view.colorTheme} options={[{ value: '', label: 'None' }, ...themes.map((t) => ({ value: t.id, label: t.name }))]} onchange={(colorTheme) => onchange({ colorTheme })} />
           <button
             class="link"
             onclick={async () => {

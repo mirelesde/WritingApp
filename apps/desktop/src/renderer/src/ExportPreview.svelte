@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Select from './Select.svelte'
   import { onMount } from 'svelte'
   import { applyExportStyle, embeddedGrowth, FOLDER_SUGGESTION_GROWTH } from '@writingapp/core'
   import type { ExportStyleDef } from '@writingapp/core'
@@ -49,6 +50,13 @@
   let styleId = $state('default')
   let problem = $state('')
   const current = $derived(styles.find((x) => x.id === styleId) ?? styles[0])
+  const styleOptions = $derived(
+    [...styles.filter((x) => x.builtin), ...styles.filter((x) => !x.builtin)].map((x) => ({
+      value: x.id,
+      label: x.name,
+      group: styles.some((y) => y.builtin) && styles.some((y) => !y.builtin) ? (x.builtin ? 'Built in' : 'Yours') : undefined
+    }))
+  )
 
   let editing = $state(false)
   let draftName = $state('')
@@ -154,17 +162,10 @@
     <header>
       <span class="name">{title} · {sheets === 1 ? '1 sheet' : `${sheets} sheets`}</span>
       <label class="pdf">
-        <select class="input" bind:value={pageSize} aria-label="Page size">
-          <option value="A4">A4</option>
-          <option value="Letter">Letter</option>
-        </select>
+        <Select label="Page size" value={pageSize} options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'Letter' }]} onchange={(v) => (pageSize = v as PdfOptions['pageSize'])} />
       </label>
       <label class="pdf">
-        <select class="input" bind:value={margin} aria-label="Margins">
-          <option value="narrow">Narrow margins</option>
-          <option value="normal">Normal margins</option>
-          <option value="wide">Wide margins</option>
-        </select>
+        <Select label="Margins" value={margin} options={[{ value: 'narrow', label: 'Narrow margins' }, { value: 'normal', label: 'Normal margins' }, { value: 'wide', label: 'Wide margins' }]} onchange={(v) => (margin = v as PdfOptions['margin'])} />
       </label>
       <label class="pdf"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
       <button disabled={saving} onclick={() => onsavepdf({ pageSize, margin, pageNumbers }, activeCss)}>
@@ -172,14 +173,7 @@
       </button>
       {#if imageBytes > 0}
         <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
-          <select class="input"
-            value={pictures}
-            onchange={(e) => (chosen = e.currentTarget.value as 'embed' | 'folder')}
-            aria-label="Pictures in HTML"
-          >
-            <option value="embed">Pictures inside the file</option>
-            <option value="folder">Pictures in a folder</option>
-          </select>
+          <Select label="Pictures in HTML" value={pictures} options={[{ value: 'embed', label: 'Pictures inside the file' }, { value: 'folder', label: 'Pictures in a folder' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
         </label>
         {#if suggest && pictures === 'embed'}
           <span class="hint">Pictures make this {Math.round(growth * 100)}% bigger</span>
@@ -194,18 +188,7 @@
     <div class="styles">
       <label>
         Style
-        <select class="input" value={styleId} onchange={(e) => choose(e.currentTarget.value)} aria-label="Export style" disabled={editing}>
-          {#if styles.some((x) => x.builtin)}
-            <optgroup label="Built in">
-              {#each styles.filter((x) => x.builtin) as x (x.id)}<option value={x.id}>{x.name}</option>{/each}
-            </optgroup>
-          {/if}
-          {#if styles.some((x) => !x.builtin)}
-            <optgroup label="Yours">
-              {#each styles.filter((x) => !x.builtin) as x (x.id)}<option value={x.id}>{x.name}</option>{/each}
-            </optgroup>
-          {/if}
-        </select>
+        <Select label="Export style" value={styleId} disabled={editing} options={styleOptions} onchange={choose} />
       </label>
       <span class="desc">{current?.description ?? ''}</span>
       {#if !editing}
