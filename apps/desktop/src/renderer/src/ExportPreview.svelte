@@ -15,6 +15,7 @@
     onsave,
     onsavepdf,
     onsavemarkdown,
+    onsavedocx,
     onclose
   }: {
     title: string
@@ -26,6 +27,7 @@
     onsave: (pictures: 'embed' | 'folder', css: string) => void
     onsavepdf: (options: PdfOptions, css: string) => void
     onsavemarkdown: () => void
+    onsavedocx: (options: PdfOptions) => void
     onclose: () => void
   } = $props()
 
@@ -179,6 +181,7 @@
           <span class="hint">Pictures make this {Math.round(growth * 100)}% bigger</span>
         {/if}
       {/if}
+      <button disabled={saving} onclick={() => onsavedocx({ pageSize, margin, pageNumbers })}>Save as Word…</button>
       <button disabled={saving} onclick={onsavemarkdown}>Save as Markdown…</button>
       <button onclick={onclose}>Close</button>
       <button class="primary" bind:this={saveButton} disabled={saving} onclick={() => onsave(pictures, activeCss)}>

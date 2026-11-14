@@ -124,7 +124,7 @@ Make these files in a scratch folder:
 
 `notes.md`: a few lines of Markdown including `# heading`.
 
-`photo.docx` (any Word file) and `broken.txt` (a file you have removed read permission from with `chmod 000`).
+`report.docx` (a Word file with a heading, bold and italic words, a bulleted and a numbered list, a link, a small table, a footnote and a picture) and `broken.txt` (a file you have removed read permission from with `chmod 000`).
 
 | # | Steps | Expected |
 |---|-------|----------|
@@ -134,14 +134,14 @@ Make these files in a scratch folder:
 | 4.4 | Import `notes.md`. | Content arrives unchanged. |
 | 4.5 | Import `plain.txt`, `rich.rtf` and `notes.md` together (multi-select). | Three sheets, in the order picked, after the current sheet, all selected. Notice "Imported 3 sheets." |
 | 4.6 | Import `plain.txt` and `broken.txt` together. | `plain.txt` imports; a notice says "Imported 1. Could not import broken.txt." |
-| 4.7 | In the picker, try to choose `photo.docx` (the filter may hide it; switch to All Files if offered). | Not importable; if it gets through it is named in the "Could not import" notice. |
+| 4.7 | Import `report.docx`. | One new sheet: `#` heading, `**`/`*` marks, `- ` and `1.` lists, `[text](url)` link, a Markdown table, `[^1]` with its definition at the end, and the picture shown (it is now in the library's assets). Import a `.doc` too: it is named in the "Could not import" notice. |
 | 4.8 | Import several files, then use **Undo Library Change** once. | All imported sheets go to the trash together and the sheet order is as it was before. The undo label reads "Import of N files". |
 | 4.9 | Cancel the dialog. | Nothing changes, no notice. |
 | 4.10 | Import with a group selected, then with a sheet in the middle of a long list selected. | New sheets land right after the current sheet (end of the group when a group is selected). |
 | 4.11 | Import 30+ text files. | Completes in a reasonable time; the list stays correct. |
 | 4.12 | Import an RTF with a table or picture. | The text comes through; the table and picture are dropped without error. |
 
-Known gaps: `.docx`, importing a folder as a project, and dropping files onto the window are not built.
+Known gaps: legacy `.doc`, Word comments and text boxes, importing a folder as a project, and dropping files onto the window are not built.
 
 ## 5. Code colours and maths
 
@@ -227,6 +227,17 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 10.6 | Delete your style (click twice). | It leaves the list and the Default is chosen. |
 | 10.7 | Put `@import url(https://example.com/a.css);` in a style. | It is ignored: nothing is fetched. |
 | 10.8 | Reopen Export. | The last style used is still chosen. |
+
+**Word export (10.x).** Select a sheet with headings, a list, a table, a footnote, a link and a picture, then Export…
+
+| # | Steps | Expected |
+|---|-------|----------|
+| 10.W1 | Choose A4, Normal margins, Page numbers on, then Save as Word…. Open the file in Word, Pages or LibreOffice. | Headings are real Heading styles (they show in the navigation pane); lists are real lists; the table has borders and a shaded header row; the footnote is a real footnote; the link is clickable; the picture is embedded and fits the page; page numbers are centred in the footer. |
+| 10.W2 | Repeat with Letter and Wide margins. | The page size and margins change accordingly. |
+| 10.W3 | Export a group of several sheets. | One document, sheets separated by a rule. |
+| 10.W4 | Import the file you just saved. | The text comes back as it was (the round trip). |
+
+Known gaps: maths appears as its TeX source; export styles do not apply to Word; SVG and WebP pictures appear as their alt text.
 
 ## 11. Tabs and windows
 

@@ -118,6 +118,7 @@ export {
 export type { Hasher, ImageIndexEntry, ImageRef, ImportedImage, UnusedImage } from './images'
 export { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLink, titleKey } from './wikiLinks'
 export type { Backlink, WikiLink } from './wikiLinks'
+export { markdownToDocx, type DocxOptions } from './docxExport'
 export { docxToMarkdown, type DocxImport, type DocxImportOptions } from './docxImport'
 export { importedMarkdown, rtfToMarkdown, textToMarkdown } from './importText'
 export { findMath, mathToHtml, type MathSpan } from './math'

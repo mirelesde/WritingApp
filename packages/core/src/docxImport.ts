@@ -53,6 +53,7 @@ interface Context {
   media: Map<string, string>
   warnings: string[]
   counters: Map<string, number[]>
+  plainBold: boolean
   imageCount: number
 }
 
@@ -336,7 +337,7 @@ type Block =
   | { kind: 'para'; text: string }
   | { kind: 'quote'; text: string }
   | { kind: 'code'; text: string }
-  | { kind: 'item'; text: string }
+  | { kind: 'item'; text: string; list: boolean }
   | { kind: 'table'; rows: string[][] }
 
 function listInfo(ctx: Context, styleId: string | undefined, props: XmlElement | undefined): { numId: string; ilvl: number; bullet: boolean } | null {
@@ -369,7 +370,7 @@ function paragraphBlock(p: XmlElement, ctx: Context): Block | null {
   const props = child(p, 'w:pPr')
   const styleId = attr(props ? child(props, 'w:pStyle') : undefined, 'w:val')
   const pieces = paragraphPieces(p, ctx)
-  const text = (): string => render(pieces).trim()
+  const text = (): string => render(pieces, { bold: !ctx.plainBold }).trim()
   const level = headingLevel(ctx, styleId, props)
   if (level > 0) {
     const t = render(pieces, { bold: false }).replace(/\\\n/g, ' ').trim()
@@ -378,13 +379,13 @@ function paragraphBlock(p: XmlElement, ctx: Context): Block | null {
   const visible = pieces.filter((x) => x.raw || x.text.trim() !== '')
   if (visible.length === 0) return null
   const names = styleNames(ctx, styleId).join(' ')
-  if (visible.every((x) => x.code && !x.raw) || /\b(source code|preformatted|html preformatted|code block|macro text)\b/i.test(names)) {
+  if (visible.every((x) => x.code || (x.raw && x.text === '\\\n')) || /\b(source code|preformatted|html preformatted|code block|macro text)\b/i.test(names)) {
     return { kind: 'code', text: pieces.map((x) => x.text).join('').replace(/\\\n/g, '\n') }
   }
   const list = listInfo(ctx, styleId, props)
   if (list) {
     const marker = list.bullet ? '- ' : `${nextNumber(ctx, list.numId, list.ilvl)}. `
-    return { kind: 'item', text: `${'  '.repeat(list.ilvl)}${marker}${text().replace(/\\\n/g, '\n' + '  '.repeat(list.ilvl + 1))}` }
+    return { kind: 'item', list: list.bullet, text: `${'  '.repeat(list.ilvl)}${marker}${text().replace(/\\\n/g, '\n' + '  '.repeat(list.ilvl + 1))}` }
   }
   if (/\b(quote|block text|intense quote)\b/i.test(names)) {
     return { kind: 'quote', text: text() }
@@ -404,6 +405,7 @@ function nextNumber(ctx: Context, numId: string, ilvl: number): number {
 function tableBlock(tbl: XmlElement, ctx: Context): Block | null {
   const rows: string[][] = []
   for (const tr of elements(tbl, 'w:tr')) {
+    ctx.plainBold = rows.length === 0
     const row: string[] = []
     for (const tc of elements(tr, 'w:tc')) {
       const text = elements(tc, 'w:p')
@@ -421,6 +423,7 @@ function tableBlock(tbl: XmlElement, ctx: Context): Block | null {
     }
     if (row.length > 0) rows.push(row)
   }
+  ctx.plainBold = false
   return rows.length === 0 ? null : { kind: 'table', rows }
 }
 
@@ -446,7 +449,7 @@ function blocksToMarkdown(blocks: Block[]): string {
   const out: string[] = []
   let last: Block | undefined
   for (const b of blocks) {
-    if (b.kind === 'item' && last?.kind === 'item') out[out.length - 1] += '\n' + b.text
+    if (b.kind === 'item' && last?.kind === 'item' && b.list === last.list) out[out.length - 1] += '\n' + b.text
     else if (b.kind === 'code' && last?.kind === 'code') out[out.length - 1] = out[out.length - 1]!.replace(/\n```$/, '\n' + b.text + '\n```')
     else if (b.kind === 'quote' && last?.kind === 'quote') out[out.length - 1] += '\n>\n' + quote(b.text)
     else if (b.kind === 'heading') out.push(`${'#'.repeat(b.level)} ${b.text}`)
@@ -492,6 +495,7 @@ export async function docxToMarkdown(bytes: Uint8Array, options: DocxImportOptio
     media: new Map(),
     warnings: [],
     counters: new Map(),
+    plainBold: false,
     imageCount: 0
   }
   const notes = new Map<string, XmlElement>()

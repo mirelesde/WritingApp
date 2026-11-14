@@ -62,6 +62,11 @@ const marked = new Marked({
   },
 })
 
+/** Markdown as marked's tokens (with highlight and math), for exporters that build other formats. */
+export function markdownTokens(markdown: string): ReturnType<typeof marked.lexer> {
+  return marked.lexer(markdown)
+}
+
 export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')

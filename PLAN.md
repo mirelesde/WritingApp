@@ -639,9 +639,9 @@ asked for directly.
     numbered lists, hyperlinks, accents and Unicode; tables, pictures and
     headers are dropped, and Markdown characters in the text are escaped.
     Not yet checked in the app: the file dialog itself (it cannot be driven
-    by the test harness). Still to do: `.docx` (needs a converter library),
-    an existing folder of Markdown as a project, dropping files onto the
-    window, RTF headings (from style or size) and tables.
+    by the test harness). Still to do: an existing folder of Markdown as a
+    project, dropping files onto the window, RTF headings (from style or
+    size) and tables. **`.docx` is done**, see item 73.
 58. **More export routes.** Copy a sheet as rich text or HTML, export a
     whole group as one Markdown file, and print. EPUB export is a bigger
     sibling of these and lives in "Later".
@@ -1213,10 +1213,27 @@ tested with the in-memory one)
 - Whether "Join" is different from merge.
 - Undo for creating and renaming; undo that survives a restart.
 
+73. **Word (.docx) import and export.** **Done**, hand-written so core stays
+    platform-free (`fflate` for the zip, a small XML reader in `xml.ts`).
+    *Import* (`docxImport.ts`, File > Import…): headings (by style, outline
+    level or Title), bold, italic, strikethrough, highlight (`==`), code
+    (monospace fonts or code styles), links, bulleted and numbered lists with
+    nesting, quotes, tables, footnotes and endnotes (as `[^n]`), and pictures
+    (stored in the library's assets folder). Tracked changes are accepted
+    (insertions kept, deletions dropped). One file is one sheet. *Export*
+    (`docxExport.ts`, Export dialog > Save as Word…): real Heading styles,
+    lists, quotes, code, tables, footnotes, links, pictures embedded (PNG,
+    JPEG, GIF), horizontal rules, task boxes; page size, margins and page
+    numbers follow the PDF controls. Gaps: legacy `.doc` is not read;
+    comments, text boxes, equations (OMML) and cell merges are dropped on
+    import; maths exports as its TeX source in italics; export styles (the
+    CSS) do not apply to Word; SVG/WebP pictures export as their alt text;
+    not yet opened in Word itself (checked with macOS `textutil` and a
+    round trip through our own reader, which agree), and `textutil` shows
+    numbered lists as bullets, which looks like its own limitation.
+
 ## Later, in rough order
 
-- **DOCX export.** Deferred: it needs a dedicated library (or hand-written
-  Office XML), and neither is worth taking on before HTML and PDF are solid.
 - Export styles beyond item 69: title page, table of contents, per-style page setup.
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.

@@ -4,6 +4,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
   docxToMarkdown,
+  markdownToDocx,
   applyUndo,
   snapshotSidecar,
   createGroup,
@@ -473,6 +474,28 @@ export function registerLibraryIpc(): void {
     await fs.writeText(file, built.markdown)
     // The pictures the text uses go beside it, so its links work anywhere.
     await copyImagesBeside(file, folder, built.images)
+    return result.filePath
+  })
+
+  ipcMain.handle('export:saveDocx', async (event, paths: unknown, rawOptions: unknown) => {
+    if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
+    const options = parsePdfOptions(rawOptions)
+    const chosen = paths.map((p) => inside(p, true))
+    const built = await exportMarkdown(fs, await load(currentRoot), chosen, ASSETS_DIR)
+    const saveOptions: Electron.SaveDialogOptions = {
+      title: 'Export as Word',
+      defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.docx`,
+      filters: [{ name: 'Word document', extensions: ['docx'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window ? await dialog.showSaveDialog(window, saveOptions) : await dialog.showSaveDialog(saveOptions)
+    if (result.canceled || !result.filePath) return null
+    const images: Record<string, Uint8Array> = {}
+    for (const name of built.images) {
+      const from = join(currentRoot, ASSETS_DIR, name)
+      if (await fs.exists(from)) images[name] = await fs.readBinary(from)
+    }
+    await nodeFs.writeFile(result.filePath, markdownToDocx(built.markdown, { title: built.title, ...options, images }))
     return result.filePath
   })
 

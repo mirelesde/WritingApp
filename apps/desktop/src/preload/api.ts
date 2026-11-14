@@ -170,6 +170,8 @@ export interface Api {
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
   /** Asks where to save, writes the selection as Markdown, and copies the pictures it uses into a folder beside it. */
   saveExportMarkdown(paths: string[]): Promise<string | null>
+  /** Asks where to save, then writes the selection as a Word document with its pictures embedded. Null if cancelled. */
+  saveExportDocx(paths: string[], options: PdfOptions): Promise<string | null>
   saveExportPdf(paths: string[], options: PdfOptions, css?: string): Promise<string | null>
   /** The built-in export styles, then the writer's own. */
   exportStyles(): Promise<ExportStyleDef[]>
