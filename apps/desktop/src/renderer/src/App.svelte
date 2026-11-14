@@ -100,6 +100,8 @@
     save: async (path, content) => {
       try {
         await guard.save(path, content)
+        // The edit may have added or removed a picture's link.
+        checkUnused()
       } catch (e) {
         if (e instanceof SaveConflict) raiseConflict(path, edits[path] ?? content, e.disk)
         throw e

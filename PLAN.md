@@ -723,15 +723,10 @@ asked for directly.
       on purpose, it edits sheets); a migration for same-folder pictures
       from the dropped design (none exists outside a test library); and the
       image behaviour belongs in the user guide.
-    - **Image polish, for later (not built):** the unused-picture count
-      (palette entry) refreshes after the library loads or changes on disk
-      but not after an edit that removes a picture's link, so it can be out
-      of date until the next change (the Clean Up dialog always recomputes
-      when opened); undoing an insert or paste leaves the file in
-      `.assets/`, where Clean Up later finds it; the `Cmd/Ctrl+Alt+I`
-      accelerator was tested only through the command it sends, not
-      pressed on the native menu; duplicate detection is exact, so a
-      re-saved or resized copy counts as a different picture.
+    - **Stale unused count: fixed.** The count refreshes a moment after
+      every save, so removing a link (or undoing an insert) updates it; the
+      Clean Up dialog still recomputes when opened. Undoing an insert or
+      paste still leaves the file in `.assets/`, where Clean Up finds it.
     - Where images live was an open question; options below, with the
       choice made.
     - **Alternative A, next to each sheet: tried, then dropped** (in the folder or a
