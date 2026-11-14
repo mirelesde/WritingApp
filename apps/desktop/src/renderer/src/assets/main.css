@@ -293,7 +293,6 @@ button {
   color: var(--comment);
 }
 
-.mac .layout.no-library .sidebar.peek .sheets header,
-.mac .layout.no-library .library:focus-within ~ .sheets header {
+.mac .layout.no-library .sidebar.peek .sheets header {
   padding-left: 21px;
 }

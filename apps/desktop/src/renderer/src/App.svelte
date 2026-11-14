@@ -1125,7 +1125,10 @@
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || !library) return
     if (e.key === '[') void step(-1)
     else if (e.key === ']') void step(1)
-    else if (e.key === '1') treeEl?.focus()
+    else if (e.key === '1') {
+      if (sidebarHidden) sidebarPeek = true
+      treeEl?.focus()
+    }
     else if (e.key === '2') sheetsEl?.focus()
     else if (e.key === '3' && selection[0]) editors[selection[0]]?.focus()
     else return
@@ -1337,6 +1340,10 @@
       aria-label="Library"
       tabindex="0"
       bind:this={treeEl}
+      onfocusout={(e) => {
+        const box = e.currentTarget.closest('.sidebar')
+        if (sidebarHidden && !box?.contains(e.relatedTarget as Node | null)) sidebarPeek = false
+      }}
       onkeydown={treeKeydown}
       onmousedown={keepFocus(treeEl)}
     >
@@ -1694,8 +1701,7 @@
     transform: translateX(-101%);
     transition: transform 140ms ease-out;
   }
-  .layout.no-library .sidebar.peek .library,
-  .layout.no-library .library:focus-within {
+  .layout.no-library .sidebar.peek .library {
     transform: none;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
@@ -1705,8 +1711,7 @@
     z-index: 29;
     transition: transform 140ms ease-out;
   }
-  .layout.no-library .sidebar.peek .sheets,
-  .layout.no-library .library:focus-within ~ .sheets {
+  .layout.no-library .sidebar.peek .sheets {
     transform: translateX(240px);
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
