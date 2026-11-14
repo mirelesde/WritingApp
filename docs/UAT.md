@@ -237,7 +237,7 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 10.W3 | Export a group of several sheets. | One document, sheets separated by a rule. |
 | 10.W4 | Import the file you just saved. | The text comes back as it was (the round trip). |
 
-The dialog has one Format picker (PDF, Word, HTML, Markdown) and one Export button; the row below shows only that format's options (page size, margins and page numbers for PDF and Word; the pictures choice for HTML; nothing for Markdown), and the Style row shows only for PDF and HTML. The last format is remembered.
+The dialog has one Format picker (PDF, Word, EPUB, HTML, Markdown) and one Export button; the row below shows only that format's options (page size, margins and page numbers for PDF and Word; title, author, language and cover for EPUB; the pictures choice for HTML; nothing for Markdown), an extras row (Number chapters, Title page, title in the margin) shows for PDF, HTML and EPUB, and the Style row shows for PDF, HTML and EPUB. The last format is remembered.
 
 Known gaps: maths appears as its TeX source; export styles do not apply to Word; SVG and WebP pictures appear as their alt text.
 
@@ -367,3 +367,10 @@ Quick checks that earlier features still work with today's changes.
 1. Export > Format PDF. Tick Number chapters, Title page (fill title and author) and Title in the top margin. The preview shows a title page and numbered headings. Export: page 1 is the title page, headings read "1. …", each page has the title at the top. A table of contents (if any) still shows the right page numbers.
 2. Make a style with `@page { size: 6in 9in; margin: 0.8in }`, export as PDF: the pages are 6 by 9 inches whatever the dialog says.
 3. Number chapters also works for HTML and EPUB; Title page for HTML.
+
+## 13.27 Dropdowns in dialog headers (macOS)
+
+1. Open Export. Click the Format picker: the list opens below it, with the same row height as the buttons beside it.
+2. Click an option: it is chosen and the list closes. Open it again and click outside it (on the preview or the title): the list closes and the dialog responds as normal.
+3. Press Escape with the list open: the list closes first; Escape again closes the dialog.
+4. Repeat for the Page size, Margins, Language and Style pickers. None of them leaves the dialog unresponsive or drags the window.
