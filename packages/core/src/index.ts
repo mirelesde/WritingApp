@@ -74,13 +74,14 @@ export type { Align, Table, TableBlock } from './table'
 export {
   addFootnoteChanges,
   findFootnoteDefs,
+  footnoteJump,
   findFootnoteRefs,
   nextFootnoteId,
   removeFootnoteChanges,
   setFootnoteChange,
   stripFootnotes
 } from './footnotes'
-export type { FootnoteDef, FootnoteRef, TextChange } from './footnotes'
+export type { FootnoteDef, FootnoteJump, FootnoteRef, TextChange } from './footnotes'
 export {
   createFromTemplate,
   dailyNote,

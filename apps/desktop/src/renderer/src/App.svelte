@@ -286,6 +286,11 @@
     if (path) editors[path]?.insertFootnoteAtCursor()
   }
 
+  function goToFootnote(): void {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (path && !editors[path]?.goToFootnoteAtCursor()) showInfo('This sheet has no footnotes.')
+  }
+
   let styleOpen = $state(false)
   let styleNow = $state<LineStyle>('body')
   function toggleStyleMenu(): void {
@@ -1297,6 +1302,7 @@
     else if (command === 'preferences') preferencesOpen = true
     else if (command === 'insert-table') insertTable()
     else if (command === 'insert-footnote') insertFootnote()
+    else if (command === 'go-to-footnote') goToFootnote()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
     else if (command === 'duplicate') void duplicateSelected()
@@ -1385,6 +1391,7 @@
       menu('Format', 'Link', 'format-link', `${keyMod}K`),
       menu('Insert', 'Table', 'insert-table'),
       menu('Insert', 'Footnote', 'insert-footnote'),
+      menu('Insert', 'Go to Footnote', 'go-to-footnote', `${keyMod}⌥J`),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
       menu('View', 'Toggle Sheet List', 'toggle-sheets'),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),

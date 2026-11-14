@@ -3,6 +3,7 @@ import {
   addFootnoteChanges,
   findFootnoteDefs,
   findFootnoteRefs,
+  footnoteJump,
   nextFootnoteId,
   removeFootnoteChanges,
   setFootnoteChange,
@@ -87,5 +88,25 @@ describe('footnotes elsewhere', () => {
     expect(html).toContain('<li id="fn-1">Beta')
     expect(html).toContain('<li id="fn-2">Alpha')
     expect(html).not.toContain('[^')
+  })
+})
+
+describe('footnoteJump', () => {
+  const text = 'One[^1] and two[^2].\n\n[^1]: first\n[^2]: second'
+  it('opens the note when the cursor is at a reference', () => {
+    expect(footnoteJump(text, 7)).toEqual({ action: 'open', id: '1' })
+    expect(footnoteJump(text, 4)).toEqual({ action: 'open', id: '1' })
+  })
+  it('goes from a definition to its reference', () => {
+    const at = text.indexOf('second')
+    expect(footnoteJump(text, at)).toEqual({ action: 'move', pos: text.indexOf('[^2]') + 4 })
+  })
+  it('otherwise moves after the next reference, wrapping round', () => {
+    expect(footnoteJump(text, 0)).toEqual({ action: 'move', pos: 7 })
+    expect(footnoteJump(text, 12)).toEqual({ action: 'move', pos: text.indexOf('[^2]') + 4 })
+    expect(footnoteJump(text, text.indexOf('.\n') + 1)).toEqual({ action: 'move', pos: 7 })
+  })
+  it('does nothing without references', () => {
+    expect(footnoteJump('plain', 2)).toBeNull()
   })
 })

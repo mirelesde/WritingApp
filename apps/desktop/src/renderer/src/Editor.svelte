@@ -8,7 +8,7 @@
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
   import { insertTable } from './tableWidget'
-  import { insertFootnote } from './footnotes'
+  import { goToFootnote, insertFootnote } from './footnotes'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
@@ -108,6 +108,11 @@
   /** Adds a footnote at the cursor and opens it for typing. */
   export function insertFootnoteAtCursor(): void {
     if (view) insertFootnote(view)
+  }
+
+  /** Opens the note at the cursor, or moves between a note and its reference. */
+  export function goToFootnoteAtCursor(): boolean {
+    return view ? goToFootnote(view) : false
   }
 
   /** The text now in the editor. */

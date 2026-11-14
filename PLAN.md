@@ -588,9 +588,7 @@ asked for directly.
     HTML export renderer in the sandboxed iframe. Scroll sync is optional.
 19. **Favorites (pinned sheets).** A pinned section at the top of the
     library; stored in the root sidecar so it travels with the folder.
-20. **Footnotes.** *Mostly done:* Insert > Footnote, a chip with an editable popover, hidden from previews and numbered in HTML export; PDF shares the HTML path. Still to do: jump between reference and definition.* `[^1]` syntax rendered in export and preview, with
-    editor highlighting and jump between reference and definition. Needs a
-    `marked` footnote extension.
+20. ~~**Footnotes.**~~ **Done.** Insert > Footnote adds a `[^1]` reference drawn as a chip; clicking it opens the note in an editable popover; definitions are hidden from the text, previews and counts, and HTML/PDF export numbers them. Insert > Go to Footnote (Cmd/Ctrl+Alt+J) opens the note at the cursor, jumps from a definition to its reference, or moves to the next reference; inside an open note the same shortcut moves on to the next footnote (`footnoteJump` in core). Not done: `marked`-level footnote rendering in a live Markdown preview (item 18 does not exist yet).
 21. **Goals and progress.** A word target per sheet or group with a
     progress indicator in the status bar. Stored in the sidecar. (Moved up
     from "Later".)

@@ -47,6 +47,7 @@ export type MenuCommand =
   | 'toggle-sheets'
   | 'insert-table'
   | 'insert-footnote'
+  | 'go-to-footnote'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 

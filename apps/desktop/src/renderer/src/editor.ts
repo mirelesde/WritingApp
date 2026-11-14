@@ -18,7 +18,7 @@ import { richPaste } from './richPaste'
 import { blankLines } from './blankLines'
 import { taskBoxes } from './taskBoxes'
 import { tableWidgets } from './tableWidget'
-import { footnotes } from './footnotes'
+import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -212,6 +212,7 @@ export function editorExtensions({
       ...formattingKeymap,
       ...blockKeymap,
       // Before the default keymap, which uses these for multiple cursors.
+      ...footnoteKeymap,
       { key: 'Mod-Alt-ArrowUp', run: previousHeading },
       { key: 'Mod-Alt-ArrowDown', run: nextHeading },
       indentWithTab,

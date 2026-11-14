@@ -164,6 +164,27 @@ export function removeFootnoteChanges(text: string, id: string): TextChange[] {
   return changes.sort((a, b) => a.from - b.from)
 }
 
+/** What "go to footnote" should do for a cursor at `head`. */
+export type FootnoteJump = { action: 'open'; id: string } | { action: 'move'; pos: number }
+
+/**
+ * Next step from the cursor: at a reference, open its note; inside a note's
+ * definition, go to its reference; anywhere else, go to just after the next
+ * reference (wrapping round). Null when the text has no references.
+ */
+export function footnoteJump(text: string, head: number): FootnoteJump | null {
+  const refs = findFootnoteRefs(text)
+  const here = refs.find((r) => head >= r.from && head <= r.to)
+  if (here) return { action: 'open', id: here.id }
+  const def = findFootnoteDefs(text).find((d) => head >= d.from && head <= d.to)
+  if (def) {
+    const ref = refs.find((r) => r.id === def.id)
+    if (ref) return { action: 'move', pos: ref.to }
+  }
+  const next = refs.find((r) => r.from > head) ?? refs[0]
+  return next ? { action: 'move', pos: next.to } : null
+}
+
 /** The text with definitions removed and references taken out, for previews and counts. */
 export function stripFootnotes(text: string): string {
   if (!text.includes('[^')) return text

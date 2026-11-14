@@ -4,6 +4,7 @@ import {
   addFootnoteChanges,
   findFootnoteDefs,
   findFootnoteRefs,
+  footnoteJump,
   removeFootnoteChanges,
   setFootnoteChange
 } from '@writingapp/core'
@@ -158,6 +159,16 @@ export function openFootnote(view: EditorView, id: string, anchor?: HTMLElement)
     if (event.key === 'Escape' || (event.key === 'Enter' && !event.shiftKey)) {
       event.preventDefault()
       close()
+    } else if ((event.metaKey || event.ctrlKey) && event.altKey && event.code === 'KeyJ') {
+      // Go to footnote from inside a note: close it and move on to the next reference.
+      event.preventDefault()
+      close()
+      const refs = findFootnoteRefs(view.state.doc.toString())
+      const at = refs.findIndex((r) => r.id === id)
+      const next = refs[(at + 1) % refs.length]
+      if (next && refs.length > 1) {
+        view.dispatch({ selection: { anchor: next.to }, scrollIntoView: true, userEvent: 'select' })
+      }
     }
   })
   remove.addEventListener('click', () => {
@@ -181,6 +192,21 @@ export function insertFootnote(view: EditorView): void {
   view.dispatch({ changes, selection: { anchor: refEnd }, userEvent: 'input.footnote' })
   openFootnote(view, id)
 }
+
+/**
+ * Go to footnote: at a reference, open its note; inside a definition, go to its
+ * reference; elsewhere, go to the next reference. Returns whether there was one.
+ */
+export function goToFootnote(view: EditorView): boolean {
+  const jump = footnoteJump(view.state.doc.toString(), view.state.selection.main.head)
+  if (!jump) return false
+  if (jump.action === 'open') openFootnote(view, jump.id)
+  else view.dispatch({ selection: { anchor: jump.pos }, scrollIntoView: true, userEvent: 'select' })
+  return true
+}
+
+/** Cmd/Ctrl+Alt+J. */
+export const footnoteKeymap = [{ key: 'Mod-Alt-j', run: goToFootnote, preventDefault: true }]
 
 /** The footnote chips and hidden notes, plus the popover editor. */
 export const footnotes = [field]
