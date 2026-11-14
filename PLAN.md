@@ -579,9 +579,9 @@ asked for directly.
     renames itself on save); groups rename the folder and keep the sidecar.
     Needs a rename operation with undo. Comes before item 17 so the context
     menu can offer it.
-17. ~~**Right-click menus (user).**~~ **Done.** Sheets, groups and the library root have a native menu with new sheet/group, rename, duplicate, cut / copy / paste, move to…, move to trash, reveal in Finder / file manager and copy path. Cmd/Ctrl+C, X, V and D work in the sheet list and the tree (File > Duplicate has no shortcut, since the editor uses Cmd/Ctrl+D). Copies are one undo step (`copyNodes` in core). On a sheet, a group and the library root:
+17. ~~**Right-click menus (user).**~~ **Done.** Sheets, groups and the library root have a right-click menu (drawn in the app since the UI consistency work, see U4) with new sheet/group, rename, duplicate, cut / copy / paste, move to…, move to trash, reveal in Finder / file manager and copy path. Cmd/Ctrl+C, X, V and D work in the sheet list and the tree (File > Duplicate has no shortcut, since the editor uses Cmd/Ctrl+D). Copies are one undo step (`copyNodes` in core). On a sheet, a group and the library root:
     new sheet/group, rename, move to…, duplicate, cut / copy / paste,
-    delete. A native menu from the main process, reusing the existing
+    delete. The menu items run the existing
     `op:*` handlers. Cut/copy/paste and duplicate need a node clipboard and
     a copy operation in core (new, with undo).
 18. **Markdown preview.** Toggle or side-by-side live preview, reusing the
@@ -1002,6 +1002,57 @@ tone instead of lines, quiet line icons, little chrome in the editor.
 Skipped from the Ulysses window: promotional buttons, and its blue accent
 (ours stays teal unless asked otherwise).
 
+**UI consistency (one look on every OS)**
+
+The aim is a Ulysses-inspired look that is the same on macOS, Windows and
+Linux, with the main window (sidebar, sheet list, editor) as the reference.
+It is not an attempt to look native. What stays with the OS: file open and
+save panels, the window frame and the application menu bar, spellcheck, the
+system dark/light setting, and the custom accent's colour picker (kept on
+purpose: pickers are a system tool, and the native ones have eyedroppers and
+saved colours). Everything drawn inside the window is the app's own.
+
+- U1. ~~**Shared tokens and shell.**~~ **Done.** `main.css` holds the radii, popover
+  shadow, scrim, layering (`--z-peek` 30, `--z-dialog` 40, `--z-modal` 60),
+  `--on-accent` and `--danger`, plus shared `.dlg`, `.btn` and `.input`
+  styles. Every dialog uses one shell; palettes sit near the top, alerts
+  (conflict, recovery) are centred. Buttons are borderless with a light tint,
+  the accent only marks the main action, inputs match the sheet filter.
+- U2. ~~**Pills and chips.**~~ **Done.** Keyword chips, the Find option toggles and the
+  word-count pill share one look (tinted, no outline).
+- U3. ~~**Type scale and focus.**~~ **Done.** Sizes are 11, 12, 13 and 15 px (larger
+  ones only for headings and empty states). Keyboard focus draws an accent
+  ring on buttons and selects; containers that take focus only for key
+  handling (`tabindex="-1"`) draw none. Section labels are sentence case.
+- U4. ~~**Controls drawn in the app.**~~ **Done.** `Select.svelte` replaces the browser's
+  dropdown (keyboard driven, grouped options, flips above when short of
+  room); checkboxes and scrollbars are drawn in CSS; right-click menus are
+  one `ContextMenu.svelte` fed by `contextMenu.ts` (sheet, group and library
+  menus, and the text menu with spelling suggestions). The main process only
+  reports the right-click's position and spelling data (`context:edit`) and
+  runs the edit commands, reveal and copy path. Keys are caught on the window
+  while a menu is open, so the editor keeps its selection.
+- U5. ~~**Bundled UI font.**~~ **Done.** Inter (SIL OFL; latin and latin-ext, about 130 KB
+  in `assets/fonts`) replaces the per-OS system font. The editor fonts are
+  the writer's own choice and are unchanged.
+- Gaps, to do when needed:
+  - The text context menu's main-process path (a real right-click on editor
+    text, then Cut/Copy/Paste through `webContents`) was not clicked through;
+    only the in-window half was checked.
+  - Windows and Linux have not been looked at: Inter metrics, the solid
+    (non-vibrant) sidebar, window-control spacing, scrollbars.
+  - Dark mode was checked on the dialogs only, not every surface.
+  - Inactive-window state (greyed selection and toolbar when the window is
+    not frontmost) and a soft focus halo on fields are not done.
+  - Escape and Return behaviour (Return = main button) was not checked in
+    every dialog.
+  - Row padding in the palettes (7 x 10) still differs from the menus
+    (5 x 9); the dialogs' `h2` sizes follow the shared 15 px but the older
+    scoped rules are not all removed.
+  - Lint reports 5 errors (a `Map` in `KeywordsDialog.svelte`, a regex escape
+    in `wikiLinks.ts`, missing return types in two tests, a needless mustache);
+    none were introduced by this work except possibly the first.
+
 ## Version history: design notes
 
 The worry: a writer wants to see their work as it was last Tuesday, or
@@ -1158,7 +1209,7 @@ tested with the in-memory one)
   menu, since the editor uses it.
 - Get signing certificates (Apple Developer ID, a Windows code-signing
   certificate) and run the release workflow once end to end.
-- Try export, watching and builds on Windows and Linux.
+- Try export, watching and builds on Windows and Linux, and look at the UI there (see the gaps under "UI consistency").
 - Whether "Join" is different from merge.
 - Undo for creating and renaming; undo that survives a restart.
 

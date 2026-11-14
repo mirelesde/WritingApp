@@ -263,7 +263,26 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 12.10 | Move, duplicate, split, merge or rename a sheet that has keywords. | The keywords follow (merge keeps all of them). |
 | 12.11 | Right-click a sheet, Keywords…. | The dialog opens for it. |
 
-## 13. Regression sweep
+## 13. UI consistency
+
+| # | Do | Expect |
+| 13.1 | Open Quick Open, Command Palette, Move To, Find in Library, Preferences, Export, Keywords, Clean Up Images (Library > Clean Up Images…). | All look like one family: same corner radius, shadow and dim; buttons borderless with a light tint, the main one in the accent colour. |
+| 13.2 | Repeat 13.1 in dark mode (Preferences > Theme > Dark). | Text on the accent colour is readable everywhere; nothing is stuck white or red. |
+| 13.3 | In Export, open the Style dropdown. | An in-app list opens under it with "Built in" and "Yours" headings and a tick on the current one. |
+| 13.4 | With the dropdown open, press Down, Return. | The next style is chosen. Escape closes only the list, not the dialog. |
+| 13.5 | Open a dropdown near the bottom of the window. | It opens above the field instead of off screen. |
+| 13.6 | Look at "Page numbers" in Export. | A drawn checkbox (rounded square, accent when ticked), not the system one. |
+| 13.7 | Scroll the editor and the sheet list. | Thin rounded scrollbars, the same colour logic in light and dark. |
+| 13.8 | Right-click a sheet, a group and the library name. | An in-app menu opens at the pointer with the items for that kind; Paste is dimmed until something is cut or copied. |
+| 13.9 | In a menu, press Down twice, then Return; also try Escape and clicking elsewhere. | The highlighted row runs; Escape or a click closes it without acting. |
+| 13.10 | Right-click near the right or bottom edge of the window. | The menu is pulled back inside the window. |
+| 13.11 | Right-click a misspelled word in the editor. | Up to five suggestions, Add to Dictionary, then Undo, Redo, Cut, Copy, Paste, Select All with shortcuts. **(the real right-click path was not clicked through)** |
+| 13.12 | Choose a suggestion, then Cut and Paste from that menu. | The word is replaced; cut and paste act on the editor's selection. |
+| 13.13 | Press Tab through a dialog's buttons. | A visible accent ring on the focused button; no ring around the dialog itself. |
+| 13.14 | Look at any section label (Preferences, Outline). | Sentence case, not spaced capitals; text is in Inter on every OS. |
+| 13.15 | Preferences > Accent colour > the last swatch. | The system colour panel opens (kept on purpose). |
+
+## 14. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 
