@@ -142,3 +142,26 @@ describe('the hash index', () => {
     expect((await saveImage(fs, '/lib', 'y.png', new Uint8Array([1]), h.hash)).reused).toBe(false)
   })
 })
+
+describe('droppedImageLink', () => {
+  it('takes the picture from dropped HTML, with its alt text', async () => {
+    const { droppedImageLink } = await import('./images')
+    expect(droppedImageLink('<a href="x"><img src="https://e.com/a%20b/cat.png?w=1" alt="A cat"></a>', '')).toBe(
+      '![A cat](https://e.com/a%20b/cat.png?w=1)',
+    )
+    expect(droppedImageLink("<img alt='x &amp; y' src='https://e.com/p(1).jpg'>", '')).toBe('![x & y](https://e.com/p%281%29.jpg)')
+  })
+
+  it('names it after the file when there is no alt text, and falls back to the address list', async () => {
+    const { droppedImageLink } = await import('./images')
+    expect(droppedImageLink('<img src="https://e.com/dir/Sunset.JPG">', '')).toBe('![Sunset](https://e.com/dir/Sunset.JPG)')
+    expect(droppedImageLink('', '# comment\nhttps://e.com/x/pic.webp\n')).toBe('![pic](https://e.com/x/pic.webp)')
+  })
+
+  it('ignores anything that is not a web picture', async () => {
+    const { droppedImageLink } = await import('./images')
+    expect(droppedImageLink('<p>text</p>', 'https://e.com/page')).toBeNull()
+    expect(droppedImageLink('<img src="file:///etc/x.png">', '')).toBeNull()
+    expect(droppedImageLink('<img src="data:image/png;base64,AA">', '')).toBeNull()
+  })
+})

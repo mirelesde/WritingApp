@@ -99,6 +99,7 @@ export {
   assetsMentioned,
   unusedImages,
   assetNameFromUrl,
+  droppedImageLink,
   embedImages,
   imagesSize,
   linkImagesToFolder,

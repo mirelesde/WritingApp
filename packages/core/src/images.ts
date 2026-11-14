@@ -381,3 +381,50 @@ export async function imagesSize(fs: FileSystem, root: string, names: string[]):
   }
   return total
 }
+
+/** The path part of a web address: no host, query or fragment. */
+function pathOfUrl(url: string): string {
+  return url.replace(/^https?:\/\/[^/?#]*/i, '').replace(/[?#].*$/, '')
+}
+
+function attr(tag: string, name: string): string | undefined {
+  const m = new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i').exec(tag)
+  return m ? (m[1] ?? m[2]) : undefined
+}
+
+function decodeEntities(text: string): string {
+  return text.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+}
+
+/**
+ * The picture a web page offered when an image was dragged out of it: the
+ * `<img>` in the dropped HTML, or else a web address in the dropped list that
+ * ends like a picture. Only http and https addresses count.
+ */
+export function droppedImageLink(html: string, uriList: string): string | null {
+  let url: string | undefined
+  let alt = ''
+  const tag = /<img\b[^>]*>/i.exec(html)?.[0]
+  if (tag) {
+    url = attr(tag, 'src')
+    alt = attr(tag, 'alt') ?? ''
+  }
+  if (!url) {
+    url = uriList
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find((l) => l && !l.startsWith('#') && /^https?:\/\//i.test(l) && isImageName(pathOfUrl(l)))
+  }
+  if (!url) return null
+  url = decodeEntities(url).trim()
+  if (!/^https?:\/\//i.test(url)) return null
+  if (alt === '') {
+    try {
+      alt = decodeURIComponent(fileNameOf(pathOfUrl(url))).replace(/\.[^.]*$/, '')
+    } catch {
+      alt = ''
+    }
+  }
+  const safe = encodeURI(decodeURI(url)).replace(/\(/g, '%28').replace(/\)/g, '%29')
+  return `![${decodeEntities(alt).replace(/[[\]\n]/g, ' ').trim()}](${safe})`
+}

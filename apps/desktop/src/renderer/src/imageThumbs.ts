@@ -1,6 +1,6 @@
 import { EditorState, RangeSet, StateField, type Range } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view'
-import { assetNameFromUrl, findImages } from '@writingapp/core'
+import { assetNameFromUrl, droppedImageLink, findImages } from '@writingapp/core'
 
 /**
  * A picture from the library's assets folder is drawn inline as a small fixed
@@ -180,10 +180,20 @@ export const imagePaste = EditorView.domEventHandlers({
   },
   drop(event, view) {
     const files = [...(event.dataTransfer?.files ?? [])].filter((f) => f.type in PASTED_TYPES)
-    if (files.length === 0) return false
-    event.preventDefault()
     // At the spot it was dropped on, not wherever the cursor was.
     const at = view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? view.state.selection.main.head
+    if (files.length === 0) {
+      // A picture dragged out of a web page may come as an address only: link to it.
+      const link = droppedImageLink(
+        event.dataTransfer?.getData('text/html') ?? '',
+        event.dataTransfer?.getData('text/uri-list') ?? ''
+      )
+      if (!link) return false
+      event.preventDefault()
+      insertImages(view, [link], at)
+      return true
+    }
+    event.preventDefault()
     void saveImageFiles(files).then((markdown) => insertImages(view, markdown, at))
     return true
   }

@@ -680,9 +680,12 @@ asked for directly.
     - **Built (b):** pasting a picture (screenshot, copied image, a file
       copied in the file manager) saves it in `.assets/` and shows its
       thumbnail at the cursor.
-    - **Built (c):** dropping picture files on the editor saves them in `.assets/` and puts the thumbnails where they were dropped. Pictures
-      dragged out of a web page work when the browser hands over the file;
-      one that gives only an address is not handled.
+    - **Built (c):** dropping picture files on the editor saves them in
+      `.assets/` and puts the thumbnails where they were dropped. A picture
+      dragged out of a web page that comes as an address only (no file) is
+      inserted as a Markdown link to that address, `![alt](https://…)`; it
+      shows as plain text in the editor, not a thumbnail, and HTML export
+      leaves it as a link to the web.
     - **Insert** an image from a file picker, through a toolbar button, an
       Insert menu item and a keyboard shortcut.
     - **Paste** an image from the clipboard (screenshots, copied images).
@@ -692,6 +695,20 @@ asked for directly.
       into the library, rendered inline in the editor and embedded on
       HTML and PDF export. Unreadable or missing images show a placeholder
       rather than failing the sheet.
+    - **Image gaps, for later (not built):**
+      PDF export with pictures has never been run (it should embed like
+      HTML); the native Insert menu item, file picker and export save
+      dialog were tested only underneath, never clicked through; no toolbar
+      button (there is no toolbar yet); dropping a file outside the editor
+      (the sidebar, say) is unchecked and may make Electron open it as a
+      page; alt text and captions can only be edited in the Markdown; a
+      missing picture only fades its thumbnail, with no clear "missing"
+      mark; dragging pictures between sheets inside the app is not handled;
+      web pictures (linked by address) get no thumbnail; resizing, cropping
+      or choosing the thumbnail crop; merging existing duplicates (left out
+      on purpose, it edits sheets); a migration for same-folder pictures
+      from the dropped design (none exists outside a test library); and the
+      image behaviour belongs in the user guide.
     - Where images live was an open question; options below, with the
       choice made.
     - **Alternative A, next to each sheet: tried, then dropped** (in the folder or a
