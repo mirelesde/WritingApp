@@ -53,9 +53,20 @@ describe('importing', () => {
     await fs.makeDir('/in')
     await fs.writeBinary('/in/cat.png', new Uint8Array([137, 80, 255]))
     await fs.writeText('/in/notes.txt', 'x')
-    const done = await importImages(fs, '/lib', ['/in/cat.png', '/in/notes.txt', '/in/cat.png'])
-    expect(done.map((d) => d.name)).toEqual(['cat.png', 'cat-2.png'])
+    const done = await importImages(fs, '/lib', ['/in/cat.png', '/in/notes.txt'])
+    expect(done.map((d) => d.name)).toEqual(['cat.png'])
     expect(Array.from(await fs.readBinary('/lib/.assets/cat.png'))).toEqual([137, 80, 255])
+  })
+
+  it('stores identical pictures once, whatever they are called', async () => {
+    const fs = new MemoryFileSystem({ '/lib/a.md': '' })
+    const first = await saveImage(fs, '/lib', 'image.png', new Uint8Array([1, 2, 3]))
+    const again = await saveImage(fs, '/lib', 'screenshot.png', new Uint8Array([1, 2, 3]))
+    const other = await saveImage(fs, '/lib', 'image.png', new Uint8Array([1, 2, 4]))
+    expect([first.reused, again.reused, other.reused]).toEqual([false, true, false])
+    expect(again.name).toBe('image.png')
+    expect(other.name).toBe('image-2.png')
+    expect((await fs.list('/lib/.assets')).length).toBe(2)
   })
 
   it('saves pasted bytes', async () => {

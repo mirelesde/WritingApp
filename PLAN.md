@@ -652,8 +652,9 @@ asked for directly.
       undo logic that had to carry pictures, and image files in every
       project folder.
     - **Still to build for B, in this order, one commit each:**
-      (1) identical pictures stored once: hash at insert, paste and drop,
-      and reuse the file already in `.assets/`; (2) an index of which sheets
+      (1) **built:** identical pictures stored once; insert, paste and drop
+      compare the bytes with what `.assets/` holds (same size first) and
+      reuse the file already there; (2) an index of which sheets
       link which pictures, kept in the sheet cache, so "which pictures does
       nothing use" is a lookup; checked in the background after load, shown
       as a quiet count ("3 unused images, 4.2 MB"); (3) Clean Up Unused

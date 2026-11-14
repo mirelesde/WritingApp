@@ -112,6 +112,8 @@ export function findImages(text: string): ImageRef[] {
 export interface ImportedImage {
   name: string
   markdown: string
+  /** An identical picture was already in the library, so nothing new was stored. */
+  reused: boolean
 }
 
 async function takenNames(fs: FileSystem, root: string): Promise<Set<string>> {
@@ -120,38 +122,63 @@ async function takenNames(fs: FileSystem, root: string): Promise<Set<string>> {
   return new Set((await fs.list(dir)).map((e) => e.name))
 }
 
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i])
+}
+
 /**
- * Copies picture files into the library's assets folder and returns the
- * Markdown for each. Files that are not images are skipped.
+ * The picture already in the assets folder that has exactly these bytes, if
+ * there is one. Files of another size are skipped without being read, where
+ * the file system can tell sizes cheaply.
+ */
+async function findIdentical(fs: FileSystem, root: string, data: Uint8Array): Promise<string | null> {
+  const dir = joinPath(root, ASSETS_DIR)
+  if (!(await fs.exists(dir))) return null
+  for (const entry of await fs.list(dir)) {
+    if (entry.kind !== 'file' || !isImageName(entry.name)) continue
+    const path = joinPath(dir, entry.name)
+    const size = (await fs.fileTimes?.(path))?.size
+    if (size !== undefined && size !== data.length) continue
+    if (sameBytes(await fs.readBinary(path), data)) return entry.name
+  }
+  return null
+}
+
+/** Stores the bytes once: reuses an identical picture, or writes a new file. */
+async function store(fs: FileSystem, root: string, originalName: string, data: Uint8Array): Promise<ImportedImage> {
+  const alt = (n: string): string => n.replace(/\.[^.]*$/, '')
+  const existing = await findIdentical(fs, root, data)
+  if (existing) return { name: existing, markdown: imageMarkdown(existing, alt(originalName)), reused: true }
+  const dir = joinPath(root, ASSETS_DIR)
+  await fs.makeDir(dir)
+  const name = assetName(originalName, await takenNames(fs, root))
+  await fs.writeBinary(joinPath(dir, name), data)
+  return { name, markdown: imageMarkdown(name, alt(name)), reused: false }
+}
+
+/**
+ * Puts picture files in the library's assets folder and returns the Markdown
+ * for each. A picture already there, byte for byte, is reused rather than
+ * stored again. Files that are not images are skipped.
  */
 export async function importImages(fs: FileSystem, root: string, sources: string[]): Promise<ImportedImage[]> {
-  const dir = joinPath(root, ASSETS_DIR)
-  const taken = await takenNames(fs, root)
   const done: ImportedImage[] = []
   for (const source of sources) {
     const original = fileNameOf(source)
     if (!isImageName(original)) continue
-    await fs.makeDir(dir)
-    const name = assetName(original, taken)
-    await fs.copyFile(source, joinPath(dir, name))
-    taken.add(name)
-    done.push({ name, markdown: imageMarkdown(name, name.replace(/\.[^.]*$/, '')) })
+    done.push(await store(fs, root, original, await fs.readBinary(source)))
   }
   return done
 }
 
-/** Saves picture bytes, such as a pasted screenshot, in the assets folder. */
+/** Saves picture bytes, such as a pasted screenshot, in the assets folder (or reuses an identical picture). */
 export async function saveImage(
   fs: FileSystem,
   root: string,
   originalName: string,
   data: Uint8Array,
 ): Promise<ImportedImage> {
-  const dir = joinPath(root, ASSETS_DIR)
-  await fs.makeDir(dir)
-  const name = assetName(originalName, await takenNames(fs, root))
-  await fs.writeBinary(joinPath(dir, name), data)
-  return { name, markdown: imageMarkdown(name, name.replace(/\.[^.]*$/, '')) }
+  return store(fs, root, originalName, data)
 }
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
