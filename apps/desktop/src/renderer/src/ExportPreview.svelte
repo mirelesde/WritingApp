@@ -1,9 +1,9 @@
 <script lang="ts">
   import Select from './Select.svelte'
   import { onMount } from 'svelte'
-  import { applyExportStyle, embeddedGrowth, FOLDER_SUGGESTION_GROWTH } from '@writingapp/core'
+  import { applyExportStyle, CHAPTER_NUMBER_CSS, embeddedGrowth, FOLDER_SUGGESTION_GROWTH, withTitlePage } from '@writingapp/core'
   import type { ExportStyleDef } from '@writingapp/core'
-  import type { EpubDialogOptions, PdfOptions } from '../../preload/api'
+  import type { EpubDialogOptions, PdfOptions, TitlePage } from '../../preload/api'
   import { errorMessage } from './organise'
 
   let {
@@ -25,8 +25,8 @@
     /** Total size of the pictures the export uses. */
     imageBytes: number
     saving: boolean
-    onsave: (pictures: 'embed' | 'folder', css: string) => void
-    onsavepdf: (options: PdfOptions, css: string) => void
+    onsave: (pictures: 'embed' | 'folder', css: string, titlePage: TitlePage | null) => void
+    onsavepdf: (options: PdfOptions, css: string, titlePage: TitlePage | null) => void
     onsavemarkdown: () => void
     onsavedocx: (options: PdfOptions) => void
     onsaveepub: (options: EpubDialogOptions, css: string) => void
@@ -36,6 +36,10 @@
   let pageSize = $state<PdfOptions['pageSize']>('A4')
   let margin = $state<PdfOptions['margin']>('normal')
   let pageNumbers = $state(true)
+  // Extras laid over the chosen style (title page, chapter numbers, running title).
+  let titlePageOn = $state(false)
+  let numberChapters = $state(false)
+  let runningTitle = $state(false)
 
   // The preview always has the pictures inside it. If that makes the page much bigger, a folder is suggested.
   const growth = $derived(embeddedGrowth(imageBytes, html.length))
@@ -116,14 +120,14 @@
     } catch {
       // Not remembered; harmless.
     }
-    onsaveepub({ title: bookTitle.trim() || title, author: bookAuthor.trim(), language: bookLanguage, cover: coverName !== null }, activeCss)
+    onsaveepub({ title: bookTitle.trim() || title, author: bookAuthor.trim(), language: bookLanguage, cover: coverName !== null }, savedCss)
   }
 
   function save(): void {
-    if (format === 'pdf') onsavepdf({ pageSize, margin, pageNumbers }, activeCss)
+    if (format === 'pdf') onsavepdf({ pageSize, margin, pageNumbers, runningTitle }, savedCss, titlePage())
     else if (format === 'docx') onsavedocx({ pageSize, margin, pageNumbers })
     else if (format === 'epub') saveEpub()
-    else if (format === 'html') onsave(pictures, activeCss)
+    else if (format === 'html') onsave(pictures, savedCss, titlePage())
     else onsavemarkdown()
   }
 
@@ -154,7 +158,13 @@
 
   /** The CSS the page is shown and saved with. */
   const activeCss = $derived(editing ? previewCss : (current?.css ?? ''))
-  const shown = $derived(applyExportStyle(html, activeCss))
+  /** The style's CSS with the chapter numbering the writer switched on. */
+  const savedCss = $derived(activeCss + (numberChapters ? CHAPTER_NUMBER_CSS : ''))
+  const titlePage = (): TitlePage | null => (titlePageOn && (format === 'pdf' || format === 'html') ? { title: bookTitle.trim() || title, author: bookAuthor.trim() } : null)
+  const shown = $derived.by(() => {
+    const styled = applyExportStyle(html, savedCss)
+    return titlePageOn && (format === 'pdf' || format === 'html') ? withTitlePage(styled, bookTitle.trim() || title, bookAuthor.trim()) : styled
+  })
 
   async function loadStyles(select?: string): Promise<void> {
     try {
@@ -293,6 +303,21 @@
           <span class="hint muted">The preview shows the {format === 'docx' ? 'PDF and HTML' : 'HTML'} look.</span>
         {/if}
       </div>
+    {/if}
+    {#if format === 'pdf' || format === 'html' || format === 'epub'}
+    <div class="options extras">
+      <label class="pdf"><input type="checkbox" bind:checked={numberChapters} /> Number chapters</label>
+      {#if format !== 'epub'}
+        <label class="pdf"><input type="checkbox" bind:checked={titlePageOn} /> Title page</label>
+        {#if titlePageOn}
+          <input class="input book" bind:value={bookTitle} placeholder={title} aria-label="Title page title" />
+          <input class="input book" bind:value={bookAuthor} placeholder="Author" aria-label="Title page author" />
+        {/if}
+      {/if}
+      {#if format === 'pdf'}
+        <label class="pdf"><input type="checkbox" bind:checked={runningTitle} /> Title in the top margin</label>
+      {/if}
+    </div>
     {/if}
     {#if format === 'pdf' || format === 'html' || format === 'epub'}
     <div class="styles">

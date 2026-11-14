@@ -106,6 +106,14 @@ export interface PdfOptions {
   pageSize: 'A4' | 'Letter'
   margin: 'narrow' | 'normal' | 'wide'
   pageNumbers: boolean
+  /** PDF only: the title in the top margin of every page. */
+  runningTitle?: boolean
+}
+
+/** A title page put first in an HTML or PDF export. */
+export interface TitlePage {
+  title: string
+  author: string
 }
 
 /** What a right-click on text tells the menu. */
@@ -183,13 +191,13 @@ export interface Api {
   /** Builds the HTML export of the given sheets and groups, without saving it. */
   previewExport(paths: string[]): Promise<ExportPreview>
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */
-  saveExport(paths: string[], pictures?: 'embed' | 'folder', css?: string): Promise<string | null>
+  saveExport(paths: string[], pictures?: 'embed' | 'folder', css?: string, titlePage?: TitlePage | null): Promise<string | null>
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
   /** Asks where to save, writes the selection as Markdown, and copies the pictures it uses into a folder beside it. */
   saveExportMarkdown(paths: string[]): Promise<string | null>
   /** Asks where to save, then writes the selection as a Word document with its pictures embedded. Null if cancelled. */
   saveExportDocx(paths: string[], options: PdfOptions): Promise<string | null>
-  saveExportPdf(paths: string[], options: PdfOptions, css?: string): Promise<string | null>
+  saveExportPdf(paths: string[], options: PdfOptions, css?: string, titlePage?: TitlePage | null): Promise<string | null>
   /** Asks for a cover picture to use in the next EPUB; returns its file name, or null if cancelled. */
   chooseEpubCover(): Promise<string | null>
   /** Asks where to save, then writes the selection as an EPUB book. Null if cancelled. */

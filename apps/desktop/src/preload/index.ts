@@ -39,10 +39,10 @@ const api: Api = {
   replaceAll: (query, replacement, only, options) =>
     ipcRenderer.invoke('op:replaceAll', query, replacement, only, options),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
-  saveExport: (paths, pictures, css) => ipcRenderer.invoke('export:save', paths, pictures, css),
+  saveExport: (paths, pictures, css, titlePage) => ipcRenderer.invoke('export:save', paths, pictures, css, titlePage),
   saveExportMarkdown: (paths) => ipcRenderer.invoke('export:saveMarkdown', paths),
   saveExportDocx: (paths, options) => ipcRenderer.invoke('export:saveDocx', paths, options),
-  saveExportPdf: (paths, options, css) => ipcRenderer.invoke('export:savePdf', paths, options, css),
+  saveExportPdf: (paths, options, css, titlePage) => ipcRenderer.invoke('export:savePdf', paths, options, css, titlePage),
   chooseEpubCover: () => ipcRenderer.invoke('export:chooseCover'),
   saveExportEpub: (paths, options, css) => ipcRenderer.invoke('export:saveEpub', paths, options, css),
   exportStyles: () => ipcRenderer.invoke('exportStyles:list'),

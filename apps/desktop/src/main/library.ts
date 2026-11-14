@@ -19,6 +19,7 @@ import {
   deleteNodeUndoable,
   exportEpub,
   exportHtml,
+  withTitlePage,
   exportMarkdown,
   changeKeywords,
   glueSheets,
@@ -397,6 +398,13 @@ export function registerLibraryIpc(): void {
     return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent, css: typeof css === 'string' ? css : '' }, imagesFolder)
   }
 
+  /** The page with a title page in front when the writer asked for one. */
+  const titled = (html: string, raw: unknown): string => {
+    const t = (raw && typeof raw === 'object' ? raw : null) as { title?: unknown; author?: unknown } | null
+    if (!t || typeof t.title !== 'string' || t.title.trim() === '') return html
+    return withTitlePage(html, t.title.slice(0, 300), typeof t.author === 'string' ? t.author.slice(0, 300) : '')
+  }
+
   const searchOptions = (raw: unknown): SearchOptions => {
     const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
     return {
@@ -435,7 +443,7 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))
 
-  ipcMain.handle('export:save', async (event, paths: unknown, pictures: unknown, css: unknown) => {
+  ipcMain.handle('export:save', async (event, paths: unknown, pictures: unknown, css: unknown, titlePage: unknown) => {
     let built = await buildExport(paths, undefined, css)
     const options: Electron.SaveDialogOptions = {
       title: 'Export as HTML',
@@ -454,7 +462,7 @@ export function registerLibraryIpc(): void {
       built = await buildExport(paths, folder, css)
       await copyImagesBeside(file, folder, built.images)
     }
-    await fs.writeText(file, built.html)
+    await fs.writeText(file, titled(built.html, titlePage))
     return result.filePath
   })
 
@@ -546,7 +554,7 @@ export function registerLibraryIpc(): void {
     return result.filePath
   })
 
-  ipcMain.handle('export:savePdf', async (event, paths: unknown, rawOptions: unknown, css: unknown) => {
+  ipcMain.handle('export:savePdf', async (event, paths: unknown, rawOptions: unknown, css: unknown, titlePage: unknown) => {
     const options = parsePdfOptions(rawOptions)
     const built = await buildExport(paths, undefined, css)
     const saveOptions: Electron.SaveDialogOptions = {
@@ -559,7 +567,7 @@ export function registerLibraryIpc(): void {
       ? await dialog.showSaveDialog(window, saveOptions)
       : await dialog.showSaveDialog(saveOptions)
     if (result.canceled || !result.filePath) return null
-    await nodeFs.writeFile(result.filePath, await renderPdf(built.html, options))
+    await nodeFs.writeFile(result.filePath, await renderPdf(titled(built.html, titlePage), options))
     return result.filePath
   })
 

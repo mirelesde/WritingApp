@@ -2,7 +2,7 @@ import { promises as nodeFs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { BrowserWindow } from 'electron'
-import { hasContentsLinks, pagesBySlug, withPageNumbers } from '@writingapp/core'
+import { hasContentsLinks, pagesBySlug, setsPageSize, withPageNumbers } from '@writingapp/core'
 import type { PdfOptions } from '../preload/api'
 import { readOutline } from './pdfOutline'
 
@@ -13,7 +13,7 @@ export function parsePdfOptions(value: unknown): PdfOptions {
   const v = (value ?? {}) as Partial<PdfOptions>
   if (v.pageSize !== 'A4' && v.pageSize !== 'Letter') throw new Error('Unknown page size')
   if (v.margin === undefined || !(v.margin in MARGIN_INCHES)) throw new Error('Unknown margin')
-  return { pageSize: v.pageSize, margin: v.margin, pageNumbers: v.pageNumbers === true }
+  return { pageSize: v.pageSize, margin: v.margin, pageNumbers: v.pageNumbers === true, runningTitle: v.runningTitle === true }
 }
 
 /**
@@ -49,10 +49,14 @@ async function print(html: string, options: PdfOptions, outline: boolean): Promi
     return await window.webContents.printToPDF({
       pageSize: options.pageSize,
       margins: { top: margin, bottom: margin, left: margin, right: margin },
-      displayHeaderFooter: options.pageNumbers,
-      headerTemplate: '<span></span>',
-      footerTemplate:
-        '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="pageNumber"></span> / <span class="totalPages"></span></div>',
+      displayHeaderFooter: options.pageNumbers || options.runningTitle === true,
+      headerTemplate: options.runningTitle
+        ? '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="title"></span></div>'
+        : '<span></span>',
+      footerTemplate: options.pageNumbers
+        ? '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="pageNumber"></span> / <span class="totalPages"></span></div>'
+        : '<span></span>',
+      preferCSSPageSize: setsPageSize(html),
       printBackground: false,
       ...(outline ? { generateDocumentOutline: true, generateTaggedPDF: true } : {})
     })

@@ -1301,9 +1301,24 @@ tested with the in-memory one)
     headings, WebP pictures are included though some older readers cannot show
     them, no fonts embedded.
 
+81. **Export extras: title page, chapter numbers, running title, page size.**
+    **Done.** In the Export dialog, a row under the options (PDF, HTML, EPUB)
+    has: *Number chapters* (each top-level heading gets "1.", "2." through
+    CSS counters; HTML, PDF and EPUB), *Title page* (HTML and PDF: a page of
+    its own with a title, defaulting to the export's name, and an author;
+    kept out of the contents and the chapter count), and, for PDF, *Title in the
+    top margin* (the document title on every page). A style may now set the
+    PDF's page with `@page { size: 6in 9in; margin: … }`: when it sets `size`,
+    the PDF follows it instead of the dialog's page size and margins. The
+    preview shows the title page and numbering. Not done: Word gets none of
+    these; EPUB has its cover instead of a title page; the running title is the
+    export's name, not the title-page text; no left/right or chapter-name
+    headers; styles are still CSS only, so these extras are dialog choices that
+    are not saved inside a style.
+
 ## Later, in rough order
 
-- Export styles beyond item 69: title page, per-style page setup.
+- Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
 - Publishing to WordPress and Ghost.

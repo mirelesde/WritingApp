@@ -21,7 +21,7 @@
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
-  import type { EditMenuInfo, EpubDialogOptions, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet } from '../../preload/api'
+  import type { EditMenuInfo, EpubDialogOptions, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet, TitlePage } from '../../preload/api'
   import { applyView } from './view'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
@@ -1489,10 +1489,10 @@
     }
   }
 
-  async function saveExport(pictures: 'embed' | 'folder', css: string): Promise<void> {
+  async function saveExport(pictures: 'embed' | 'folder', css: string, titlePage: TitlePage | null): Promise<void> {
     exportSaving = true
     try {
-      const saved = await window.api.saveExport(exportPaths, pictures, css)
+      const saved = await window.api.saveExport(exportPaths, pictures, css, titlePage ? { ...titlePage } : null)
       if (saved) {
         exportPreview = null
         showInfo('Exported to ' + saved.split(/[\\/]/).pop())
@@ -1553,10 +1553,10 @@
     }
   }
 
-  async function saveExportPdf(options: PdfOptions, css: string): Promise<void> {
+  async function saveExportPdf(options: PdfOptions, css: string, titlePage: TitlePage | null): Promise<void> {
     exportSaving = true
     try {
-      const saved = await window.api.saveExportPdf(exportPaths, { ...options }, css)
+      const saved = await window.api.saveExportPdf(exportPaths, { ...options }, css, titlePage ? { ...titlePage } : null)
       if (saved) {
         exportPreview = null
         showInfo('Exported to ' + saved.split(/[\\/]/).pop())

@@ -361,3 +361,9 @@ Quick checks that earlier features still work with today's changes.
 2. Fill in a title and author, pick a cover picture, and Export as EPUB….
 3. Run `epubcheck` on the file if you have it: no errors expected.
 4. Open it in Apple Books (or another reader): the cover shows, the contents list the headings, each sheet starts a new chapter, pictures and tables show, and the style you chose is applied. Footnotes jump to their notes.
+
+## 13.26 Export extras
+
+1. Export > Format PDF. Tick Number chapters, Title page (fill title and author) and Title in the top margin. The preview shows a title page and numbered headings. Export: page 1 is the title page, headings read "1. …", each page has the title at the top. A table of contents (if any) still shows the right page numbers.
+2. Make a style with `@page { size: 6in 9in; margin: 0.8in }`, export as PDF: the pages are 6 by 9 inches whatever the dialog says.
+3. Number chapters also works for HTML and EPUB; Title page for HTML.
