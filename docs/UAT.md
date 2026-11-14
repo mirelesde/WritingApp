@@ -331,3 +331,10 @@ Quick checks that earlier features still work with today's changes.
 4. Click the chevron. A Replace box, Replace and Replace All appear. Replace changes the current match and moves on. Replace All in a sheet can be undone with Cmd/Ctrl+Z in the editor; in a group or project it reports the count and File > Undo Library Change restores it.
 5. Select text in the editor and press Cmd/Ctrl+F: the bar opens with it as the query. Escape closes the bar and returns to the editor.
 6. A bad pattern with .* on shows "Invalid" instead of a count.
+
+## 13.22 Table of contents
+
+1. In a sheet type a heading, then a line with only `(cnt)`, then a few headings (`#`, `##`) below it. Move the cursor off the `(cnt)` line: it shows as a "Table of Contents" chip. Move onto it: the text `(cnt)` returns.
+2. Export as HTML (or preview it). Where `(cnt)` was is a nested list of the later headings; clicking an entry jumps to that heading.
+3. Export as Markdown or Word: the same list appears without links, and `(cnt)` is gone.
+4. Select several sheets or a group and export: the list covers headings from all of them that come after the marker.

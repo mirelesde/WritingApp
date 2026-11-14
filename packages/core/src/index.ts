@@ -59,6 +59,7 @@ export type { QuickOpenItem } from './quickOpen'
 export { stripComments } from './comments'
 export { maskComments } from './comments'
 export { extractHeadings } from './outline'
+export { CONTENTS_MARKER, addHeadingIds, expandContents, findMarkers, hasContentsMarker, headingSlugs } from './contents'
 export type { Heading } from './outline'
 export {
   addColumn,

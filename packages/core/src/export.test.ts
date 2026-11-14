@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exportHtml, exportRuns, htmlDocument, markdownToHtml } from './export'
+import { exportHtml, exportMarkdown, exportRuns, htmlDocument, markdownToHtml } from './export'
 import { loadLibrary } from './library'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -160,5 +160,22 @@ describe('embeddedGrowth', () => {
     expect(embeddedGrowth(0, 1000)).toBe(0)
     // 3000 picture bytes become 4000 characters, in a page of 5000.
     expect(embeddedGrowth(3000, 5000)).toBe(4)
+  })
+})
+
+describe('table of contents in exports', () => {
+  it('fills (cnt) with linked headings in HTML and a plain list in Markdown', async () => {
+    const fs = new MemoryFileSystem({
+      '/Lib/Book/.writingapp.json': sidecar(['a.md', 'b.md'], []),
+      '/Lib/Book/a.md': '# Contents\n\n(cnt)\n',
+      '/Lib/Book/b.md': '# One\n\n## Sub\n',
+    })
+    const tree = await loadLibrary(fs, '/Lib')
+    const html = await exportHtml(fs, tree, ['/Lib/Book'])
+    expect(html.html).toContain('<a href="#one">One</a>')
+    expect(html.html).toContain('<h1 id="one">One</h1>')
+    const md = await exportMarkdown(fs, tree, ['/Lib/Book'], 'x')
+    expect(md.markdown).toContain('- One\n  - Sub')
+    expect(md.markdown).not.toContain('(cnt)')
   })
 })

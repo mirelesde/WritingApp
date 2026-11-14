@@ -1256,10 +1256,19 @@ tested with the in-memory one)
     CodeMirror's matcher, so whole-word and regex edge cases can differ slightly
     from the counts (which use core `findMatches`); a library search stops at
     2,000 sheets.
+77. **Automatic table of contents.** **Done.** A line holding only `(cnt)`
+    (Ulysses writes it the same way) is a table of contents. In the editor it
+    shows as a "Table of Contents" chip until the cursor is on the line. On
+    export, HTML gets a nested list of the headings that come after it, across
+    every exported sheet, linked to anchors on the headings; Markdown and Word
+    get the same list without links. The sheet card still shows `(cnt)`.
+    Limits: no page numbers; only headings after the marker are listed;
+    setext (underlined) headings get no anchor; no menu item yet, you type
+    `(cnt)`; PDF and print follow the HTML export.
 
 ## Later, in rough order
 
-- Export styles beyond item 69: title page, table of contents, per-style page setup.
+- Export styles beyond item 69: title page, per-style page setup.
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
 - **EPUB export.** Another export target next to HTML and PDF: one book

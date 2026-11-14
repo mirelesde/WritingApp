@@ -1,6 +1,7 @@
 import { assetNameFromUrl, embedImages, findImages, imagesSize, linkImagesToFolder } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
+import { addHeadingIds, expandContents } from './contents'
 import { mathToHtml } from './math'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
 import { sanitizeCss, STYLE_BLOCK_OPEN } from './exportStyles'
@@ -240,7 +241,7 @@ export async function exportHtml(
   const title = only ? only.name : runs[0]![0]!.title
 
   const used = new Set<string>()
-  const parts: string[] = []
+  const runTexts: string[][] = []
   for (const run of runs) {
     const texts: string[] = []
     for (const sheet of run) {
@@ -252,9 +253,16 @@ export async function exportHtml(
       text = imagesFolder ? linkImagesToFolder(text, imagesFolder).text : await embedImages(fs, root.path, text)
       texts.push(text)
     }
-    parts.push(markdownToHtml(texts.join('\n\n')))
+    runTexts.push(texts)
   }
-  const body = parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n')
+  const flat = runTexts.flat()
+  const expanded = expandContents(flat, true)
+  let at = 0
+  const parts = runTexts.map((texts) => {
+    const mine = expanded.slice(at, (at += texts.length))
+    return markdownToHtml(mine.join('\n\n'))
+  })
+  const body = addHeadingIds(parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n'), flat)
   const images = [...used]
   return {
     title,
@@ -302,7 +310,7 @@ export async function exportMarkdown(
   const title = only ? only.name : runs[0]![0]!.title
 
   const images = new Set<string>()
-  const parts: string[] = []
+  const runTexts: string[][] = []
   for (const run of runs) {
     const texts: string[] = []
     for (const sheet of run) {
@@ -311,8 +319,11 @@ export async function exportMarkdown(
       const text = linked.text
       texts.push(text)
     }
-    parts.push(texts.join('\n\n'))
+    runTexts.push(texts)
   }
+  const expanded = expandContents(runTexts.flat(), false)
+  let at = 0
+  const parts = runTexts.map((texts) => expanded.slice(at, (at += texts.length)).join('\n\n'))
   return {
     title,
     markdown: parts.join('\n\n---\n\n') + '\n',

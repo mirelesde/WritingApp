@@ -18,6 +18,7 @@ import { linkBehaviour } from './links'
 import { richPaste } from './richPaste'
 import { blankLines } from './blankLines'
 import { taskBoxes } from './taskBoxes'
+import { contentsChip } from './contentsChip'
 import { tableWidgets } from './tableWidget'
 import { highlightSyntax, highlightTag } from './highlightMark'
 import { footnoteKeymap, footnotes } from './footnotes'
@@ -255,6 +256,7 @@ export function editorExtensions({
     headingMarks,
     paragraphStarts,
     taskBoxes,
+    contentsChip,
     tableWidgets,
     footnotes,
     imageThumbs,
