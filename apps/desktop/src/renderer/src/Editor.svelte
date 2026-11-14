@@ -11,6 +11,7 @@
   import { goToFootnote, insertFootnote } from './footnotes'
   import { insertImages } from './imageThumbs'
   import { updateWikiHost } from './wikiLinks'
+  import { hideMarkers as hideMarkersExtension } from './hideMarkers'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
@@ -38,6 +39,8 @@
     typewriterAt?: 'centre' | 'upper'
     /** Curly quotes, dashes and ellipses as you type. */
     smartTypography?: boolean
+    /** Hide Markdown markers away from the cursor. */
+    hideMarkers?: boolean
     /** Show line numbers in a gutter. */
     lineNumbers?: boolean
     /** Every sheet title, for [[wiki links]]. */
@@ -56,6 +59,7 @@
     focusScope = 'paragraph',
     typewriterAt = 'centre',
     smartTypography: smart = false,
+    hideMarkers: hide = false,
     lineNumbers = false,
     autofocus = false,
     titles = [],
@@ -153,6 +157,7 @@
   const focusing = new Compartment()
   const gutter = new Compartment()
   const typography = new Compartment()
+  const markers = new Compartment()
 
   // Focus mode and typewriter scrolling can change while the editor is open.
   $effect(() => {
@@ -163,6 +168,11 @@
   $effect(() => {
     const on = smart
     view?.dispatch({ effects: typography.reconfigure(on ? smartTypography : []) })
+  })
+
+  $effect(() => {
+    const on = hide
+    view?.dispatch({ effects: markers.reconfigure(on ? hideMarkersExtension : []) })
   })
 
   $effect(() => {
@@ -187,7 +197,8 @@
             focusExtensions({ dim: focusMode, typewriter, scope: focusScope, position: typewriterAt })
           ),
           gutter.of(lineNumbers ? lineNumbersExtension() : []),
-          typography.of(smart ? smartTypography : [])
+          typography.of(smart ? smartTypography : []),
+          markers.of(hide ? hideMarkersExtension : [])
         ]
       )
     })

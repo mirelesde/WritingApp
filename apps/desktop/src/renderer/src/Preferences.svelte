@@ -233,6 +233,15 @@
           onchange={(e) => onchange({ hangHeadings: e.currentTarget.checked })}
         />
       </label>
+      <label class="row">
+        <span>Hide Markdown marks<small>Hide ** and # and link addresses except on the line you are editing</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.hideMarkers}
+          onchange={(e) => onchange({ hideMarkers: e.currentTarget.checked })}
+        />
+      </label>
       {@render choice('Alignment', 'textAlign')}
       {@render choice('Cursor width', 'caretWidth')}
       {@render choice('Highlight current line', 'currentLine')}

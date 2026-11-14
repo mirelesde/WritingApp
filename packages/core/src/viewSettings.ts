@@ -78,6 +78,8 @@ export interface ViewSettings {
   smartTypography: boolean
   /** Hang heading hashes in the left margin so heading text lines up with the body text. */
   hangHeadings: boolean
+  /** Hide Markdown markers (**, #, link addresses) except on the lines the cursor is on. */
+  hideMarkers: boolean
   /** Indent the first line of each paragraph and close the gap between paragraphs, in the editor and in exports. */
   paragraphIndent: boolean
   /** Accent colour as `#rrggbb`; empty keeps the theme's own. */
@@ -109,6 +111,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   sheetSort: 'manual',
   smartTypography: false,
   hangHeadings: true,
+  hideMarkers: false,
   paragraphIndent: false,
   accent: '',
   colorTheme: '',
@@ -167,6 +170,7 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof record.scrollPastEnd === 'boolean') out.scrollPastEnd = record.scrollPastEnd
   if (typeof record.smartTypography === 'boolean') out.smartTypography = record.smartTypography
   if (typeof record.hangHeadings === 'boolean') out.hangHeadings = record.hangHeadings
+  if (typeof record.hideMarkers === 'boolean') out.hideMarkers = record.hideMarkers
   if (typeof record.paragraphIndent === 'boolean') out.paragraphIndent = record.paragraphIndent
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
     out.accent = record.accent.toLowerCase()

@@ -598,12 +598,14 @@ asked for directly.
     Must refuse dropping a group into itself. The Move to… command stays as
     the keyboard route. Hit testing and multi-selection are the hard parts.
 
-41. **Hide Markdown markers (setting).** Off by default: the editor keeps
-    showing markers, dimmed, as Ulysses does. When on, `**`, `#`, link
-    addresses and similar markers are hidden except on the line or
-    selection that holds the cursor. Risks are cursor movement across
-    hidden ranges and selection that includes hidden text. Needs the
-    Preferences window (item 37).
+41. ~~**Hide Markdown markers (setting).**~~ **Done.** Preferences > Hide
+    Markdown marks (off by default). When on, emphasis, strikethrough and
+    highlight marks, heading hashes, quote `>`, inline-code backticks and
+    link brackets and addresses are hidden except on lines the selection
+    touches. The cursor steps over a hidden mark as one unit (atomic
+    ranges). List bullets, task boxes, fences, tables, images, wiki links
+    and footnotes stay visible. Not built: revealing per element rather
+    than per line, hiding fence lines.
 42. **Folding sections.** Collapse the text under a heading from a gutter
     arrow or Cmd/Ctrl+Alt+[ and ]; fold all and unfold all. Fold state is
     remembered per sheet. The outline and quick jump (item 36) keep
@@ -788,11 +790,20 @@ asked for directly.
     beside the current sheet) when none exists. The outline panel has a
     "Linked from" list of sheets linking to the open one, kept current as
     you type (links are stored in the sheet cache, version 3).
-    Not built: rewriting links when a title changes (titles follow the
-    first line, so it would fire while typing; broken links show dashed
-    instead), `[[Title#Heading]]`, link snippets in the backlinks list,
-    unlinked mentions, wiki links in export (they export as plain text),
-    and picking up links in sheets of other groups when names clash.
+    Left to do:
+    - Rewrite links when a sheet's title changes. Titles follow the first
+      line, so it would fire while typing; broken links show dashed
+      instead. Needs a rename step that commits on blur or Enter.
+    - `[[Title#Heading]]` links that jump to a heading, with completion
+      of headings.
+    - A snippet of the surrounding text for each entry in "Linked from".
+    - Unlinked mentions: sheets that use the title without a link, with a
+      one-click "link it".
+    - Wiki links in export: they come out as plain text; they could
+      become links between exported files or in-page anchors.
+    - Duplicate titles: the first sheet in library order wins; the editor
+      should say so and offer `[[Group/Title]]` to pick another.
+    - Completion beyond titles: aliases, and links to sheets by path.
 31. **Sync conflict handling.** Detect conflict copies from iCloud or
     Dropbox (`name (conflicted copy).md`) and offer a side-by-side merge.
     Needs a diff view.

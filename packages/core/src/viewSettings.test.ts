@@ -57,6 +57,7 @@ describe('writing comfort settings', () => {
         textAlign: 'justify',
         scrollPastEnd: false,
         smartTypography: true,
+        hideMarkers: true,
         lineSpacing: 2
       })
     ).toEqual({
@@ -70,6 +71,7 @@ describe('writing comfort settings', () => {
       textAlign: 'justify',
       scrollPastEnd: false,
       smartTypography: true,
+      hideMarkers: true,
       lineSpacing: 2
     })
     expect(
