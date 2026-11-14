@@ -374,3 +374,9 @@ Quick checks that earlier features still work with today's changes.
 2. Click an option: it is chosen and the list closes. Open it again and click outside it (on the preview or the title): the list closes and the dialog responds as normal.
 3. Press Escape with the list open: the list closes first; Escape again closes the dialog.
 4. Repeat for the Page size, Margins, Language and Style pickers. None of them leaves the dialog unresponsive or drags the window.
+
+## 13.28 Find: patterns that could freeze
+
+1. Open Find (⌘F) and turn on the regular-expression toggle (`.*`). Type `(a+)+$`. The bar says the pattern repeats a repeat and that it can freeze the app; the app stays responsive. Try it in both the sheet and library scopes.
+2. Type `(\w+\s?)+$` and `([a-z]+)*`: the same message.
+3. Ordinary patterns still work: `(foo|bar)+`, `^#+ `, `(\d+)-(\d+)`, `Chapter \d+`. Replace All with `$1` still expands.

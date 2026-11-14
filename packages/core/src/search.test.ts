@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary } from './library'
-import { findMatches, replaceAllIn, replaceInLibrary, searchLibrary } from './search'
+import { findMatches, hasNestedRepeat, replaceAllIn, replaceInLibrary, searchLibrary } from './search'
 import { applyUndo } from './undo'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -114,5 +114,22 @@ describe('findMatches', () => {
   })
   it('finds nothing for a blank query', () => {
     expect(findMatches('text', '  ')).toEqual([])
+  })
+})
+
+describe('patterns that could freeze the app', () => {
+  const risky = ['(a+)+$', '(a*)*b', '(\\w+\\s?)+$', '(?:x+x+)+y', '([a-z]+)*', '((a+))+', '(a|b+)+', '(\\d+){2,}', '(a+){1,}']
+  const fine = ['(foo|bar)+', 'a+b+', '(\\d+)-(\\d+)', '[a+]+', '(?:ab)+', '\\(a+\\)+', 'x(y+)z', '(a+)?', '(a+){1,3}', '^\\s*#+ ', '[(]+']
+  it.each(risky)('refuses %s', (p) => {
+    expect(hasNestedRepeat(p)).toBe(true)
+    expect(() => findMatches('aaaa', p, { regex: true })).toThrow(/repeats a repeat/)
+  })
+  it.each(fine)('allows %s', (p) => {
+    expect(hasNestedRepeat(p)).toBe(false)
+  })
+  it('returns quickly for a classic bomb', () => {
+    const t = Date.now()
+    expect(() => findMatches('a'.repeat(40) + '!', '^(a+)+$', { regex: true })).toThrow()
+    expect(Date.now() - t).toBeLessThan(500)
   })
 })

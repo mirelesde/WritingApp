@@ -28,6 +28,48 @@ export interface SearchOptions {
 
 const WORD = '[\\w\\u00C0-\\u024F\\u0370-\\u052F]'
 
+/**
+ * Whether a pattern repeats something that itself repeats without limit, like
+ * `(a+)+` or `(\\w*\\s?)*`. Such a pattern can take longer than the age of the
+ * universe on a short line that nearly matches, and the app cannot interrupt
+ * a regular expression, so these are refused up front.
+ */
+export function hasNestedRepeat(source: string): boolean {
+  // One flag per open group: does it contain an unbounded repeat?
+  const open: boolean[] = []
+  let inClass = false
+  const unbounded = (at: number): boolean => {
+    const c = source[at]
+    if (c === '*' || c === '+') return true
+    return c === '{' && /^\{\d+,\}/.test(source.slice(at))
+  }
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i]
+    if (c === '\\') {
+      i++
+      if (!inClass && unbounded(i + 1)) mark(open)
+    } else if (inClass) {
+      if (c === ']') {
+        inClass = false
+        if (unbounded(i + 1)) mark(open)
+      }
+    } else if (c === '[') inClass = true
+    else if (c === '(') open.push(false)
+    else if (c === ')') {
+      const had = open.pop() ?? false
+      if (unbounded(i + 1)) {
+        if (had) return true
+        mark(open)
+      } else if (had) mark(open)
+    } else if (c !== '|' && c !== '^' && c !== '$' && unbounded(i + 1)) mark(open)
+  }
+  return false
+}
+
+function mark(open: boolean[]): void {
+  if (open.length > 0) open[open.length - 1] = true
+}
+
 /** A global matcher for `query`, or undefined when there is nothing to look for. Throws on a bad pattern. */
 export function buildMatcher(query: string, options: SearchOptions = {}): RegExp | undefined {
   const text = options.regex ? query : query.trim()
@@ -35,6 +77,9 @@ export function buildMatcher(query: string, options: SearchOptions = {}): RegExp
   let source = options.regex ? text : text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   if (options.wholeWord) source = `(?<!${WORD})(?:${source})(?!${WORD})`
   const flags = 'g' + (options.caseSensitive ? '' : 'i') + (options.regex ? 'm' : '')
+  if (options.regex && hasNestedRepeat(source)) {
+    throw new Error('That pattern repeats a repeat (like (a+)+), which can freeze the app. Simplify it.')
+  }
   let matcher: RegExp
   try {
     matcher = new RegExp(source, flags)
