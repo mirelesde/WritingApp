@@ -20,6 +20,8 @@ export interface OpResult {
   replaced?: number
   /** Paths of the copies a copy or duplicate made, in the order given. */
   copied?: string[]
+  /** For an import: names of files that could not be imported. */
+  skipped?: string[]
 }
 
 export type MenuCommand =

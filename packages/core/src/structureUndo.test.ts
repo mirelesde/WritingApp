@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary, type GroupNode } from './library'
-import { deleteNodeUndoable, moveNodesUndoable } from './operations'
+import { createSheet, deleteNodeUndoable, moveNodesUndoable } from './operations'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
-import { applyUndo } from './undo'
+import { applyUndo, snapshotSidecar } from './undo'
 
 const sidecar = (order: string[], glued: string[] = []) =>
   JSON.stringify({ version: 1, order, glued })
@@ -123,5 +123,22 @@ describe('copyNodes', () => {
     const fs = setup()
     const { copyNodes } = await import('./operations')
     await expect(copyNodes(fs, ['/Lib/Book'], '/Lib/Book/Part')).rejects.toThrow('into itself')
+  })
+})
+
+describe('undoing an import', () => {
+  it('trashes the new sheets and restores the group order', async () => {
+    const fs = setup()
+    const before = await shape(fs)
+    const snapshot = await snapshotSidecar(fs, '/Lib/Book')
+    const one = await createSheet(fs, '/Lib/Book', '# Imported one\n', 1)
+    const two = await createSheet(fs, '/Lib/Book', '# Imported two\n', 2)
+    expect(await shape(fs)).not.toEqual(before)
+    await applyUndo(fs, [
+      { kind: 'trash', path: one },
+      { kind: 'trash', path: two },
+      snapshot
+    ])
+    expect(await shape(fs)).toEqual(before)
   })
 })

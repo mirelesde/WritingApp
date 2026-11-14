@@ -329,9 +329,14 @@
     if (!parent) return
     const at = parent.children.findIndex((c) => c.path === cursor)
     const result = await runOp(() => window.api.importFiles(parent.path, at >= 0 ? at + 1 : undefined))
-    if (result?.copied?.length) {
-      await selectCopies(result.copied)
-      showInfo(`Imported ${result.copied.length === 1 ? '1 sheet' : `${result.copied.length} sheets`}.`)
+    if (result?.copied?.length) await selectCopies(result.copied)
+    const done = result?.copied?.length ?? 0
+    const bad = result?.skipped ?? []
+    if (bad.length > 0) {
+      const names = bad.slice(0, 3).join(', ') + (bad.length > 3 ? ` and ${bad.length - 3} more` : '')
+      notice = `${done > 0 ? `Imported ${done}. ` : ''}Could not import ${names}.`
+    } else if (done > 0) {
+      showInfo(`Imported ${done === 1 ? '1 sheet' : `${done} sheets`}.`)
     }
   }
 

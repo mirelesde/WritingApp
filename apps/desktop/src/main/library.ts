@@ -4,6 +4,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
   applyUndo,
+  snapshotSidecar,
   createGroup,
   createFromTemplate,
   replaceInLibrary,
@@ -497,20 +498,30 @@ export function registerLibraryIpc(): void {
     }
     const window = BrowserWindow.fromWebContents(event.sender)
     const picked = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
-    return change(async () => {
+    const skipped: string[] = []
+    const result = await change(async () => {
       const copied: string[] = []
       if (picked.canceled) return { copied }
+      const before = await snapshotSidecar(fs, parent)
       let at = typeof index === 'number' ? index : undefined
       for (const file of picked.filePaths) {
-        const bytes = await nodeFs.readFile(file)
-        const markdown = importedMarkdown(basename(file), decodeImported(bytes, extname(file)))
-        if (markdown === null) continue
-        const path = await createSheet(fs, parent, markdown, at)
-        copied.push(path)
-        if (at !== undefined) at++
+        try {
+          const bytes = await nodeFs.readFile(file)
+          const markdown = importedMarkdown(basename(file), decodeImported(bytes, extname(file)))
+          if (markdown === null) throw new Error('Not a type that can be imported')
+          copied.push(await createSheet(fs, parent, markdown, at))
+          if (at !== undefined) at++
+        } catch {
+          // One bad file does not stop the others; they are reported afterwards.
+          skipped.push(basename(file))
+        }
       }
-      return { copied }
+      if (copied.length === 0) return { copied }
+      // One undo step: trash every new sheet, then put the group's order back.
+      const label = copied.length === 1 ? 'Import' : `Import of ${copied.length} files`
+      return { copied, undo: { label, actions: [...copied.map((path): UndoAction => ({ kind: 'trash', path })), before] } }
     })
+    return { ...result, skipped }
   })
 
   ipcMain.handle('templates:list', async () =>

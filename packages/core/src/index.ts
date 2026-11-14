@@ -28,7 +28,7 @@ export {
   unglueSheets,
 } from './operations'
 export type { SheetChange } from './operations'
-export { applyUndo } from './undo'
+export { applyUndo, snapshotSidecar } from './undo'
 export type { UndoAction } from './undo'
 export { escapeHtml, exportHtml, exportMarkdown, embeddedGrowth, FOLDER_SUGGESTION_GROWTH, exportRuns, htmlDocument, markdownToHtml } from './export'
 export type { ExportStyle, HtmlExport, MarkdownExport } from './export'
