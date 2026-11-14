@@ -718,6 +718,61 @@ asked for directly.
     window and appends to an Inbox sheet. Depends on windows (item 29).
    Edited in a dialog (Format > Table…, command palette) rather than as an inline widget: title caption, add/delete rows and columns, alignment, Tab/Enter navigation; writes clean aligned Markdown
 
+**Added after comparing with Ulysses (round 3)**
+
+Not yet scheduled; the user picks the order. Items 62 to 71 are features
+Ulysses has and we do not; 72 to 81 are suggestions of our own.
+
+62. **Smart filters.** Saved searches shown in the sidebar as virtual
+    groups ("sheets with keyword X", "modified this week", "status Draft").
+    Builds on keywords (26), status labels (63) and search.
+63. **Sheet status labels.** A per-sheet mark (Draft, Revise, Final, or
+    user-defined), shown on the card and usable as a filter. Stored in the
+    sidecar.
+64. **Annotations.** Inline notes anchored to a passage and shown in the
+    margin. Different from `<!-- -->` comments (item 13), which are only
+    dimmed text. Never exported.
+65. **Text replacement and autocorrect.** User-defined shortcuts (`;;sig`
+    expands to a signature) and common typo fixes, in Preferences.
+66. **Grammar and style check.** Optional, off by default, through
+    LanguageTool (local or remote, the user's choice). Needs a decision on
+    privacy, since text would leave the machine with a remote server.
+67. **Inbox.** A permanent catch-all group that new sheets can land in;
+    pairs with global quick capture (32).
+68. **Automatic library backups.** A rolling zip of the whole library on a
+    schedule, kept in a folder of the user's choice, with a cap on how many
+    are kept. Separate from per-sheet history (27); protects against a
+    corrupted library.
+69. **Export styles.** Several built-in stylesheets for HTML and PDF
+    (Ulysses ships about twenty) and user-editable ones. See also "Later".
+70. **Publishing.** WordPress, Ghost and Medium. Already under "Later".
+71. **Dictionary and thesaurus lookup.** Part of item 56; listed here so it
+    is not forgotten if 56 is split.
+
+72. **Load performance.** The library reads every file on open. Cache
+    titles, previews and counts (by modified time) or load them lazily, so a
+    library of thousands of sheets opens fast. Do this before it hurts.
+73. **Search upgrades.** Whole-word and regular-expression options, plus the
+    Look-in scope in "Still open". Cheap on top of what exists.
+74. **Sample library on first run.** A small "Welcome" project that teaches
+    the shortcuts, offered instead of the bare empty state.
+75. **Crash and data-loss safety.** Journal unsaved edits to the app's data
+    folder and offer to restore them after a crash or a power cut.
+76. **Format menu check marks.** The menu does not show the style at the
+    cursor yet (only the popover does).
+77. **Print.** A Print command (File menu, Cmd/Ctrl+P conflicts with Quick
+    Open, so pick another shortcut), sharing the PDF path. Overlaps item 58.
+78. **Session timer or sprint mode.** A timed writing sprint with a word
+    goal, feeding the stats of item 55.
+79. **Localisation.** Move UI strings into a table so the app can be
+    translated; cheaper to start early than to retrofit.
+80. **Windows and Linux pass.** Run the app, export, watching and builds on
+    both, and the release workflow once end to end (see "Still open").
+81. **Duplicate sheet, and cut / copy / paste of sheets.** Already part of
+    item 17; listed here because it is the most obvious gap in daily use.
+
+Suggested first five (not decided): 17 / 81, 72, 75, 21 + 55, 26 + 62.
+
 Open decisions for this list: where images
 live (item 23, alternatives written out there), where sheet notes are stored (item 24) and in-app Trash
 versus the system trash (item 25).
