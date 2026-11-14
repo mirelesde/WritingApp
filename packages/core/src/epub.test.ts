@@ -1,4 +1,4 @@
-import { strFromU8, unzipSync } from 'fflate'
+import { strFromU8, strToU8, unzipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { exportEpub, toXhtml } from './epub'
 import { loadLibrary } from './library'
@@ -92,5 +92,5 @@ describe('toXhtml', () => {
 })
 
 function strToBytes(s: string): Uint8Array {
-  return new TextEncoder().encode(s)
+  return strToU8(s)
 }
