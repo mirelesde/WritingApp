@@ -1,6 +1,8 @@
 import type { SheetCache, SheetCacheEntry } from '@writingapp/core'
 
-const VERSION = 3
+// Raise this whenever titles, previews or other cached values are worked out differently,
+// or a saved cache keeps showing the old ones.
+const VERSION = 4
 
 /** The cache as JSON, for the file that lets the next launch skip reading unchanged sheets. */
 export function serializeSheetCache(root: string, cache: SheetCache): string {
