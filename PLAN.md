@@ -632,7 +632,7 @@ asked for directly.
 
 **Medium to hard**
 
-23. **Images.** *In progress, in this order, one commit each:* (a) insert from a file (**done**), (b) paste from the clipboard, (c) drag and drop. Wanted:
+23. **Images.** *In progress, in this order, one commit each:* (a) insert from a file (**done**), (b) paste from the clipboard (**done**), (c) drag and drop. Wanted:
     - **Shown as a thumbnail, not full size (user).** An image is drawn
       inline in the editor as a small fixed-size square thumbnail (cropped to
       fill the square, the way Ulysses does), so a sheet's text stays
@@ -647,6 +647,9 @@ asked for directly.
       breaks them. The editor loads them through a `wa-asset://` address the
       main process serves from that folder only. HTML export embeds each as
       a data URI; image links do not count as words.
+    - **Built (b):** pasting a picture (screenshot, copied image, a file
+      copied in the file manager) saves it in `.assets/` and shows its
+      thumbnail at the cursor.
     - **Built (a):** Insert > Image… (`Cmd/Ctrl+Alt+I`) and the command
       palette pick one or more files and put a thumbnail at the cursor; the
       raw Markdown shows while the cursor is on it. A toolbar button is not

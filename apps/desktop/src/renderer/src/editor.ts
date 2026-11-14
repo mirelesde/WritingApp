@@ -21,7 +21,7 @@ import { tableWidgets } from './tableWidget'
 import { highlightSyntax, highlightTag } from './highlightMark'
 import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
-import { imageThumbs } from './imageThumbs'
+import { imagePaste, imageThumbs } from './imageThumbs'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
 import { headingMarks } from './headingMarks'
@@ -193,6 +193,8 @@ export function editorExtensions({
     ...emphasisPairs,
     ...bracketPairs,
     linkBehaviour,
+    // Before richPaste: a copied web image carries both a picture and HTML.
+    imagePaste,
     richPaste,
     linkChips,
     // Find and replace within this sheet; Find in Library searches all of them.

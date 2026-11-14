@@ -41,8 +41,9 @@ function build(state: EditorState): DecorationSet {
   for (const ref of findImages(state.doc.toString())) {
     const name = assetNameFromUrl(ref.url)
     if (!name) continue
-    // The raw text shows while the cursor is on or inside it.
-    if (sel.from <= ref.to && sel.to >= ref.from) continue
+    // The raw text shows while the cursor is inside it or it is selected.
+    if (sel.from < ref.to && sel.to > ref.from) continue
+    if (sel.empty && sel.head > ref.from && sel.head < ref.to) continue
     ranges.push(Decoration.replace({ widget: new ThumbWidget(name, ref.alt) }).range(ref.from, ref.to))
   }
   return Decoration.set(ranges, true)
@@ -89,3 +90,36 @@ export function insertImages(view: EditorView, markdown: string[]): void {
   })
   view.focus()
 }
+
+const PASTED_TYPES: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/bmp': 'bmp',
+  'image/avif': 'avif'
+}
+
+/** Saves each picture file in the list and returns its Markdown. */
+export async function saveImageFiles(files: File[]): Promise<string[]> {
+  const markdown: string[] = []
+  for (const file of files) {
+    const ext = PASTED_TYPES[file.type]
+    if (!ext) continue
+    // A screenshot comes without a useful name.
+    const name = /\.[a-z0-9]+$/i.test(file.name) ? file.name : `image.${ext}`
+    markdown.push(await window.api.saveImage(name, new Uint8Array(await file.arrayBuffer())))
+  }
+  return markdown
+}
+
+/** Pasting a picture (a screenshot, a copied image) saves it in the library and shows its thumbnail. */
+export const imagePaste = EditorView.domEventHandlers({
+  paste(event, view) {
+    const files = [...(event.clipboardData?.files ?? [])].filter((f) => f.type in PASTED_TYPES)
+    if (files.length === 0) return false
+    event.preventDefault()
+    void saveImageFiles(files).then((markdown) => insertImages(view, markdown))
+    return true
+  }
+})
