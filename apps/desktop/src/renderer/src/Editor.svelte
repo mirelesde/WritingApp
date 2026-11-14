@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { Compartment } from '@codemirror/state'
   import { EditorView } from '@codemirror/view'
+  import { closeSearchPanel, openSearchPanel, SearchQuery, setSearchQuery } from '@codemirror/search'
   import { createEditorState, fromDisk } from './editor'
   import { focusExtensions } from './focusMode'
   import { smartTypography } from './smartTypography'
@@ -32,6 +33,8 @@
     onselection?: (selected: string) => void
     /** The cursor moved into another section: the index of its heading, -1 before the first. */
     onsection?: (heading: number) => void
+    /** Cmd/Ctrl+F, +Alt+F or +G was pressed: the Find bar takes it from here. */
+    onfind?: (action: 'find' | 'replace' | 'next' | 'previous') => void
     /** Dim everything but the current paragraph. */
     focusMode?: boolean
     /** Keep the cursor line in the middle of the window. */
@@ -59,6 +62,7 @@
   let { text, onchange, onblur, onescape, onfocus, onedge,
     onselection,
     onsection,
+    onfind,
     focusMode = false,
     typewriter = false,
     focusScope = 'paragraph',
@@ -168,6 +172,53 @@
     })
   }
 
+  /** Marks every match of a query in the text; a blank query clears the marks. */
+  export function markMatches(query: string, options: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean }): void {
+    if (!view) return
+    if (query.trim() === '') {
+      closeSearchPanel(view)
+      return
+    }
+    openSearchPanel(view)
+    view.dispatch({
+      effects: setSearchQuery.of(
+        new SearchQuery({
+          search: query,
+          caseSensitive: options.caseSensitive === true,
+          wholeWord: options.wholeWord === true,
+          regexp: options.regex === true
+        })
+      )
+    })
+  }
+
+  /** Clears the marks left by `markMatches`. */
+  export function clearMarks(): void {
+    if (view) closeSearchPanel(view)
+  }
+
+  /** Selects a stretch of text and scrolls it into view, without taking focus. */
+  export function selectRange(from: number, to: number): void {
+    if (!view) return
+    const end = view.state.doc.length
+    const a = Math.min(from, end)
+    reveal(view, a)
+    view.dispatch({
+      selection: { anchor: a, head: Math.min(to, end) },
+      effects: EditorView.scrollIntoView(a, { y: 'center' })
+    })
+  }
+
+  /** Replaces text in the editor, as one undo step. */
+  export function replaceRanges(changes: { from: number; to: number; insert: string }[]): void {
+    view?.dispatch({ changes, userEvent: 'input.replace' })
+  }
+
+  /** The cursor, or the start of the selection. */
+  export function cursorOffset(): number {
+    return view?.state.selection.main.from ?? 0
+  }
+
   /** The text and cursor position, if the cursor is in this editor. */
   export function cursorInfo(): { text: string; offset: number } | undefined {
     if (!view?.hasFocus) return undefined
@@ -211,7 +262,7 @@
       parent: host,
       state: createEditorState(
         text,
-        { onchange, onblur, onescape, onfocus, onedge, onselection, onsection },
+        { onchange, onblur, onescape, onfocus, onedge, onselection, onsection, onfind },
         [
           focusing.of(
             focusExtensions({ dim: focusMode, typewriter, scope: focusScope, position: typewriterAt })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary } from './library'
-import { replaceAllIn, replaceInLibrary, searchLibrary } from './search'
+import { findMatches, replaceAllIn, replaceInLibrary, searchLibrary } from './search'
 import { applyUndo } from './undo'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -99,5 +99,20 @@ describe('search options', () => {
     const out = await replaceInLibrary(fs2, tree, 'red', 'blue', undefined, { within: '/r/G' })
     expect(out.sheets).toBe(1)
     expect(await fs2.readText('/r/b.md')).toBe('# B\nred')
+  })
+})
+
+describe('findMatches', () => {
+  it('gives the position of every match', () => {
+    const found = findMatches('One cat, two Cats', 'cat')
+    expect(found.map((m) => [m.from, m.to])).toEqual([[4, 7], [13, 16]])
+  })
+  it('honours case, whole word and regex options', () => {
+    expect(findMatches('cat Cat category', 'cat', { caseSensitive: true, wholeWord: true })).toHaveLength(1)
+    const [m] = findMatches('a-1', '(\\w)-(\\d)', { regex: true })
+    expect(m!.insert('$2-$1')).toBe('1-a')
+  })
+  it('finds nothing for a blank query', () => {
+    expect(findMatches('text', '  ')).toEqual([])
   })
 })

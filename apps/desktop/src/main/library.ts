@@ -404,7 +404,7 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('search:run', async (_event, query: unknown, options: unknown) => {
     if (typeof query !== 'string' || !currentRoot) return []
-    return searchLibrary(fs, await load(currentRoot), query, 50, searchOptions(options))
+    return searchLibrary(fs, await load(currentRoot), query, 2000, searchOptions(options))
   })
 
   ipcMain.handle('op:replaceAll', async (_event, query: unknown, replacement: unknown, only: unknown, options: unknown) => {

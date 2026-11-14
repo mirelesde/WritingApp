@@ -1191,13 +1191,6 @@ tested with the in-memory one)
   - *Formats:* no ePub or DOCX, which Ulysses styles also target; both would reuse the style CSS (ePub) or need a mapping (DOCX).
   - *UI polish:* the export dialog header clips the title on narrow windows; style descriptions are cut off with an ellipsis; Book, Manuscript and Academic force a light page, so a dark-mode saved HTML does not follow the system, while Default, Modern and Plain notes do.
 
-- **Scope for Find in Library (decided, see item 73: group or whole library).** Old note: Find and Replace in the
-  library search every sheet. Option: a "Look in" selector (Library,
-  Project, Group, Sheet) that limits both the results and Replace All,
-  defaulting to the selected group or project. `replaceInLibrary` already
-  accepts a list of sheet paths; `searchLibrary` and the dialog would need
-  a scope. Open question: whether "Sheet" belongs there or stays with the
-  editor's own find bar (Cmd/Ctrl+F), which already has Replace.
 - **Shortcuts with no menu item or palette entry (to decide).** These work
   but are not listed anywhere, so a user cannot discover them: Cmd/Ctrl+Enter
   (toggle a task), Cmd/Ctrl+Alt+Up and Down (previous and next heading),
@@ -1246,6 +1239,23 @@ tested with the in-memory one)
     or project in the sidebar selects the first sheet of its list and opens it
     in the editor (without moving focus out of the sidebar), so "no sheet
     selected" shows only for groups with no sheets.
+
+76. **One Find bar.** **Done.** The magnifier in the toolbar (and Cmd/Ctrl+F,
+    Cmd/Ctrl+Alt+F in the editor, Cmd/Ctrl+Shift+F) opens a bar above the
+    editor that replaces both the old Find in Library dialog and the editor's
+    own search panel. A "Look in" menu picks the sheet, the selected group, its
+    project or the whole library. The box shows "x of y" and back and forward
+    arrows (Enter and Shift+Enter, Cmd/Ctrl+G in the editor); the current match
+    is selected in the editor and all matches are marked, moving on into the
+    next sheet when the scope has several. The chevron adds a Replace box with
+    Replace (this match) and Replace All. In a sheet both are ordinary editor
+    edits, so Cmd/Ctrl+Z undoes them; in a group, project or library Replace
+    All is one Undo Library Change step. Selected text becomes the query.
+    Case, whole-word and regex toggles are kept. Limits: the scope is fixed
+    when chosen, not followed as the sidebar selection changes; marks use
+    CodeMirror's matcher, so whole-word and regex edge cases can differ slightly
+    from the counts (which use core `findMatches`); a library search stops at
+    2,000 sheets.
 
 ## Later, in rough order
 

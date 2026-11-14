@@ -63,6 +63,25 @@ function allMatches(matcher: RegExp, text: string): RegExpExecArray[] {
   return found
 }
 
+/** One occurrence of a query in a text. */
+export interface TextMatch {
+  from: number
+  to: number
+  /** What `replacement` stands for here (expanding $1, $& and the like in regular-expression mode). */
+  insert(replacement: string): string
+}
+
+/** Every occurrence of `query` in `text`, in order. Throws on a bad pattern; a blank query finds nothing. */
+export function findMatches(text: string, query: string, options: SearchOptions = {}): TextMatch[] {
+  const matcher = buildMatcher(query, options)
+  if (!matcher) return []
+  return allMatches(matcher, text).map((m) => ({
+    from: m.index,
+    to: m.index + m[0].length,
+    insert: (replacement: string) => (options.regex ? expand(replacement, m) : replacement),
+  }))
+}
+
 /**
  * Finds sheets containing `query`, ignoring case unless asked, in library
  * order. Stops after `limit` sheets. A blank query finds nothing.

@@ -10,7 +10,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language'
-import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
+import { highlightSelectionMatches, search } from '@codemirror/search'
 import { tags } from '@lezer/highlight'
 import { emphasisPairs } from './emphasis'
 import { bracketPairs } from './pairs'
@@ -205,6 +205,15 @@ interface Hooks {
   onselection?: (selected: string) => void
   /** The section the cursor is in changed: the index of its heading, or -1 before the first. */
   onsection?: (heading: number) => void
+  /** Find (Cmd/Ctrl+F), Find and Replace (Cmd/Ctrl+Alt+F), or Find Next / Previous (Cmd/Ctrl+G) was pressed. */
+  onfind?: (action: 'find' | 'replace' | 'next' | 'previous') => void
+}
+
+/** CodeMirror draws match highlights only while a search panel is open; the Find bar lives outside the editor, so this one is empty and hidden. */
+function hiddenPanel(): { dom: HTMLElement } {
+  const dom = document.createElement('div')
+  dom.style.display = 'none'
+  return { dom }
 }
 
 /** An arrow key that hands over to the next sheet when the cursor cannot go further. */
@@ -235,7 +244,8 @@ export function editorExtensions({
   onfocus,
   onedge,
   onselection,
-  onsection
+  onsection,
+  onfind
 }: Hooks): Extension[] {
   return [
     history(),
@@ -265,14 +275,16 @@ export function editorExtensions({
     fencedCode,
     mathWidgets,
     // Find and replace within this sheet; Find in Library searches all of them.
-    search({ top: true }),
+    search({ top: true, createPanel: hiddenPanel }),
     highlightSelectionMatches(),
     // Four spaces nests correctly under both "- " and "1. " markers.
     indentUnit.of('    '),
     keymap.of([
-      // Cmd/Ctrl+F and Cmd/Ctrl+Alt+F both open the bar; it always has a replace field.
-      { key: 'Mod-Alt-f', run: openSearchPanel, preventDefault: true },
-      ...searchKeymap,
+      // The Find bar is outside the editor; these keys ask for it.
+      { key: 'Mod-f', run: () => (onfind ? (onfind('find'), true) : false), preventDefault: true },
+      { key: 'Mod-Alt-f', run: () => (onfind ? (onfind('replace'), true) : false), preventDefault: true },
+      { key: 'Mod-g', run: () => (onfind ? (onfind('next'), true) : false), shift: () => (onfind ? (onfind('previous'), true) : false), preventDefault: true },
+      { key: 'F3', run: () => (onfind ? (onfind('next'), true) : false), shift: () => (onfind ? (onfind('previous'), true) : false), preventDefault: true },
       { key: 'Escape', run: () => (onescape ? (onescape(), true) : false) },
       ...(onedge
         ? [

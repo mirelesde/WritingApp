@@ -37,7 +37,7 @@
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
-  import SearchDialog from './SearchDialog.svelte'
+  import FindBar, { type FindHost, type FindScope } from './FindBar.svelte'
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import ToolButton from './ToolButton.svelte'
@@ -1337,15 +1337,102 @@
 
   // --- Search ----------------------------------------------------------------
 
-  let searching = $state(false)
+  let finding = $state<{ scope: FindScope; replace: boolean; query: string; key: number } | null>(null)
+  let findBar = $state<FindBar>()
   let searchReturnFocus: HTMLElement | null = null
+  let findKey = 0
 
-  function openSearch(): void {
+  /** The scopes the Find bar offers: the open sheet, the selected group, its project, the library. */
+  const findScopes = $derived.by(() => {
+    if (!library) return []
+    const root = library.tree.path
+    const list: { value: FindScope; label: string; name: string; path: string | undefined }[] = []
+    const sheetPath = selection.length === 1 ? selection[0] : undefined
+    if (sheetPath && open) {
+      list.push({ value: 'sheet', label: 'Look in sheet', name: tabTitles.get(sheetPath) ?? 'this sheet', path: sheetPath })
+    }
+    const inGroup = selectedGroup !== root ? selectedGroup : undefined
+    const projectPath = inGroup ? inGroup.slice(0, root.length + 1 + inGroup.slice(root.length + 1).split('/')[0]!.length) : undefined
+    if (inGroup && inGroup !== projectPath) {
+      list.push({ value: 'group', label: 'Look in group', name: findGroup(library.tree, inGroup)?.name ?? 'group', path: inGroup })
+    }
+    if (projectPath) {
+      list.push({ value: 'project', label: 'Look in project', name: findGroup(library.tree, projectPath)?.name ?? 'project', path: projectPath })
+    }
+    list.push({ value: 'library', label: 'Look in library', name: 'library', path: undefined })
+    return list
+  })
+
+  /** Opens the Find bar. Without a scope it starts as narrow as makes sense. */
+  function openFind(scope?: FindScope, replace = false): void {
+    if (finding) {
+      const wanted = scope && findScopes.some((s) => s.value === scope) ? scope : undefined
+      if (wanted) finding.scope = wanted
+      const text = selectedText && !selectedText.includes('\n') ? selectedText.slice(0, 200) : undefined
+      findBar?.focusQuery(text, replace)
+      return
+    }
     searchReturnFocus = document.activeElement as HTMLElement | null
-    searching = true
+    const have = (v: FindScope): boolean => findScopes.some((s) => s.value === v)
+    const chosen: FindScope =
+      scope && have(scope) ? scope : have('sheet') ? 'sheet' : have('group') ? 'group' : have('project') ? 'project' : 'library'
+    const query = selectedText && !selectedText.includes('\n') ? selectedText.slice(0, 200) : ''
+    finding = { scope: chosen, replace, query, key: ++findKey }
   }
 
-  /** Replaces in the library (or one sheet) for the Find dialog; returns how many were changed. */
+  function closeFind(): void {
+    finding = null
+    for (const e of Object.values(editors)) e?.clearMarks()
+    const path = selection.length === 1 ? selection[0] : undefined
+    if (path && editors[path]) editors[path]!.focus()
+    else searchReturnFocus?.focus()
+  }
+
+  /** The editor of a sheet, once it has opened. */
+  async function editorFor(path: string): Promise<Editor | undefined> {
+    for (let i = 0; i < 20 && !editors[path]; i++) await tick()
+    return editors[path]
+  }
+
+  const findHost: FindHost = {
+    sheet() {
+      const path = selection.length === 1 ? selection[0] : undefined
+      const editor = path ? editors[path] : undefined
+      if (!path || !editor) return null
+      return { path, text: editor.getText(), cursor: editor.cursorOffset() }
+    },
+    async reveal(path, from, to) {
+      if (!library) return
+      if (!(selection.length === 1 && selection[0] === path && editors[path])) {
+        if (listed.some((x) => x.path === path)) await setSelection([path], path, false)
+        else {
+          const parent = path.slice(0, path.lastIndexOf('/'))
+          for (let p = parent; p.length >= library.tree.path.length; p = p.slice(0, p.lastIndexOf('/'))) expanded[p] = true
+          selectedGroup = parent
+          await setSelection([path], path, false)
+        }
+      }
+      ;(await editorFor(path))?.selectRange(from, to)
+    },
+    mark(path, query, options) {
+      for (const [p, e] of Object.entries(editors)) {
+        if (p === path) e?.markMatches(query, options)
+        else e?.clearMarks()
+      }
+    },
+    unmark() {
+      for (const e of Object.values(editors)) e?.clearMarks()
+    },
+    replaceHere(path, changes) {
+      editors[path]?.replaceRanges(changes)
+    },
+    async replaceAll(query, replacement, within, options) {
+      return replaceFound(query, replacement, undefined, { ...options, ...(within ? { within } : {}) })
+    },
+    flush: () => autosaver.flush()
+  }
+
+  /** Replaces in the library (or one sheet) for the Find bar; returns how many were changed. */
   async function replaceFound(
     query: string,
     replacement: string,
@@ -1360,15 +1447,9 @@
     return result?.replaced ?? 0
   }
 
-  function closeSearch(): void {
-    searching = false
-    searchReturnFocus?.focus()
-  }
-
   /** Opens a sheet found by search: selects its group, expands the way to it, and shows it. */
   async function revealSheet(path: string, focus = true): Promise<void> {
     if (!library) return
-    searching = false
     quickOpening = false
     await autosaver.flush()
     const parent = path.slice(0, path.lastIndexOf('/'))
@@ -1778,7 +1859,7 @@
     else if (command === 'new-from-template') openPalette()
     else if (command === 'move-to') openMoveTo()
     else if (command === 'export-html') void openExport()
-    else if (command === 'search') openSearch()
+    else if (command === 'search') openFind(findScopes.some((x) => x.value === 'group') ? 'group' : undefined)
     else if (command === 'quick-open') openQuick()
     else if (command === 'command-palette') openPalette()
     else if (command === 'distraction-free') toggleZen()
@@ -2208,7 +2289,7 @@
           />
           <ToolButton icon="back" label="Back" hint="{keyMod}[" disabled={!canBack} onclick={() => void step(-1)} />
           <ToolButton icon="forward" label="Forward" hint="{keyMod}]" disabled={!canForward} onclick={() => void step(1)} />
-          <ToolButton icon="search" label="Find in library" hint="{keyMod}{keyShift}F" onclick={openSearch} />
+          <ToolButton icon="search" label="Find" hint="{keyMod}F" pressed={finding !== null} onclick={() => (finding ? closeFind() : openFind())} />
         </span>
         <span class="tools">
           <ToolButton icon="bold" label="Bold" hint="{keyMod}B" disabled={open === null} onclick={() => formatActive('bold')} />
@@ -2240,6 +2321,7 @@
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
       </div>
+      <div class="above">
       {#if tabs.length > 1 && !zen}
         <div class="tabs" role="tablist" aria-label="Open sheets">
           {#each tabs as path, i (i)}
@@ -2272,6 +2354,21 @@
           <button class="tab-new" aria-label="New tab" title="New tab ({keyMod}T)" onclick={newTab}>+</button>
         </div>
       {/if}
+      {#if finding && !zen}
+        {#key finding.key}
+          <FindBar
+            bind:this={findBar}
+            scopes={findScopes}
+            scope={finding.scope}
+            initialQuery={finding.query}
+            showReplace={finding.replace}
+            host={findHost}
+            onclose={closeFind}
+            onscope={(v) => finding && (finding.scope = v)}
+          />
+        {/key}
+      {/if}
+      </div>
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="scroller" onmousedown={clickBelowText}>
       {#if error}
@@ -2292,6 +2389,7 @@
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (selectedText = text)}
                   onsection={(heading) => (currentSection = { path: part.path, heading })}
+                  onfind={(action) => (action === 'next' || action === 'previous' ? findBar?.next(action === 'next' ? 1 : -1) : openFind(undefined, action === 'replace'))}
                   {focusMode}
                   {typewriter}
                   {lineNumbers}
@@ -2331,15 +2429,6 @@
     onrefreshthemes={() => void window.api.listThemes().then((found) => (themes = found))}
     onchange={(patch) => void window.api.setView(patch)}
     onclose={() => (preferencesOpen = false)}
-  />
-{/if}
-
-{#if searching}
-  <SearchDialog
-    onpick={revealSheet}
-    oncancel={closeSearch}
-    onreplace={replaceFound}
-    scope={group && library && group.path !== library.tree.path ? { path: group.path, name: group.name } : undefined}
   />
 {/if}
 
@@ -2962,9 +3051,12 @@
   .tools.right {
     justify-content: flex-end;
   }
-  .tabs {
+  .above {
     grid-column: 1;
     grid-row: 2;
+    min-width: 0;
+  }
+  .tabs {
     display: flex;
     align-items: center;
     gap: 2px;

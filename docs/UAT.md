@@ -321,3 +321,13 @@ Quick checks that earlier features still work with today's changes.
 - Export (Cmd/Ctrl+E) of a sheet with wiki links: the links come out as plain text and nothing breaks.
 - Open a very large sheet (5,000+ lines) with folds on: scrolling stays smooth.
 - Try on the other platforms you use (Windows/Linux): the Fold menu and shortcuts, since only macOS was checked.
+
+
+## 13.21 Find bar
+
+1. Click the magnifier. A bar opens above the editor with "Look in sheet", a box, Aa / ab / .* and a close button.
+2. Type a word in the open sheet. The box shows "1 of N", matches are marked, the first is selected. Enter and the arrows step through; Shift+Enter goes back; the count wraps.
+3. Pick "Look in project" (or group, library). The count covers every sheet; stepping past the last match in a sheet opens the next sheet.
+4. Click the chevron. A Replace box, Replace and Replace All appear. Replace changes the current match and moves on. Replace All in a sheet can be undone with Cmd/Ctrl+Z in the editor; in a group or project it reports the count and File > Undo Library Change restores it.
+5. Select text in the editor and press Cmd/Ctrl+F: the bar opens with it as the query. Escape closes the bar and returns to the editor.
+6. A bad pattern with .* on shows "Invalid" instead of a count.
