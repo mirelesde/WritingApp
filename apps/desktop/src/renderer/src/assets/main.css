@@ -159,6 +159,15 @@ html.hang-marks .cm-hang-gap {
 .mac .editor-bar button {
   -webkit-app-region: no-drag;
 }
+/* Anything drawn inside a header (a dropdown list, the click-away layer behind
+   it) must not be part of the drag area, or the system swallows its clicks.
+   A dialog's own header is not for dragging the window at all. */
+.mac header .scrim,
+.mac header [role='listbox'],
+.mac header [role='menu'],
+.mac .dlg header {
+  -webkit-app-region: no-drag;
+}
 .mac .library {
   background: color-mix(in srgb, var(--sidebar) 55%, transparent);
 }
