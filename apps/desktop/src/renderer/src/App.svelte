@@ -140,7 +140,16 @@
   async function finishRecovery(restore: boolean): Promise<void> {
     const entry = recovery[0]
     if (!entry) return
-    if (restore) {
+    if (restore && entry.missing) {
+      try {
+        const made = await window.api.recreateSheet(entry.path, entry.text)
+        guard.trust(made, entry.text)
+        showInfo(`Restored the text as “${made.slice(made.lastIndexOf('/') + 1)}”`)
+      } catch (e) {
+        notice = errorMessage(e)
+        return
+      }
+    } else if (restore) {
       try {
         await autosaver.flush()
         await guard.save(entry.path, entry.text)
@@ -2486,6 +2495,7 @@
     recovered={recovery[0].text}
     disk={recovery[0].disk}
     savedAt={recovery[0].savedAt}
+    missing={recovery[0].missing === true}
     position={recoveryTotal - recovery.length + 1}
     total={recoveryTotal}
     onrestore={() => void finishRecovery(true)}

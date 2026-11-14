@@ -380,3 +380,9 @@ Quick checks that earlier features still work with today's changes.
 1. Open Find (⌘F) and turn on the regular-expression toggle (`.*`). Type `(a+)+$`. The bar says the pattern repeats a repeat and that it can freeze the app; the app stays responsive. Try it in both the sheet and library scopes.
 2. Type `(\w+\s?)+$` and `([a-z]+)*`: the same message.
 3. Ordinary patterns still work: `(foo|bar)+`, `^#+ `, `(\d+)-(\d+)`, `Chapter \d+`. Replace All with `$1` still expands.
+
+## 13.29 Recovery when the sheet is gone
+
+1. Type in a sheet, then quit the app abruptly (force quit) within a second of typing, before it saves. While it is closed, delete or rename that sheet in Finder.
+2. Reopen the app. A dialog says the sheet "has since been deleted, renamed or moved" and shows the recovered text alone.
+3. "Restore as a sheet" makes the sheet again in its old folder (or at the top of the library if the folder is gone), with a different name if that one is taken, and says where it went. "Throw it away" discards the text.

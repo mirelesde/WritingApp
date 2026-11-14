@@ -379,6 +379,21 @@ export function registerLibraryIpc(): void {
     if (!(await fs.exists(path))) throw new Error('The sheet no longer exists')
     await fs.writeText(path, text)
   })
+  // Puts back a sheet whose file is gone, from text recovered after a crash. It never
+  // overwrites: if the name is taken it picks another. A vanished folder is not
+  // recreated; the sheet goes to the library's top level instead.
+  ipcMain.handle('sheet:recreate', async (_event, path: unknown, text: unknown) => {
+    if (typeof path !== 'string' || typeof text !== 'string' || !currentRoot || !isSheetInside(currentRoot, path)) {
+      throw new Error('Not a sheet in the open library')
+    }
+    let folder = dirname(path)
+    if (!(await fs.exists(folder))) folder = currentRoot
+    const base = basename(path, '.md')
+    let target = join(folder, `${base}.md`)
+    for (let n = 2; await fs.exists(target); n++) target = join(folder, `${base} ${n}.md`)
+    await fs.writeText(target, text)
+    return target
+  })
   /** Copies pictures from the library into `folder`, next to the exported file. */
   async function copyImagesBeside(file: string, folder: string, names: string[]): Promise<void> {
     if (!currentRoot) return

@@ -10,6 +10,8 @@
     disk: string
     /** When the text was last kept safe, in ms since 1970. */
     savedAt: number
+    /** The file is gone, so restoring creates it again. */
+    missing?: boolean
     /** Where this one stands when several sheets were recovered. */
     position: number
     total: number
@@ -17,7 +19,7 @@
     ondiscard: () => void
   }
 
-  let { name, recovered, disk, savedAt, position, total, onrestore, ondiscard }: Props = $props()
+  let { name, recovered, disk, savedAt, missing = false, position, total, onrestore, ondiscard }: Props = $props()
 
   const words = (text: string): string => `${textStats(text).words.toLocaleString()} words`
   const when = $derived(
@@ -36,24 +38,31 @@
       {#if total > 1}<small>{position} of {total}</small>{/if}
     </h2>
     <p>
-      The app closed before this text was saved. It was kept safe at {when}. Restore it to put it back
-      in the sheet, or keep the file as it is now.
+      {#if missing}
+        The app closed before this text was saved, and the sheet has since been deleted, renamed or
+        moved. The text was kept safe at {when}. Restore it to make the sheet again, or throw it away.
+      {:else}
+        The app closed before this text was saved. It was kept safe at {when}. Restore it to put it back
+        in the sheet, or keep the file as it is now.
+      {/if}
     </p>
-    <div class="versions">
+    <div class="versions" class:single={missing}>
       <section>
         <h3>Recovered text <small>{words(recovered)}</small></h3>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <pre tabindex="0">{recovered}</pre>
       </section>
+      {#if !missing}
       <section>
         <h3>In the file now <small>{words(disk)}</small></h3>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <pre tabindex="0">{disk}</pre>
       </section>
+      {/if}
     </div>
     <div class="buttons">
-      <button onclick={ondiscard}>Keep the file as it is</button>
-      <button class="primary" onclick={onrestore}>Restore recovered text</button>
+      <button onclick={ondiscard}>{missing ? 'Throw it away' : 'Keep the file as it is'}</button>
+      <button class="primary" onclick={onrestore}>{missing ? 'Restore as a sheet' : 'Restore recovered text'}</button>
     </div>
   </div>
 </div>
@@ -82,6 +91,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     min-height: 0;
+  }
+  .versions.single {
+    grid-template-columns: 1fr;
   }
   section {
     display: flex;

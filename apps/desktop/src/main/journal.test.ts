@@ -34,15 +34,25 @@ describe('journal', () => {
     expect(await journal.pending(lib)).toEqual([])
   })
 
-  it('drops entries that match the file, or whose sheet is gone', async () => {
+  it('drops entries that match the file, or whose sheet is gone and text is blank', async () => {
     const same = join(lib, 'same.md')
     const gone = join(lib, 'gone.md')
     await writeFile(same, 'text')
     const journal = createJournal(join(dir, 'j'))
     await journal.put(lib, same, 'text')
-    await journal.put(lib, gone, 'lost')
+    await journal.put(lib, gone, '  \n')
     expect(await journal.pending(lib)).toEqual([])
     expect(await readdir(join(dir, 'j'))).toEqual([])
+  })
+
+  it('offers text back when its sheet was deleted or renamed', async () => {
+    const gone = join(lib, 'gone.md')
+    const journal = createJournal(join(dir, 'j'))
+    await journal.put(lib, gone, 'my only copy')
+    expect(await journal.pending(lib)).toEqual([
+      expect.objectContaining({ path: gone, text: 'my only copy', disk: '', missing: true })
+    ])
+    expect(await readdir(join(dir, 'j'))).toHaveLength(1)
   })
 
   it('keeps another library’s entries and ignores damaged files', async () => {

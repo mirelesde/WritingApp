@@ -10,6 +10,7 @@ const api: Api = {
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
   readSheet: (path) => ipcRenderer.invoke('sheet:read', path),
   writeSheet: (path, text) => ipcRenderer.invoke('sheet:write', path, text),
+  recreateSheet: (path, text) => ipcRenderer.invoke('sheet:recreate', path, text),
   createSheet: (group, index) => ipcRenderer.invoke('op:createSheet', group, index),
   listTemplates: () => ipcRenderer.invoke('templates:list'),
   saveTemplate: (text) => ipcRenderer.invoke('templates:save', text),

@@ -11,6 +11,8 @@ export interface RecoveredSheet {
   disk: string
   /** When the text was journaled, in ms since 1970. */
   savedAt: number
+  /** The sheet's file is gone (deleted, renamed or moved), so `disk` is empty and restoring recreates it. */
+  missing?: boolean
 }
 
 interface Entry {
@@ -78,13 +80,20 @@ export function createJournal(dir: string): {
           try {
             disk = await nodeFs.readFile(entry.path, 'utf8')
           } catch {
-            // The sheet is gone or was renamed: there is nothing to restore into.
+            // The sheet is gone or was renamed. The text is still the user's work,
+            // so it is offered back (as a new sheet) unless it is empty.
           }
-          if (disk === undefined || disk === entry.text) {
+          if (disk === entry.text || (disk === undefined && entry.text.trim() === '')) {
             await nodeFs.rm(file, { force: true })
             continue
           }
-          found.push({ path: entry.path, text: entry.text, disk, savedAt: entry.savedAt ?? 0 })
+          found.push({
+            path: entry.path,
+            text: entry.text,
+            disk: disk ?? '',
+            savedAt: entry.savedAt ?? 0,
+            ...(disk === undefined ? { missing: true } : {})
+          })
         } catch {
           await nodeFs.rm(file, { force: true })
         }

@@ -80,6 +80,8 @@ export interface RecoveredSheet {
   text: string
   disk: string
   savedAt: number
+  /** The sheet's file is gone; restoring recreates it. */
+  missing?: boolean
 }
 
 /** A preview of an HTML export. */
@@ -136,6 +138,8 @@ export interface Api {
   readSheet(path: string): Promise<string>
   /** Replaces the text of an existing sheet in the open library. */
   writeSheet(path: string, text: string): Promise<void>
+  /** Makes a sheet again from recovered text when its file is gone; returns where it went. */
+  recreateSheet(path: string, text: string): Promise<string>
   /** Creates a sheet in a group, at `index` among its children (default: the end). */
   createSheet(group: string, index?: number): Promise<OpResult>
   /** The templates kept in the library's hidden `.templates` folder. */
