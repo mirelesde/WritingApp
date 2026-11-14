@@ -88,36 +88,63 @@ function editAlt(view: EditorView, box: HTMLElement, current: string): void {
   input.select()
 }
 
+/** Web pictures the user has chosen to load in this session. */
+const loadedWeb = new Set<string>()
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host
+  } catch {
+    return url
+  }
+}
+
 class ThumbWidget extends WidgetType {
   constructor(
     readonly name: string,
-    readonly alt: string
+    readonly alt: string,
+    /** A web address, for a picture that is not in the library. */
+    readonly remote = ''
   ) {
     super()
   }
   get src(): string {
-    return `wa-asset://library/${encodeURIComponent(this.name)}`
+    return this.remote || `wa-asset://library/${encodeURIComponent(this.name)}`
   }
   eq(other: ThumbWidget): boolean {
-    return other.name === this.name && other.alt === this.alt
+    return other.name === this.name && other.alt === this.alt && other.remote === this.remote
   }
   toDOM(view: EditorView): HTMLElement {
     const box = document.createElement('span')
     box.className = 'cm-image-thumb'
-    const img = document.createElement('img')
-    img.src = this.src
-    img.alt = this.alt
-    img.title = this.alt
-    img.draggable = false
-    img.addEventListener('error', () => {
-      box.classList.add('cm-image-missing')
-      box.title = `Missing picture: ${this.name}`
-      const label = document.createElement('span')
-      label.className = 'cm-image-missing-label'
-      label.textContent = this.name
-      box.append(label)
-    })
-    box.append(img)
+    const label = this.remote ? hostOf(this.remote) : this.name
+    const show = (): void => {
+      box.classList.remove('cm-image-web')
+      box.querySelector('.cm-image-missing-label')?.remove()
+      const img = document.createElement('img')
+      img.src = this.src
+      img.alt = this.alt
+      img.title = this.alt
+      img.draggable = false
+      img.addEventListener('error', () => {
+        box.classList.add('cm-image-missing')
+        box.title = `Missing picture: ${label}`
+        const note = document.createElement('span')
+        note.className = 'cm-image-missing-label'
+        note.textContent = label
+        box.append(note)
+      })
+      box.prepend(img)
+    }
+    // A picture on the web is fetched only when asked for, so opening a sheet contacts no one.
+    if (this.remote && !loadedWeb.has(this.remote)) {
+      box.classList.add('cm-image-web')
+      box.title = `Click to load the picture from ${label}`
+      const note = document.createElement('span')
+      note.className = 'cm-image-missing-label'
+      note.textContent = `Load from ${label}`
+      box.append(note)
+    } else show()
     const badge = document.createElement('span')
     badge.className = 'cm-image-alt-badge'
     badge.textContent = this.alt ? 'Alt' : '+ Alt'
@@ -131,6 +158,12 @@ class ThumbWidget extends WidgetType {
     box.addEventListener('mousedown', (event) => {
       event.preventDefault()
       if ((event.target as HTMLElement).closest('.cm-image-alt-input')) return
+      if (box.classList.contains('cm-image-web')) {
+        loadedWeb.add(this.remote)
+        box.title = ''
+        show()
+        return
+      }
       if (!box.classList.contains('cm-image-missing')) previewImage(this.src, this.alt)
     })
     return box
@@ -145,11 +178,12 @@ function build(state: EditorState): DecorationSet {
   const ranges: Range<Decoration>[] = []
   for (const ref of findImages(state.doc.toString())) {
     const name = assetNameFromUrl(ref.url)
-    if (!name) continue
+    const remote = /^https:\/\//i.test(ref.url) ? ref.url : ''
+    if (!name && !remote) continue
     // The raw text shows while the cursor is inside it or it is selected.
     if (sel.from < ref.to && sel.to > ref.from) continue
     if (sel.empty && sel.head > ref.from && sel.head < ref.to) continue
-    ranges.push(Decoration.replace({ widget: new ThumbWidget(name, ref.alt) }).range(ref.from, ref.to))
+    ranges.push(Decoration.replace({ widget: new ThumbWidget(name ?? '', ref.alt, remote) }).range(ref.from, ref.to))
   }
   return Decoration.set(ranges, true)
 }
@@ -224,6 +258,18 @@ export const imageThumbs = [
       boxSizing: 'border-box'
     },
     '.cm-image-thumb.cm-image-missing img': { display: 'none' },
+    '.cm-image-thumb.cm-image-web': {
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: '1px dashed var(--muted)',
+      color: 'var(--muted)',
+      fontSize: '11px',
+      textAlign: 'center',
+      padding: '4px',
+      boxSizing: 'border-box'
+    },
     '.cm-image-thumb.cm-image-missing::before': { content: '"⚠︎"', fontSize: '20px' },
     '.cm-image-missing-label': { maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
   })

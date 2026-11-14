@@ -720,7 +720,7 @@ asked for directly.
       (the sidebar, say) is unchecked and may make Electron open it as a
       page; alt text is edited from the thumbnail (hover, click Alt; done), captions only in the Markdown; a
       missing picture now shows a dashed "missing" box with its file name (done); dragging pictures between sheets inside the app is not handled;
-      web pictures (linked by address) get no thumbnail; resizing, cropping
+      web pictures (https links) show a "Load from host" box and fetch only when clicked, once per session (done; http links get none, and the preference to load automatically is not built); resizing, cropping
       or choosing the thumbnail crop; merging existing duplicates (left out
       on purpose, it edits sheets); a migration for same-folder pictures
       from the dropped design (none exists outside a test library); and the
