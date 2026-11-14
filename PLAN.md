@@ -579,7 +579,7 @@ asked for directly.
     renames itself on save); groups rename the folder and keep the sidecar.
     Needs a rename operation with undo. Comes before item 17 so the context
     menu can offer it.
-17. **Right-click menus (user).** *Partly done:* sheets, groups and the library root have a native menu with new sheet/group, rename, move to…, move to trash, reveal in Finder / file manager and copy path. Still to do: duplicate, cut / copy / paste (below). On a sheet, a group and the library root:
+17. ~~**Right-click menus (user).**~~ **Done.** Sheets, groups and the library root have a native menu with new sheet/group, rename, duplicate, cut / copy / paste, move to…, move to trash, reveal in Finder / file manager and copy path. Cmd/Ctrl+C, X, V and D work in the sheet list and the tree (File > Duplicate has no shortcut, since the editor uses Cmd/Ctrl+D). Copies are one undo step (`copyNodes` in core). On a sheet, a group and the library root:
     new sheet/group, rename, move to…, duplicate, cut / copy / paste,
     delete. A native menu from the main process, reusing the existing
     `op:*` handlers. Cut/copy/paste and duplicate need a node clipboard and
@@ -768,8 +768,7 @@ Ulysses has and we do not; 72 to 81 are suggestions of our own.
     translated; cheaper to start early than to retrofit.
 80. **Windows and Linux pass.** Run the app, export, watching and builds on
     both, and the release workflow once end to end (see "Still open").
-81. **Duplicate sheet, and cut / copy / paste of sheets.** Already part of
-    item 17; listed here because it is the most obvious gap in daily use.
+81. ~~**Duplicate sheet, and cut / copy / paste of sheets.**~~ **Done**, with item 17.
 
 Suggested first five (not decided): 17 / 81, 72, 75, 21 + 55, 26 + 62.
 

@@ -319,6 +319,74 @@ export async function moveNodesUndoable(
   return { paths: moved, undo: [...renames, ...sidecars] }
 }
 
+/** Copies a sheet, or a group with every sheet and sub-group in it, to `to`. */
+async function copyTree(fs: FileSystem, from: string, to: string, isDir: boolean): Promise<void> {
+  if (!isDir) {
+    await fs.writeText(to, await fs.readText(from))
+    return
+  }
+  await fs.makeDir(to)
+  for (const entry of await fs.list(from)) {
+    const keep = entry.kind === 'directory' ? !entry.name.startsWith('.') : entry.name === SIDECAR_NAME || entry.name.endsWith('.md')
+    if (keep) await copyTree(fs, joinPath(from, entry.name), joinPath(to, entry.name), entry.kind === 'directory')
+  }
+}
+
+/**
+ * Copies sheets and groups into `targetGroup` as a block, in the order they
+ * stand in their own group, and returns the new paths in the order given.
+ * `index` is where the block starts (default: the end). A name already in use
+ * gets a numeric suffix, so copying into the same group makes a duplicate.
+ * Throws, changing nothing, when a group would be copied into itself.
+ */
+export async function copyNodes(
+  fs: FileSystem,
+  paths: string[],
+  targetGroup: string,
+  index?: number,
+): Promise<{ paths: string[]; undo: UndoAction[] }> {
+  if (paths.length === 0) return { paths: [], undo: [] }
+  const froms = paths.map(trimSlashes)
+  const target = trimSlashes(targetGroup)
+  for (const from of froms) {
+    if (target === from || target.startsWith(from + '/')) throw new Error('Cannot copy a group into itself')
+  }
+  const dest = await readFolder(fs, target)
+  const sidecar = await snapshotSidecar(fs, target)
+  const taken = takenNames(dest)
+  // Items from one group are copied in the order they stand there.
+  const kinds = new Map<string, boolean>()
+  let ordered = [...froms]
+  for (const from of froms) {
+    const folder = await readFolder(fs, parentPath(from))
+    const entry = folder.entries.find((e) => e.name === baseName(from))
+    if (!entry || !folder.order.includes(baseName(from))) throw new Error(`Not part of the library: ${from}`)
+    kinds.set(from, entry.kind === 'directory')
+  }
+  if (new Set(froms.map(parentPath)).size === 1) {
+    const source = await readFolder(fs, parentPath(froms[0]!))
+    ordered = ordered.sort((a, b) => source.order.indexOf(baseName(a)) - source.order.indexOf(baseName(b)))
+  }
+  const created = new Map<string, string>()
+  const written: string[] = []
+  const start = clamp(index ?? dest.order.length, dest.order.length)
+  for (const [i, from] of ordered.entries()) {
+    const name = baseName(from)
+    const isDir = kinds.get(from)!
+    const newName = uniqueName(name, isDir ? '' : '.md', isDir ? ' ' : '-', taken)
+    taken.add(newName.toLowerCase())
+    await copyTree(fs, from, joinPath(target, newName), isDir)
+    written.push(joinPath(target, newName))
+    created.set(from, newName)
+    insertName(dest, newName, start + i)
+  }
+  await writeFolder(fs, target, dest)
+  return {
+    paths: froms.map((from) => joinPath(target, created.get(from)!)),
+    undo: [...written.map((path): UndoAction => ({ kind: 'trash', path })).reverse(), sidecar],
+  }
+}
+
 /** Moves a sheet or group to `index` within its own group. */
 export async function reorderNode(fs: FileSystem, path: string, index: number): Promise<void> {
   await moveNode(fs, path, parentPath(trimSlashes(path)), index)

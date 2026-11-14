@@ -574,6 +574,92 @@
     showInfo('Moved to the trash. Undo with Cmd/Ctrl+Alt+Z.')
   }
 
+  // --- Duplicate, copy, cut and paste --------------------------------------
+
+  /** What Cut or Copy last took: sheets or groups, waiting for Paste. */
+  let nodeClip = $state<{ paths: string[]; cut: boolean } | null>(null)
+
+  /** What these commands act on: the selected sheets, or the selected group when the tree has focus. */
+  function nodeTargets(): string[] {
+    if (!library) return []
+    const inTree = treeEl?.contains(document.activeElement) ?? false
+    if (inTree || selection.length === 0) {
+      return selectedGroup === library.tree.path ? [] : [selectedGroup]
+    }
+    return [...selection] // a plain array: state proxies cannot cross the bridge
+  }
+
+  const dirOf = (path: string): string => path.slice(0, path.lastIndexOf('/'))
+
+  /** Selects what a copy or move produced: the new sheets, or the new group. */
+  async function selectCopies(paths: string[]): Promise<void> {
+    if (!library || paths.length === 0) return
+    if (paths.every((p) => sheetExists(library!.tree, p))) {
+      anchor = paths[0]!
+      await setSelection(paths, paths[0]!, false)
+    } else if (findGroup(library.tree, paths[0]!)) {
+      selectGroup(paths[0]!)
+    }
+  }
+
+  async function duplicateSelected(): Promise<void> {
+    const targets = nodeTargets()
+    const first = targets[0]
+    if (!library || !first) {
+      notice = 'Select a sheet or group to duplicate first.'
+      return
+    }
+    const parent = findGroup(library.tree, dirOf(first))
+    const after = Math.max(...targets.map((p) => parent?.children.findIndex((c) => c.path === p) ?? -1))
+    const result = await runOp(() =>
+      window.api.copy(targets, dirOf(first), after >= 0 ? after + 1 : undefined, 'Duplicate')
+    )
+    if (result?.copied) await selectCopies(result.copied)
+  }
+
+  function copySelected(cut: boolean): void {
+    const targets = nodeTargets()
+    if (targets.length === 0) {
+      notice = `Select a sheet or group to ${cut ? 'cut' : 'copy'} first.`
+      return
+    }
+    nodeClip = { paths: targets, cut }
+    showInfo(`${cut ? 'Cut' : 'Copied'} ${targets.length === 1 ? '1 item' : `${targets.length} items`}. Paste with Cmd/Ctrl+V.`)
+  }
+
+  async function pasteNodes(): Promise<void> {
+    const clip = nodeClip
+    const parent = group
+    if (!library || !clip || !parent) return
+    const inTree = treeEl?.contains(document.activeElement) ?? false
+    const at = inTree ? -1 : parent.children.findIndex((c) => c.path === cursor)
+    const index = at >= 0 ? at + 1 : undefined
+    const paths = [...clip.paths]
+    if (clip.cut) {
+      const result = await runOp(() => window.api.move(paths, parent.path, index))
+      if (!result) return
+      nodeClip = null
+      await selectCopies(paths.map((p) => remapPath(p, result.moved)))
+    } else {
+      const result = await runOp(() => window.api.copy(paths, parent.path, index, 'Paste'))
+      if (result?.copied) await selectCopies(result.copied)
+    }
+  }
+
+  /** Cmd/Ctrl+C, X, V and D in the sheet list and the tree. Returns whether the key was used. */
+  function nodeClipboardKey(e: KeyboardEvent): boolean {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return false
+    if ((e.target as HTMLElement).closest('input, textarea')) return false
+    const key = e.key.toLowerCase()
+    if (key === 'c') copySelected(false)
+    else if (key === 'x') copySelected(true)
+    else if (key === 'v') void pasteNodes()
+    else if (key === 'd') void duplicateSelected()
+    else return false
+    e.preventDefault()
+    return true
+  }
+
   async function undoSheetChange(): Promise<void> {
     const result = await runOp(() => window.api.undo(), true)
     if (result?.label) showInfo(`Undid ${result.label.toLowerCase()}`)
@@ -588,11 +674,18 @@
       selectGroup(path)
       await tick()
     }
-    const action = await window.api.showNodeMenu(kind, path)
+    const action = await window.api.showNodeMenu(kind, path, nodeClip !== null)
     if (!action) return
     if (action === 'new-sheet') await newSheet()
     else if (action === 'new-group') await newGroup(kind === 'root')
     else if (action === 'rename') void startRename(path)
+    else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
+      if (kind === 'group') treeEl?.focus()
+      await tick()
+      if (action === 'duplicate') await duplicateSelected()
+      else if (action === 'paste') await pasteNodes()
+      else copySelected(action === 'cut')
+    }
     else if (action === 'move') {
       if (kind === 'group') treeEl?.focus()
       else await tick()
@@ -1036,6 +1129,7 @@
         void runOp(() => window.api.move([current.group.path], parent.path, slot))
       return
     }
+    if (nodeClipboardKey(e)) return
     if (mod || e.altKey) return
 
     const subgroups = current.group.children.some((c) => c.kind === 'group')
@@ -1085,6 +1179,7 @@
       void setSelection([...listPaths], cursor ?? listPaths[0] ?? null)
       return
     }
+    if (nodeClipboardKey(e)) return
     if (mod || e.altKey) return
 
     const at = cursor ? listPaths.indexOf(cursor) : -1
@@ -1166,6 +1261,7 @@
     else if (command === 'insert-footnote') insertFootnote()
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
+    else if (command === 'duplicate') void duplicateSelected()
     else if (command === 'split') void splitAtCursor()
     else if (command === 'merge') void mergeSelected()
     else if (command === 'glue') void glueSelected(true)
@@ -1231,6 +1327,7 @@
       menu('File', 'Save Sheet as Template', 'save-template'),
       menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
       menu('File', 'New Project', 'new-project'),
+      menu('File', 'Duplicate', 'duplicate'),
       menu('File', 'Move to…', 'move-to', `${keyMod}${keyShift}M`),
       menu('File', 'Move to Trash', 'delete'),
       menu('File', 'Quick Open…', 'quick-open', `${keyMod}P`),

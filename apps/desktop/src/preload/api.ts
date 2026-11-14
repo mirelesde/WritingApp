@@ -18,6 +18,8 @@ export interface OpResult {
   label?: string
   /** For a replace: how many matches were changed. */
   replaced?: number
+  /** Paths of the copies a copy or duplicate made, in the order given. */
+  copied?: string[]
 }
 
 export type MenuCommand =
@@ -37,6 +39,7 @@ export type MenuCommand =
   | 'unglue'
   | 'undo-sheet-change'
   | 'delete'
+  | 'duplicate'
   | 'toggle-sidebar'
   | 'daily-note'
   | 'save-template'
@@ -89,6 +92,8 @@ export interface Api {
   syncSheetNames(paths: string[]): Promise<OpResult>
   /** Moves sheets or groups sharing one parent into `target` as a block. */
   move(paths: string[], target: string, index?: number): Promise<OpResult>
+  /** Copies sheets or groups into a group; `label` names the undo step. */
+  copy(paths: string[], target: string, index?: number, label?: 'Duplicate' | 'Paste'): Promise<OpResult>
   /** Splits a sheet, given its current text, at `offset`; the tail becomes the next sheet. */
   split(path: string, text: string, offset: number): Promise<OpResult>
   /** Merges sheets of one group into the first of them. */
@@ -132,8 +137,9 @@ export interface Api {
   /** Shows the native right-click menu for a node; resolves with what the renderer must do, or null. */
   showNodeMenu(
     kind: 'sheet' | 'group' | 'root',
-    path: string
-  ): Promise<'new-sheet' | 'new-group' | 'rename' | 'move' | 'delete' | null>
+    path: string,
+    canPaste?: boolean
+  ): Promise<'new-sheet' | 'new-group' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when files in the open library change outside the app, with the library as it is now. */

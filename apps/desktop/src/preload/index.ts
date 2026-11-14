@@ -17,6 +17,7 @@ const api: Api = {
   renameGroup: (path, name) => ipcRenderer.invoke('op:renameGroup', path, name),
   syncSheetNames: (paths) => ipcRenderer.invoke('op:syncSheetNames', paths),
   move: (paths, target, index) => ipcRenderer.invoke('op:move', paths, target, index),
+  copy: (paths, target, index, label) => ipcRenderer.invoke('op:copy', paths, target, index, label),
   split: (path, text, offset) => ipcRenderer.invoke('op:split', path, text, offset),
   merge: (paths) => ipcRenderer.invoke('op:merge', paths),
   setColor: (path, color) => ipcRenderer.invoke('op:setColor', path, color),
@@ -44,7 +45,7 @@ const api: Api = {
   },
   listThemes: () => ipcRenderer.invoke('themes:list'),
   openThemesFolder: () => ipcRenderer.invoke('themes:openFolder'),
-  showNodeMenu: (kind, path) => ipcRenderer.invoke('menu:node', kind, path),
+  showNodeMenu: (kind, path, canPaste) => ipcRenderer.invoke('menu:node', kind, path, canPaste),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

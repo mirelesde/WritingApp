@@ -84,3 +84,44 @@ describe('deleteNodeUndoable', () => {
     expect(await fs.readText('/Lib/Book/Part/c.md')).toBe('# C\n')
   })
 })
+
+describe('copyNodes', () => {
+  it('duplicates a sheet beside the original and undoes it', async () => {
+    const fs = setup()
+    const before = await shape(fs)
+    const { copyNodes } = await import('./operations')
+    const { paths, undo } = await copyNodes(fs, ['/Lib/Book/a.md'], '/Lib/Book', 1)
+    expect(paths).toEqual(['/Lib/Book/a-2.md'])
+    expect(await fs.readText('/Lib/Book/a-2.md')).toBe('# A\n')
+    expect(await shape(fs)).toEqual(['Book/', 'Book/a.md', 'Book/a-2.md', 'Book/b.md', 'Book/Part/', 'Book/Part/c.md', 'Other/', 'Other/a.md'])
+    await applyUndo(fs, undo)
+    expect(await shape(fs)).toEqual(before)
+  })
+
+  it('copies a whole group, with its contents, into another group', async () => {
+    const fs = setup()
+    const { copyNodes } = await import('./operations')
+    const { paths, undo } = await copyNodes(fs, ['/Lib/Book/Part'], '/Lib/Other')
+    expect(paths).toEqual(['/Lib/Other/Part'])
+    expect(await fs.readText('/Lib/Other/Part/c.md')).toBe('# C\n')
+    expect(await fs.readText('/Lib/Book/Part/c.md')).toBe('# C\n')
+    await applyUndo(fs, undo)
+    expect(await fs.exists('/Lib/Other/Part')).toBe(false)
+  })
+
+  it('copies several sheets as a block in their own order', async () => {
+    const fs = setup()
+    const { copyNodes } = await import('./operations')
+    const { paths } = await copyNodes(fs, ['/Lib/Book/b.md', '/Lib/Book/a.md'], '/Lib/Other', 0)
+    expect(paths).toEqual(['/Lib/Other/b.md', '/Lib/Other/a-2.md'])
+    const tree = await loadLibrary(fs, '/Lib')
+    const other = tree.children.find((c) => c.name === 'Other') as GroupNode
+    expect(other.children.map((c) => c.name)).toEqual(['a-2.md', 'b.md', 'a.md'])
+  })
+
+  it('refuses to copy a group into itself', async () => {
+    const fs = setup()
+    const { copyNodes } = await import('./operations')
+    await expect(copyNodes(fs, ['/Lib/Book'], '/Lib/Book/Part')).rejects.toThrow('into itself')
+  })
+})

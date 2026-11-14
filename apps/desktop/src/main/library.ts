@@ -19,6 +19,7 @@ import {
   searchLibrary,
   mergeSheets,
   moveNodesUndoable,
+  copyNodes,
   renameGroup,
   syncSheetName,
   resolveView,
@@ -142,6 +143,7 @@ async function change(
   run: (root: string) => Promise<{
     moved?: [string, string][]
     created?: string
+    copied?: string[]
     /** Set to make the change undoable. */
     undo?: { label: string; actions: UndoAction[] }
   }>
@@ -154,7 +156,7 @@ async function change(
   }
   const library = await open(currentRoot)
   if (!library) throw new Error('The library could not be reloaded')
-  return { library, moved: outcome.moved ?? [], created: outcome.created }
+  return { library, moved: outcome.moved ?? [], created: outcome.created, copied: outcome.copied }
 }
 
 /** Wraps a sheet change's result so `change` records how to undo it. */
@@ -373,6 +375,19 @@ export function registerLibraryIpc(): void {
         moved: from.map((p, i): [string, string] => [p, to[i]!]),
         undo: { label: 'Move', actions: undo }
       }
+    })
+  )
+
+  ipcMain.handle('op:copy', (_event, paths: unknown, target: unknown, index: unknown, label: unknown) =>
+    change(async () => {
+      if (!Array.isArray(paths) || paths.length === 0) throw new Error('Nothing to copy')
+      const { paths: to, undo } = await copyNodes(
+        fs,
+        paths.map((p) => inside(p)),
+        inside(target, true),
+        typeof index === 'number' ? index : undefined
+      )
+      return { copied: to, undo: { label: label === 'Duplicate' ? 'Duplicate' : 'Paste', actions: undo } }
     })
   )
 

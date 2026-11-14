@@ -163,6 +163,10 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
+          label: 'Duplicate',
+          click: () => sendCommand('duplicate')
+        },
+        {
           label: 'Move to…',
           accelerator: 'CmdOrCtrl+Shift+M',
           click: () => sendCommand('move-to')

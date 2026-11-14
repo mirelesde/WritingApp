@@ -20,6 +20,7 @@ export {
   moveNode,
   moveNodes,
   moveNodesUndoable,
+  copyNodes,
   renameGroup,
   syncSheetName,
   reorderNode,
