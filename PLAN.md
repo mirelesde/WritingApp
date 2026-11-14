@@ -639,49 +639,58 @@ asked for directly.
       readable. Later: clicking a thumbnail opens a preview of the image at
       full size (not built yet; its own step). HTML and PDF export embed the
       image at a sensible size, not as a thumbnail.
-    - **Storage, as built for the first steps:** shared hidden `.assets/`
-      folder at the library root (alternative B below), original file names
-      kept with a numeric suffix on a collision. The browsable stash picker
-      (B plus a stash) is not built yet. Links are relative to the library,
-      not the sheet: `![name](.assets/name.png)`, so moving a sheet never
-      breaks them. The editor loads them through a `wa-asset://` address the
-      main process serves from that folder only. HTML export embeds each as
-      a data URI; image links do not count as words.
+    - **Storage: decided, Alternative A (user).** Each picture is stored in
+      the same folder as the sheet that uses it, under its own file name
+      (numeric suffix on a clash), and linked by that name:
+      `![name](name.png)`. The tree lists only sheets and groups, so the
+      pictures stay out of sight, and other Markdown apps read the links.
+      The editor loads them through a `wa-asset://` address the main
+      process serves, for files inside the open library only. HTML export
+      embeds each as a data URI; image links do not count as words.
+      Moving or copying a sheet to another group copies its pictures into
+      the new folder and rewrites its links (an identical file there is
+      reused, a different one is renamed); the originals stay, since other
+      sheets may use them, and undo removes the copies. Copying a group
+      takes its pictures with it. Known cost: pictures nobody links any
+      more stay on disk after a sheet is deleted or moved away; a "find
+      unused pictures" clean-up is not built.
+    - **Built (a):** Insert > Image… (`Cmd/Ctrl+Alt+I`) picks one or more
+      files and puts a thumbnail at the cursor; the raw Markdown shows
+      while the cursor is on it. A toolbar button is not built (there is
+      no toolbar yet).
     - **Built (b):** pasting a picture (screenshot, copied image, a file
-      copied in the file manager) saves it in `.assets/` and shows its
+      copied in the file manager) saves it next to the sheet and shows its
       thumbnail at the cursor.
-    - **Built (a):** Insert > Image… (`Cmd/Ctrl+Alt+I`) and the command
-      palette pick one or more files and put a thumbnail at the cursor; the
-      raw Markdown shows while the cursor is on it. A toolbar button is not
-      built (there is no toolbar yet).
     - **Insert** an image from a file picker, through a toolbar button, an
       Insert menu item and a keyboard shortcut.
     - **Paste** an image from the clipboard (screenshots, copied images).
     - **Drag and drop** image files, or images dragged from other apps and
       browsers, into the editor at the drop position.
-    - Each becomes a Markdown image link, `![](assets/name.png)`, copied
+    - Each becomes a Markdown image link, `![](name.png)`, copied
       into the library, rendered inline in the editor and embedded on
       HTML and PDF export. Unreadable or missing images show a placeholder
       rather than failing the sheet.
-    - Blocked on the open question of where images live on disk; moves,
-      renames and deletes of sheets must keep their images with them.
-    - **Alternative A, next to each sheet** (in the folder or a
+    - Where images live was an open question; options below, with the
+      choice made.
+    - **Alternative A, next to each sheet: CHOSEN** (in the folder or a
       `sheet.assets/` subfolder). Pros: self-contained, images belong to
       one sheet and go with it, short links, works in other Markdown apps.
-      Cons: clutters the tree; moves, renames, merges and splits must move
+      Cons (the tree is not cluttered in practice, since it lists only sheets
+      and groups): moves, renames, merges and splits must move
       or rewrite images; the same image pasted twice is stored twice.
-    - **Alternative B, shared assets folder** (one hidden `.assets/` at
+    - **Alternative B, shared assets folder: not chosen, kept for the
+      record** (one hidden `.assets/` at
       the library root, or one per folder). Pros: the tree stays clean,
       moves never break links, easy to store a duplicate once, a common
       convention. Cons: images outlive their sheets, so unused images
       pile up; per-folder assets break when a sheet changes group.
-    - **B plus a stash:** unused images are a feature, not a leak. Insert
+    - **B plus a stash: not chosen** — unused images are a feature, not a leak. Insert
       opens a picker of every image in the library with "Add new…" first;
       paste and drop add to the stash and insert at once; the picker marks
       images no sheet uses and can delete them, warning when one is still
       linked. Keep original file names (a short suffix only on a
-      collision) so the picker is browsable. Leaning towards this, not
-      decided. Parked until the user picks it up again.
+      collision) so the picker is browsable. Not chosen: the user picked A, so this stays here only as the
+      road not taken.
 24. **Sheet notes.** A side note per sheet that is never exported, like
     Ulysses' notes. Stored in the sidecar or a companion file; decide which
     when starting.

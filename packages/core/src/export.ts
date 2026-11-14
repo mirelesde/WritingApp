@@ -195,7 +195,7 @@ export async function exportHtml(
   const parts: string[] = []
   for (const run of runs) {
     const texts: string[] = []
-    for (const sheet of run) texts.push(await embedImages(fs, root.path, await fs.readText(sheet.path)))
+    for (const sheet of run) texts.push(await embedImages(fs, sheet.path.slice(0, sheet.path.lastIndexOf('/')), await fs.readText(sheet.path)))
     parts.push(markdownToHtml(texts.map((t) => stripComments(t).trim()).join('\n\n')))
   }
   const body = parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n')

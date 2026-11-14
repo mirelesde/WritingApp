@@ -1,28 +1,39 @@
-import { EditorState, RangeSet, StateField, type Range } from '@codemirror/state'
+import { EditorState, Facet, RangeSet, StateField, type Range } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view'
-import { assetNameFromUrl, findImages } from '@writingapp/core'
+import { findImages, localImagePath } from '@writingapp/core'
 
 /**
- * A picture from the library's assets folder is drawn inline as a small fixed
+ * A picture stored next to its sheet is drawn inline as a small fixed
  * square, whatever its shape, like Ulysses does. The Markdown underneath stays
- * plain, and the raw `![alt](.assets/name)` shows while the cursor is on it.
+ * plain, and the raw `![alt](name.png)` shows while the cursor is on it.
  */
+
+/** Where the sheet being edited lives; a function, since the sheet can be renamed. */
+export const sheetPathOf = Facet.define<() => string, () => string>({
+  combine: (values) => values[0] ?? (() => '')
+})
+
+/** The address the main process serves a picture file from. */
+function assetUrl(sheet: string, relative: string): string {
+  const dir = sheet.slice(0, sheet.lastIndexOf('/'))
+  return `wa-asset://f/${encodeURIComponent(`${dir}/${relative}`)}`
+}
 
 class ThumbWidget extends WidgetType {
   constructor(
-    readonly name: string,
+    readonly src: string,
     readonly alt: string
   ) {
     super()
   }
   eq(other: ThumbWidget): boolean {
-    return other.name === this.name && other.alt === this.alt
+    return other.src === this.src && other.alt === this.alt
   }
   toDOM(): HTMLElement {
     const box = document.createElement('span')
     box.className = 'cm-image-thumb'
     const img = document.createElement('img')
-    img.src = `wa-asset://library/${encodeURIComponent(this.name)}`
+    img.src = this.src
     img.alt = this.alt
     img.title = this.alt
     img.draggable = false
@@ -37,14 +48,16 @@ class ThumbWidget extends WidgetType {
 
 function build(state: EditorState): DecorationSet {
   const sel = state.selection.main
+  const sheet = state.facet(sheetPathOf)()
   const ranges: Range<Decoration>[] = []
+  if (!sheet) return Decoration.none
   for (const ref of findImages(state.doc.toString())) {
-    const name = assetNameFromUrl(ref.url)
+    const name = localImagePath(ref.url)
     if (!name) continue
     // The raw text shows while the cursor is inside it or it is selected.
     if (sel.from < ref.to && sel.to > ref.from) continue
     if (sel.empty && sel.head > ref.from && sel.head < ref.to) continue
-    ranges.push(Decoration.replace({ widget: new ThumbWidget(name, ref.alt) }).range(ref.from, ref.to))
+    ranges.push(Decoration.replace({ widget: new ThumbWidget(assetUrl(sheet, name), ref.alt) }).range(ref.from, ref.to))
   }
   return Decoration.set(ranges, true)
 }
@@ -101,14 +114,14 @@ const PASTED_TYPES: Record<string, string> = {
 }
 
 /** Saves each picture file in the list and returns its Markdown. */
-export async function saveImageFiles(files: File[]): Promise<string[]> {
+export async function saveImageFiles(sheet: string, files: File[]): Promise<string[]> {
   const markdown: string[] = []
   for (const file of files) {
     const ext = PASTED_TYPES[file.type]
     if (!ext) continue
     // A screenshot comes without a useful name.
     const name = /\.[a-z0-9]+$/i.test(file.name) ? file.name : `image.${ext}`
-    markdown.push(await window.api.saveImage(name, new Uint8Array(await file.arrayBuffer())))
+    markdown.push(await window.api.saveImage(sheet, name, new Uint8Array(await file.arrayBuffer())))
   }
   return markdown
 }
@@ -119,7 +132,7 @@ export const imagePaste = EditorView.domEventHandlers({
     const files = [...(event.clipboardData?.files ?? [])].filter((f) => f.type in PASTED_TYPES)
     if (files.length === 0) return false
     event.preventDefault()
-    void saveImageFiles(files).then((markdown) => insertImages(view, markdown))
+    void saveImageFiles(view.state.facet(sheetPathOf)(), files).then((markdown) => insertImages(view, markdown))
     return true
   }
 })

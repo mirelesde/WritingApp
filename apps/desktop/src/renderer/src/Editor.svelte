@@ -9,12 +9,14 @@
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
   import { insertTable } from './tableWidget'
   import { goToFootnote, insertFootnote } from './footnotes'
-  import { insertImages } from './imageThumbs'
+  import { insertImages, sheetPathOf } from './imageThumbs'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
     /** The text to start from. Edits are reported through `onchange`. */
     text: string
+    /** The sheet's path, so its pictures can be found next to it. */
+    path: string
     onchange: (text: string) => void
     onblur: () => void
     /** Escape was pressed: hand focus back to the sheet list. */
@@ -43,7 +45,7 @@
     autofocus?: boolean
   }
 
-  let { text, onchange, onblur, onescape, onfocus, onedge,
+  let { text, path, onchange, onblur, onescape, onfocus, onedge,
     onselection,
     onsection,
     focusMode = false,
@@ -170,6 +172,7 @@
         text,
         { onchange, onblur, onescape, onfocus, onedge, onselection, onsection },
         [
+          sheetPathOf.of(() => path),
           focusing.of(
             focusExtensions({ dim: focusMode, typewriter, scope: focusScope, position: typewriterAt })
           ),
