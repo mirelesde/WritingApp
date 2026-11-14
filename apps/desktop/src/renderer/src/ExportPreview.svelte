@@ -304,7 +304,7 @@
     height: calc(100vh - 48px);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: clip;
   }
   header button {
     padding: 5px 10px;
