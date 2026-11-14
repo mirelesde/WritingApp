@@ -619,7 +619,7 @@ asked for directly.
     syntax colours in fenced code, and maths (`$...$`), rendered in the
     editor styling and in HTML and PDF export. Maths needs a renderer
     (KaTeX) bundled for export.
-54. **Library-wide replace.** Find in Library gains a Replace field with a
+54. ~~**Library-wide replace.**~~ **Done.** Replace… in Find in Library: the snippets preview the change, Replace in this sheet, Replace All, one undo step (Undo Library Change). Unsaved edits are saved first rather than skipped. Find in Library gains a Replace field with a
     per-match preview, replace one, replace all, and one undo step for the
     whole replacement. Skips sheets with unsaved edits until they are saved.
 55. **Writing session stats.** Words written today, a streak, and a daily

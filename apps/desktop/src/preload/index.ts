@@ -26,6 +26,8 @@ const api: Api = {
   undo: () => ipcRenderer.invoke('op:undo'),
   groupWords: (path) => ipcRenderer.invoke('stats:group', path),
   search: (query) => ipcRenderer.invoke('search:run', query),
+  replaceAll: (query, replacement, only) =>
+    ipcRenderer.invoke('op:replaceAll', query, replacement, only),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
   saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),

@@ -770,6 +770,13 @@
     searching = true
   }
 
+  /** Replaces in the library (or one sheet) for the Find dialog; returns how many were changed. */
+  async function replaceFound(query: string, replacement: string, path?: string): Promise<number> {
+    const result = await runOp(() => window.api.replaceAll(query, replacement, path ? [path] : undefined), true)
+    if (result?.replaced) showInfo(`Replaced ${result.replaced} ${result.replaced === 1 ? 'match' : 'matches'}. Undo Library Change brings them back.`)
+    return result?.replaced ?? 0
+  }
+
   function closeSearch(): void {
     searching = false
     searchReturnFocus?.focus()
@@ -1581,7 +1588,7 @@
 {/if}
 
 {#if searching}
-  <SearchDialog onpick={revealSheet} oncancel={closeSearch} />
+  <SearchDialog onpick={revealSheet} oncancel={closeSearch} onreplace={replaceFound} />
 {/if}
 
 {#if palette}

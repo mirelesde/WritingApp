@@ -5,6 +5,7 @@ import {
   applyUndo,
   createGroup,
   createFromTemplate,
+  replaceInLibrary,
   createSheet,
   dailyNote,
   listTemplates,
@@ -237,6 +238,20 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('search:run', async (_event, query: unknown) => {
     if (typeof query !== 'string' || !currentRoot) return []
     return searchLibrary(fs, await loadLibrary(fs, currentRoot), query)
+  })
+
+  ipcMain.handle('op:replaceAll', async (_event, query: unknown, replacement: unknown, only: unknown) => {
+    if (typeof query !== 'string' || typeof replacement !== 'string') throw new Error('Nothing to replace')
+    const paths = Array.isArray(only) ? only.map((p) => inside(p)) : undefined
+    let replaced = 0
+    const result = await change(async (root) => {
+      const outcome = await replaceInLibrary(fs, await loadLibrary(fs, root), query, replacement, paths)
+      replaced = outcome.count
+      return outcome.count > 0
+        ? { undo: { label: `Replace “${query.trim()}”`, actions: outcome.undo } }
+        : {}
+    })
+    return { ...result, replaced }
   })
 
   ipcMain.handle('stats:group', async (_event, path: unknown) => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary } from './library'
-import { searchLibrary } from './search'
+import { replaceAllIn, replaceInLibrary, searchLibrary } from './search'
+import { applyUndo } from './undo'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
 const fs = new MemoryFileSystem({
@@ -32,5 +33,25 @@ describe('searchLibrary', () => {
     const tree = await loadLibrary(fs, '/Lib')
     expect(await searchLibrary(fs, tree, 'lighthouse', 1)).toHaveLength(1)
     expect(await searchLibrary(fs, tree, '   ')).toEqual([])
+  })
+})
+
+
+describe('replace', () => {
+  it('replaces every match, ignoring case', () => {
+    expect(replaceAllIn('Cat cat CAT dog', 'cat', 'fox')).toEqual({ text: 'fox fox fox dog', count: 3 })
+    expect(replaceAllIn('abc', '', 'x').count).toBe(0)
+  })
+
+  it('replaces across sheets, can be limited, and can be undone', async () => {
+    const fs = new MemoryFileSystem({ '/lib/a.md': '# A\nred red', '/lib/G/b.md': '# B\nRed', '/lib/c.md': '# C' })
+    const tree = await loadLibrary(fs, '/lib')
+    const one = await replaceInLibrary(fs, tree, 'red', 'blue', ['/lib/c.md', '/lib/G/b.md'])
+    expect(one).toMatchObject({ count: 1, sheets: 1 })
+    const all = await replaceInLibrary(fs, tree, 'red', 'blue')
+    expect(all).toMatchObject({ count: 2, sheets: 1 })
+    expect(await fs.readText('/lib/a.md')).toBe('# A\nblue blue')
+    await applyUndo(fs, all.undo)
+    expect(await fs.readText('/lib/a.md')).toBe('# A\nred red')
   })
 })

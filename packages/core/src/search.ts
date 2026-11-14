@@ -73,3 +73,51 @@ async function searchSheet(
     count,
   }
 }
+
+/** `text` with every occurrence of `query` (ignoring case) replaced, and how many there were. */
+export function replaceAllIn(text: string, query: string, replacement: string): { text: string; count: number } {
+  const needle = query.toLowerCase()
+  if (needle === '') return { text, count: 0 }
+  const lower = text.toLowerCase()
+  let out = ''
+  let from = 0
+  let count = 0
+  for (let at = lower.indexOf(needle); at >= 0; at = lower.indexOf(needle, from)) {
+    out += text.slice(from, at) + replacement
+    from = at + needle.length
+    count++
+  }
+  return { text: out + text.slice(from), count }
+}
+
+/**
+ * Replaces `query` with `replacement` in every sheet that has it (or only in
+ * the sheets listed in `only`). Returns the steps that put the old text back.
+ */
+export async function replaceInLibrary(
+  fs: FileSystem,
+  root: GroupNode,
+  query: string,
+  replacement: string,
+  only?: string[],
+): Promise<{ count: number; sheets: number; undo: { kind: 'write'; path: string; text: string }[] }> {
+  const undo: { kind: 'write'; path: string; text: string }[] = []
+  let count = 0
+  if (query.trim() === '') return { count, sheets: 0, undo }
+  const chosen = only ? new Set(only) : undefined
+  const visit = async (group: GroupNode): Promise<void> => {
+    for (const child of group.children) {
+      if (child.kind === 'group') await visit(child)
+      else if (!chosen || chosen.has(child.path)) {
+        const text = await fs.readText(child.path)
+        const next = replaceAllIn(text, query.trim(), replacement)
+        if (next.count === 0) continue
+        await fs.writeText(child.path, next.text)
+        undo.push({ kind: 'write', path: child.path, text })
+        count += next.count
+      }
+    }
+  }
+  await visit(root)
+  return { count, sheets: undo.length, undo }
+}
