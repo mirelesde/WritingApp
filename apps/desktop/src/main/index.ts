@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { attachEditMenu } from './editMenu'
 import { registerNodeMenuIpc } from './nodeMenu'
 import { registerThemeIpc } from './themes'
+import { registerExportStyleIpc } from './exportStyles'
 import { loadView, registerViewIpc, viewMenu } from './view'
 import {
   chooseLibrary,
@@ -313,6 +314,7 @@ app.whenReady().then(async () => {
   registerViewIpc()
   registerNodeMenuIpc()
   registerThemeIpc()
+  registerExportStyleIpc()
   const rebuild = (): void => Menu.setApplicationMenu(buildMenu())
   await loadView(rebuild)
   await loadRecent(rebuild)

@@ -1,4 +1,4 @@
-import type { ColorTheme, GroupNode, SearchHit, SearchOptions, ViewSettings } from '@writingapp/core'
+import type { ColorTheme, ExportStyleDef, GroupNode, SearchHit, SearchOptions, ViewSettings } from '@writingapp/core'
 
 /** A loaded library: where it lives and its tree. */
 export interface LibraryInfo {
@@ -149,11 +149,17 @@ export interface Api {
   /** Builds the HTML export of the given sheets and groups, without saving it. */
   previewExport(paths: string[]): Promise<ExportPreview>
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */
-  saveExport(paths: string[], pictures?: 'embed' | 'folder'): Promise<string | null>
+  saveExport(paths: string[], pictures?: 'embed' | 'folder', css?: string): Promise<string | null>
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
   /** Asks where to save, writes the selection as Markdown, and copies the pictures it uses into a folder beside it. */
   saveExportMarkdown(paths: string[]): Promise<string | null>
-  saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
+  saveExportPdf(paths: string[], options: PdfOptions, css?: string): Promise<string | null>
+  /** The built-in export styles, then the writer's own. */
+  exportStyles(): Promise<ExportStyleDef[]>
+  /** Saves a style of the writer's own (over `id` if given); returns its id. */
+  saveExportStyle(name: string, description: string, css: string, id?: string): Promise<string>
+  deleteExportStyle(id: string): Promise<void>
+  openExportStylesFolder(): Promise<void>
   /** The sheet that was open when the app last ran, if any. */
   getLastSheet(): Promise<string | null>
   /** Keeps unsaved editor text safe until the sheet is written. */

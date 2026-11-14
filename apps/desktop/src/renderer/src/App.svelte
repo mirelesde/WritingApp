@@ -1125,10 +1125,10 @@
     }
   }
 
-  async function saveExport(pictures: 'embed' | 'folder'): Promise<void> {
+  async function saveExport(pictures: 'embed' | 'folder', css: string): Promise<void> {
     exportSaving = true
     try {
-      const saved = await window.api.saveExport(exportPaths, pictures)
+      const saved = await window.api.saveExport(exportPaths, pictures, css)
       if (saved) {
         exportPreview = null
         showInfo('Exported to ' + saved.split(/[\\/]/).pop())
@@ -1157,10 +1157,10 @@
     }
   }
 
-  async function saveExportPdf(options: PdfOptions): Promise<void> {
+  async function saveExportPdf(options: PdfOptions, css: string): Promise<void> {
     exportSaving = true
     try {
-      const saved = await window.api.saveExportPdf(exportPaths, { ...options })
+      const saved = await window.api.saveExportPdf(exportPaths, { ...options }, css)
       if (saved) {
         exportPreview = null
         showInfo('Exported to ' + saved.split(/[\\/]/).pop())

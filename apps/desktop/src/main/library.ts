@@ -381,12 +381,12 @@ export function registerLibraryIpc(): void {
     }
   }
 
-  async function buildExport(paths: unknown, imagesFolder?: string): Promise<ExportPreview> {
+  async function buildExport(paths: unknown, imagesFolder?: string, css?: unknown): Promise<ExportPreview> {
     if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
     const chosen = paths.map((p) => inside(p, true))
     const tree = await load(currentRoot)
     const view = resolveView((await settings.load()).view)
-    return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent }, imagesFolder)
+    return exportHtml(fs, tree, chosen, { indentParagraphs: view.paragraphIndent, css: typeof css === 'string' ? css : '' }, imagesFolder)
   }
 
   const searchOptions = (raw: unknown): SearchOptions => {
@@ -427,8 +427,8 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('export:preview', (_event, paths: unknown) => buildExport(paths))
 
-  ipcMain.handle('export:save', async (event, paths: unknown, pictures: unknown) => {
-    let built = await buildExport(paths)
+  ipcMain.handle('export:save', async (event, paths: unknown, pictures: unknown, css: unknown) => {
+    let built = await buildExport(paths, undefined, css)
     const options: Electron.SaveDialogOptions = {
       title: 'Export as HTML',
       defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.html`,
@@ -443,7 +443,7 @@ export function registerLibraryIpc(): void {
     if (pictures === 'folder' && built.images.length > 0) {
       // The pictures sit in a folder beside the page instead of inside it.
       const folder = `${basename(file, extname(file))}-images`
-      built = await buildExport(paths, folder)
+      built = await buildExport(paths, folder, css)
       await copyImagesBeside(file, folder, built.images)
     }
     await fs.writeText(file, built.html)
@@ -474,9 +474,9 @@ export function registerLibraryIpc(): void {
     return result.filePath
   })
 
-  ipcMain.handle('export:savePdf', async (event, paths: unknown, rawOptions: unknown) => {
+  ipcMain.handle('export:savePdf', async (event, paths: unknown, rawOptions: unknown, css: unknown) => {
     const options = parsePdfOptions(rawOptions)
-    const built = await buildExport(paths)
+    const built = await buildExport(paths, undefined, css)
     const saveOptions: Electron.SaveDialogOptions = {
       title: 'Export as PDF',
       defaultPath: `${built.title.replace(/[\\/:*?"<>|]+/g, '-')}.pdf`,

@@ -3,6 +3,7 @@ import { Marked } from 'marked'
 import { stripComments } from './comments'
 import { mathToHtml } from './math'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
+import { sanitizeCss, STYLE_BLOCK_OPEN } from './exportStyles'
 import type { FileSystem } from './filesystem'
 import type { GroupNode, SheetNode } from './library'
 
@@ -173,6 +174,8 @@ hr.break::after { content: '* * *'; letter-spacing: .5em; color: #888; }
 export interface ExportStyle {
   /** Indent each paragraph that follows another and drop the space between them, as in a printed book. */
   indentParagraphs?: boolean
+  /** The CSS of the chosen export style (see exportStyles.ts), laid over the base stylesheet. */
+  css?: string
 }
 
 const INDENT_STYLE = `
@@ -190,6 +193,7 @@ export function htmlDocument(title: string, body: string, options: ExportStyle =
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <style>${STYLE}${options.indentParagraphs ? INDENT_STYLE : ''}</style>
+${STYLE_BLOCK_OPEN}${sanitizeCss(options.css ?? '')}</style>
 </head>
 <body>
 ${body}

@@ -38,9 +38,14 @@ const api: Api = {
   replaceAll: (query, replacement, only, options) =>
     ipcRenderer.invoke('op:replaceAll', query, replacement, only, options),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
-  saveExport: (paths, pictures) => ipcRenderer.invoke('export:save', paths, pictures),
+  saveExport: (paths, pictures, css) => ipcRenderer.invoke('export:save', paths, pictures, css),
   saveExportMarkdown: (paths) => ipcRenderer.invoke('export:saveMarkdown', paths),
-  saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),
+  saveExportPdf: (paths, options, css) => ipcRenderer.invoke('export:savePdf', paths, options, css),
+  exportStyles: () => ipcRenderer.invoke('exportStyles:list'),
+  saveExportStyle: (name, description, css, id) =>
+    ipcRenderer.invoke('exportStyles:save', name, description, css, id),
+  deleteExportStyle: (id) => ipcRenderer.invoke('exportStyles:delete', id),
+  openExportStylesFolder: () => ipcRenderer.invoke('exportStyles:openFolder'),
   getLastSheet: () => ipcRenderer.invoke('session:lastSheet'),
   setLastSheet: (path) => ipcRenderer.invoke('session:setLastSheet', path),
   getView: () => ipcRenderer.invoke('view:get'),

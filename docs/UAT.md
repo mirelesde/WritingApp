@@ -215,7 +215,20 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 9.5 | Type `(` in regex mode. | "That is not a valid regular expression". |
 | 9.6 | Close and reopen the dialog. | The three toggles keep their state. **(Replace in a Windows or Linux build not yet checked)** |
 
-## 10. Regression sweep
+## 10. Export styles
+
+| # | Steps | Expected |
+|---|---|---|
+| 10.1 | Open Export (`Cmd/Ctrl+E`) and pick each style from the Style menu. | The preview changes at once: Book is centred and justified, Manuscript monospaced and double spaced. |
+| 10.2 | Pick Manuscript, Save as PDF. | The PDF is in that style. **(not yet checked live: needs a save dialog)** |
+| 10.3 | Pick Book, Save as HTML, open the file in a browser. | Same look as the preview. **(not yet checked live)** |
+| 10.4 | "Make my own…", rename it, add `body { background: #fee }`, Save style. | The preview updates as you type; the style appears under "Yours" and is selected; a `.css` file is in the app's `export-styles` folder. |
+| 10.5 | Choose your style, Edit…, change it, Save; then Save as new. | The first overwrites; the second adds another. |
+| 10.6 | Delete your style (click twice). | It leaves the list and the Default is chosen. |
+| 10.7 | Put `@import url(https://example.com/a.css);` in a style. | It is ignored: nothing is fetched. |
+| 10.8 | Reopen Export. | The last style used is still chosen. |
+
+## 11. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 

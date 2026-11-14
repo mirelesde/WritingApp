@@ -855,8 +855,7 @@ Ulysses has and we do not; 72 to 81 are suggestions of our own.
     schedule, kept in a folder of the user's choice, with a cap on how many
     are kept. Separate from per-sheet history (27); protects against a
     corrupted library.
-69. **Export styles.** Several built-in stylesheets for HTML and PDF
-    (Ulysses ships about twenty) and user-editable ones. See also "Later".
+69. ~~**Export styles.**~~ **Done.** The export dialog has a Style picker: Default, Book, Manuscript, Modern, Academic and Plain notes, all written for this app, plus the writer's own. A style is a CSS file laid over the base stylesheet (`exportStyles.ts` in core); it applies to the live preview, HTML and PDF. "Make my own…" copies a style into an editor (name, description, CSS, live preview); own styles are `.css` files in `export-styles/` in the app's data folder (name and description in a leading comment), listed under "Yours", editable, deletable, and shareable by copying the file. CSS is sanitised: no `@import`, no web `url()`, no way out of the style element. Ulysses' own styles were not copied: their site states no licence and authors keep their rights, so the built-ins are original. Not done: a Ulysses `.ulstyle` importer, per-style page size or margins, fonts beyond what the system has, title pages and a table of contents.
 70. **Publishing.** WordPress, Ghost and Medium. Already under "Later".
 71. **Dictionary and thesaurus lookup.** Part of item 56; listed here so it
     is not forgotten if 56 is split.
@@ -1124,7 +1123,7 @@ tested with the in-memory one)
 
 - **DOCX export.** Deferred: it needs a dedicated library (or hand-written
   Office XML), and neither is worth taking on before HTML and PDF are solid.
-- Export styles: user-selectable and user-editable stylesheets.
+- Export styles beyond item 69: title page, table of contents, per-style page setup.
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
 - **EPUB export.** Another export target next to HTML and PDF: one book

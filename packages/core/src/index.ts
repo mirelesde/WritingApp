@@ -129,3 +129,12 @@ export {
   mergeHunks
 } from './diff'
 export type { ConflictPair, DiffRun, Hunk, WordSegment } from './diff'
+export {
+  applyExportStyle,
+  BUILTIN_EXPORT_STYLES,
+  parseStyleMeta,
+  sanitizeCss,
+  styleFileName,
+  styleFileText,
+} from './exportStyles'
+export type { ExportStyleDef } from './exportStyles'
