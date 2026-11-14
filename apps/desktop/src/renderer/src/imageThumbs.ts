@@ -19,6 +19,46 @@ function assetUrl(sheet: string, relative: string): string {
   return `wa-asset://f/${encodeURIComponent(`${dir}/${relative}`)}`
 }
 
+/** Shows a picture at full size over the window; a click or Escape closes it. */
+export function previewImage(src: string, alt: string): void {
+  const shade = document.createElement('div')
+  shade.className = 'image-preview'
+  Object.assign(shade.style, {
+    position: 'fixed',
+    inset: '0',
+    zIndex: '1000',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(0, 0, 0, 0.72)',
+    cursor: 'zoom-out'
+  })
+  const img = document.createElement('img')
+  img.src = src
+  img.alt = alt
+  Object.assign(img.style, {
+    maxWidth: '92vw',
+    maxHeight: '92vh',
+    objectFit: 'contain',
+    borderRadius: '6px',
+    boxShadow: '0 8px 40px rgba(0, 0, 0, 0.5)'
+  })
+  shade.append(img)
+  const close = (): void => {
+    shade.remove()
+    document.removeEventListener('keydown', onKey, true)
+  }
+  const onKey = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' && event.key !== ' ') return
+    event.preventDefault()
+    event.stopPropagation()
+    close()
+  }
+  shade.addEventListener('click', close)
+  document.addEventListener('keydown', onKey, true)
+  document.body.append(shade)
+}
+
 class ThumbWidget extends WidgetType {
   constructor(
     readonly src: string,
@@ -39,10 +79,14 @@ class ThumbWidget extends WidgetType {
     img.draggable = false
     img.addEventListener('error', () => box.classList.add('cm-image-missing'))
     box.append(img)
+    box.addEventListener('mousedown', (event) => {
+      event.preventDefault()
+      if (!box.classList.contains('cm-image-missing')) previewImage(this.src, this.alt)
+    })
     return box
   }
   ignoreEvent(): boolean {
-    return false
+    return true
   }
 }
 
@@ -76,6 +120,7 @@ export const imageThumbs = [
   EditorView.theme({
     '.cm-image-thumb': {
       display: 'inline-block',
+      cursor: 'zoom-in',
       width: '88px',
       height: '88px',
       verticalAlign: 'middle',

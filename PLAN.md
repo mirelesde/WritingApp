@@ -637,7 +637,7 @@ asked for directly.
       inline in the editor as a small fixed-size square thumbnail (cropped to
       fill the square, the way Ulysses does), so a sheet's text stays
       readable. Later: clicking a thumbnail opens a preview of the image at
-      full size (not built yet; its own step). HTML and PDF export embed the
+      full size, closed by a click or Escape (built). HTML and PDF export embed the
       image at a sensible size, not as a thumbnail.
     - **Storage: decided, Alternative A (user).** Each picture is stored in
       the same folder as the sheet that uses it, under its own file name
