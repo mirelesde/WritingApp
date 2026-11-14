@@ -810,12 +810,16 @@ asked for directly.
     library from the menu switches every window. Two windows editing one
     sheet fall back on the save guard's disk check, so the second save
     raises the usual conflict dialog.
-    Gaps: tabs are not remembered across launches and are not draggable or
-    reorderable; a tab keeps only the sheet, not its group, scroll or cursor
+    Tabs drag to reorder (a bar marks the drop point), drag onto another
+    window to move there, and drag off the window onto the desktop to
+    become a window of their own at the drop point.
+    Gaps: tabs are not remembered across launches; the drag gestures were
+    tested with synthetic drag events, not a real mouse, and moving a tab
+    between windows was not tested live at all; a tab keeps only the sheet, not its group, scroll or cursor
     (the group list follows the sheet); a sheet renamed or moved by another
     window drops its tab here instead of following it; Cmd+T copies the
     current sheet rather than opening a blank tab; no tab-stripe overflow
-    menu (it scrolls); a tab cannot be dragged out into its own window;
+    menu (it scrolls); a tab dropped back on its own window's empty area does nothing;
     live checks not done on Windows or Linux; menu accelerators were not
     pressed by hand (driven through menu items and IPC).
 30. ~~**Wiki-links `[[sheet]]` and backlinks.**~~ **Done (first version).**

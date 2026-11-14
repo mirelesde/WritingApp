@@ -630,6 +630,81 @@
     if (wasFront) void showTab(activeTab)
   }
 
+  const TAB_MIME = 'application/x-writingapp-tab'
+  /** The tab being dragged from this window, and where a drop would put it. */
+  let dragTab = $state<number | null>(null)
+  let tabHint = $state<number | null>(null)
+  let tabDropped = false
+
+  function tabDragStart(i: number, e: DragEvent): void {
+    if (!e.dataTransfer) return
+    e.dataTransfer.setData(TAB_MIME, tabs[i] ?? '')
+    e.dataTransfer.effectAllowed = 'move'
+    dragTab = i
+    tabDropped = false
+  }
+
+  /** Where in the bar a drag at this point would land: before or after the tab under it. */
+  function tabSlot(e: DragEvent): number {
+    const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]')
+    if (!tab) return tabs.length
+    const box = tab.getBoundingClientRect()
+    return Number(tab.dataset.tab) + (e.clientX > box.left + box.width / 2 ? 1 : 0)
+  }
+
+  function tabDragOver(e: DragEvent): void {
+    if (!e.dataTransfer?.types.includes(TAB_MIME)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    tabHint = tabSlot(e)
+  }
+
+  async function tabDrop(e: DragEvent): Promise<void> {
+    const path = e.dataTransfer?.getData(TAB_MIME)
+    if (!path) return
+    e.preventDefault()
+    const at = tabSlot(e)
+    tabHint = null
+    tabDropped = true
+    if (dragTab !== null) {
+      // Reordered within this window; the front tab stays in front.
+      const from = dragTab
+      const to = at > from ? at - 1 : at
+      const rest = tabs.filter((_, i) => i !== from)
+      rest.splice(to, 0, path)
+      let front = activeTab
+      if (front === from) front = to
+      else {
+        if (from < front) front--
+        if (to <= front) front++
+      }
+      tabs = rest
+      activeTab = front
+    } else if (library && sheetExists(library.tree, path)) {
+      // Brought over from another window, which closes its copy.
+      tabs = [...tabs.slice(0, at), path, ...tabs.slice(at)]
+      await showTab(at)
+    }
+  }
+
+  function tabDragEnd(e: DragEvent): void {
+    const from = dragTab
+    dragTab = null
+    tabHint = null
+    if (from === null || tabDropped) return
+    const outside =
+      e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight
+    const path = tabs[from]
+    if (e.dataTransfer?.dropEffect === 'move') {
+      // Another window took it.
+      closeTab(from)
+    } else if (outside && path && tabs.length > 1) {
+      // Dropped on the desktop: it becomes a window of its own.
+      void window.api.newWindow(path, { x: e.screenX, y: e.screenY })
+      closeTab(from)
+    }
+  }
+
   function cycleTab(delta: number): void {
     if (tabs.length < 2) return
     void showTab((activeTab + delta + tabs.length) % tabs.length)
@@ -1944,7 +2019,7 @@
 
     </div>
 
-    <section class="editor" aria-label="Editor">
+    <section class="editor" aria-label="Editor" ondragover={tabDragOver} ondrop={(e) => void tabDrop(e)}>
       <div class="editor-bar" role="toolbar" aria-label="Editor tools">
         <span class="tools">
           {#if sidebarCollapsed}
@@ -1992,7 +2067,17 @@
       {#if tabs.length > 1 && !zen}
         <div class="tabs" role="tablist" aria-label="Open sheets">
           {#each tabs as path, i (i)}
-            <div class="tab" class:active={i === activeTab} role="presentation">
+            <div
+              class="tab"
+              class:active={i === activeTab}
+              class:before={tabHint === i}
+              class:after={tabHint === tabs.length && i === tabs.length - 1}
+              data-tab={i}
+              draggable="true"
+              role="presentation"
+              ondragstart={(e) => tabDragStart(i, e)}
+              ondragend={tabDragEnd}
+            >
               <button
                 class="tab-label"
                 role="tab"
@@ -2631,6 +2716,25 @@
     min-width: 90px;
     border-radius: 6px;
     color: var(--muted);
+  }
+  .tab {
+    position: relative;
+  }
+  .tab.before::before,
+  .tab.after::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+  }
+  .tab.before::before {
+    left: -2px;
+  }
+  .tab.after::after {
+    right: -2px;
   }
   .tab:hover {
     background: var(--hover);

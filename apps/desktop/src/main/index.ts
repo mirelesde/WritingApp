@@ -28,10 +28,10 @@ const pendingSheet = new Map<number, string>()
  * Opens a window on the library. Every window shares the one library, so
  * a window needs no setup beyond this; `sheet` is what it opens first.
  */
-function createWindow(sheet?: string): void {
+function createWindow(sheet?: string, where?: { x: number; y: number }): void {
   // Cascade from the window in front, so a new one does not hide it exactly.
   const front = BrowserWindow.getFocusedWindow()
-  const at = front && !front.isMaximized() && !front.isFullScreen() ? front.getPosition() : undefined
+  const at = where ? [where.x, where.y] : front && !front.isMaximized() && !front.isFullScreen() ? front.getPosition() : undefined
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -372,8 +372,13 @@ app.whenReady().then(async () => {
   registerNodeMenuIpc()
   registerThemeIpc()
   registerExportStyleIpc()
-  ipcMain.handle('window:new', (_event, sheet: unknown) => {
-    createWindow(typeof sheet === 'string' ? inside(sheet) : undefined)
+  ipcMain.handle('window:new', (_event, sheet: unknown, where: unknown) => {
+    const w = where as { x?: unknown; y?: unknown } | undefined
+    const at =
+      w && Number.isFinite(w.x) && Number.isFinite(w.y)
+        ? { x: Math.round(w.x as number) - 26, y: Math.round(w.y as number) - 26 }
+        : undefined
+    createWindow(typeof sheet === 'string' ? inside(sheet) : undefined, at)
   })
   // A new window asks once, on start-up, which sheet it was opened for.
   ipcMain.handle('window:initialSheet', (event) => {

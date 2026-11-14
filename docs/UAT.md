@@ -243,6 +243,9 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 11.9 | Trash a sheet that has a tab. | Its tab closes. |
 | 11.10 | File > Open Library in one window. | Every window switches. |
 | 11.11 | Cmd/Ctrl+W with a single tab. | The window closes. |
+| 11.12 | Drag a tab left or right along the bar. | A line shows where it will land; it moves there and the front tab stays in front. |
+| 11.13 | Drag a tab off the window onto the desktop. | It becomes a new window near the drop point and leaves the first window's bar. |
+| 11.14 | With two windows, drag a tab onto the other window. | It is added there and removed from the first. |
 
 ## 12. Regression sweep
 

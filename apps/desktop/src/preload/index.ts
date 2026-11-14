@@ -60,7 +60,7 @@ const api: Api = {
   listThemes: () => ipcRenderer.invoke('themes:list'),
   openThemesFolder: () => ipcRenderer.invoke('themes:openFolder'),
   showNodeMenu: (kind, path, canPaste) => ipcRenderer.invoke('menu:node', kind, path, canPaste),
-  newWindow: (sheet) => ipcRenderer.invoke('window:new', sheet),
+  newWindow: (sheet, at) => ipcRenderer.invoke('window:new', sheet, at),
   initialSheet: () => ipcRenderer.invoke('window:initialSheet'),
   closeWindow: () => ipcRenderer.invoke('window:close'),
   onMenuCommand(callback) {

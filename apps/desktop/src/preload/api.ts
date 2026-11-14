@@ -190,8 +190,8 @@ export interface Api {
     path: string,
     canPaste?: boolean
   ): Promise<'new-sheet' | 'new-group' | 'open-tab' | 'open-window' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
-  /** Opens another window on the same library, on `sheet` when given. */
-  newWindow(sheet?: string): Promise<void>
+  /** Opens another window on the same library, on `sheet` when given, with its corner near `at` (screen pixels). */
+  newWindow(sheet?: string, at?: { x: number; y: number }): Promise<void>
   /** The sheet this window was opened for, once; null for an ordinary window. */
   initialSheet(): Promise<string | null>
   /** Closes this window. */
