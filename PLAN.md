@@ -1105,7 +1105,7 @@ tested with the in-memory one)
   - *Scope:* one style per export; no per-sheet or per-group override, no remembered style per library, and the choice is stored in the browser's local storage, not in settings. Markdown export and the editor's own look do not use styles.
   - *Content features a style cannot add:* title page, table of contents, running headers and footers, chapter numbering, drop caps and first-line small caps, widow and orphan control beyond the print basics, per-style horizontal-rule ornaments for the "break" between sheets beyond a character.
   - *Formats:* no ePub or DOCX, which Ulysses styles also target; both would reuse the style CSS (ePub) or need a mapping (DOCX).
-  - *UI polish:* the export dialog header clips the title on narrow windows; style descriptions are cut off with an ellipsis; the preview shows a light page even in dark mode for styles that do not force one.
+  - *UI polish:* the export dialog header clips the title on narrow windows; style descriptions are cut off with an ellipsis; Book, Manuscript and Academic force a light page, so a dark-mode saved HTML does not follow the system, while Default, Modern and Plain notes do.
 
 - **Scope for Find in Library (decided, see item 73: group or whole library).** Old note: Find and Replace in the
   library search every sheet. Option: a "Look in" selector (Library,
