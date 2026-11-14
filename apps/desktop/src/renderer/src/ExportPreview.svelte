@@ -413,6 +413,11 @@
     border: none;
     background: #fff;
   }
+  /* A dropdown the same height as the buttons beside it. */
+  header :global(.select),
+  .options :global(.select) {
+    padding: 4px 8px 4px 10px;
+  }
   .options {
     display: flex;
     align-items: center;

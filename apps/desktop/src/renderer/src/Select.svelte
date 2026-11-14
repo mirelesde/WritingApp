@@ -125,15 +125,14 @@
   >
     {#each options as option, i (option.value)}
       {#if heading(i)}<li class="group" role="presentation">{heading(i)}</li>{/if}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
       <li
         role="option"
         aria-selected={option.value === value}
         class:active={i === active}
         onmouseenter={() => (active = i)}
-        onmousedown={(e) => {
-          e.preventDefault()
-          pick(i)
-        }}
+        onmousedown={(e) => e.preventDefault()}
+        onclick={() => pick(i)}
       >
         <span class="tick">{option.value === value ? '✓' : ''}</span>{option.label}
       </li>
