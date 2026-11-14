@@ -1783,6 +1783,7 @@
           <ToolButton icon="bold" label="Bold" hint="{keyMod}B" disabled={open === null} onclick={() => formatActive('bold')} />
           <ToolButton icon="italic" label="Italic" hint="{keyMod}I" disabled={open === null} onclick={() => formatActive('italic')} />
           <ToolButton icon="link" label="Link" hint="{keyMod}K" disabled={open === null} onclick={() => formatActive('link')} />
+          <ToolButton icon="image" label="Insert image" hint="{keyMod}⌥I" disabled={open === null} onclick={() => void insertImage()} />
           <span class="style-wrap">
             <ToolButton icon="style" label="Styles" pressed={styleOpen} disabled={open === null} onclick={toggleStyleMenu} />
             {#if styleOpen}

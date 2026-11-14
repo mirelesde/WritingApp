@@ -691,8 +691,7 @@ asked for directly.
       PDF always embeds; Markdown export always uses the folder.
     - **Built (a):** Insert > Image… (`Cmd/Ctrl+Alt+I`) picks one or more
       files and puts a thumbnail at the cursor; the raw Markdown shows
-      while the cursor is on it. A toolbar button is not built (there is
-      no toolbar yet).
+      while the cursor is on it. A toolbar button (picture icon, after Link) runs the same command (built).
     - **Built (b):** pasting a picture (screenshot, copied image, a file
       copied in the file manager) saves it in `.assets/` and shows its
       thumbnail at the cursor.
@@ -715,8 +714,7 @@ asked for directly.
       PDF export with pictures was run in Electron with the app's own
       settings (scripts off, hidden window) and the picture printed
       correctly; only the native save dialog was not clicked through; the native Insert menu item, file picker and export save
-      dialog were tested only underneath, never clicked through; no toolbar
-      button (there is no toolbar yet); dropping a file outside the editor
+      dialog were tested only underneath, never clicked through; dropping a file outside the editor
       (the sidebar, say) is unchecked and may make Electron open it as a
       page; alt text is edited from the thumbnail (hover, click Alt; done), captions only in the Markdown; a
       missing picture now shows a dashed "missing" box with its file name (done); dragging pictures between sheets inside the app is not handled;

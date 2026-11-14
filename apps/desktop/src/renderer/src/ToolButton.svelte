@@ -12,6 +12,7 @@
     | 'bold'
     | 'italic'
     | 'link'
+    | 'image'
     | 'outline'
     | 'export'
     | 'style'
@@ -77,6 +78,10 @@
       {:else if icon === 'link'}
         <path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9" />
         <path d="M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9" />
+      {:else if icon === 'image'}
+        <rect x="3" y="4" width="14" height="12" rx="2" />
+        <circle cx="7.5" cy="8.5" r="1.3" />
+        <path d="M3.5 14.5l4-3.7 3 2.7 2.5-2.3 3.5 3.3" />
       {:else if icon === 'outline'}
         <path d="M3.5 5h13M6.5 10h10M9.5 15h7" />
       {:else if icon === 'sort'}

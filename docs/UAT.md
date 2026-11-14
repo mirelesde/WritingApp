@@ -181,6 +181,7 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | # | Steps | Expected |
 |---|-------|----------|
 | 7.1 | Insert > Image… (Cmd/Ctrl+Alt+I), pick one or more files. | A square thumbnail appears at the cursor for each; the raw `![name](.assets/name.png)` shows while the cursor is on it. **(native picker not yet clicked through)** |
+| 7.1b | Click the picture button in the toolbar. | The same picker opens; chosen files insert at the cursor. The button is disabled with no sheet open. **(picker not yet clicked through)** |
 | 7.2 | Paste a screenshot, then a picture file copied in the file manager. | Each saves into the library's hidden `.assets` folder and shows a thumbnail. |
 | 7.3 | Drop picture files on the editor. | Thumbnails land where dropped. |
 | 7.4 | Insert the same picture twice. | Only one file is stored in `.assets`. |
