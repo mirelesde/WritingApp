@@ -456,6 +456,11 @@
     if (path) editors[path]?.insertFootnoteAtCursor()
   }
 
+  function insertContents(): void {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (path) editors[path]?.insertContentsAtCursor()
+  }
+
   async function insertImage(): Promise<void> {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (!path || !editors[path]) return
@@ -1866,6 +1871,7 @@
     else if (command === 'preferences') preferencesOpen = true
     else if (command === 'insert-table') insertTable()
     else if (command === 'insert-footnote') insertFootnote()
+    else if (command === 'insert-contents') insertContents()
     else if (command === 'insert-image') void insertImage()
     else if (command === 'clean-images') void openCleanUp()
     else if (command === 'resolve-conflicts') {
@@ -1984,6 +1990,7 @@
       menu('Insert', 'Table', 'insert-table'),
       menu('Insert', 'Image…', 'insert-image', `${keyMod}⌥I`),
       menu('Insert', 'Footnote', 'insert-footnote'),
+      menu('Insert', 'Table of Contents', 'insert-contents'),
       menu('Insert', 'Go to Footnote', 'go-to-footnote', `${keyMod}⌥J`),
       menu('Fold', 'Fold All Sections', 'fold-all'),
       menu('Fold', 'Unfold All Sections', 'unfold-all'),

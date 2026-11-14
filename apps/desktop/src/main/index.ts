@@ -344,6 +344,7 @@ function buildMenu(): Menu {
         { label: 'Table', click: () => sendCommand('insert-table') },
         { label: 'Image…', accelerator: 'CmdOrCtrl+Alt+I', click: () => sendCommand('insert-image') },
         { label: 'Footnote', click: () => sendCommand('insert-footnote') },
+        { label: 'Table of Contents', click: () => sendCommand('insert-contents') },
         { label: 'Go to Footnote', ...shown('CmdOrCtrl+Alt+J'), click: () => sendCommand('go-to-footnote') }
       ]
     },

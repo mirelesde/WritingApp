@@ -9,6 +9,7 @@
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
   import { linkCommand, toggleBold, toggleItalic } from './formatting'
   import { insertTable } from './tableWidget'
+  import { insertContents } from './contentsChip'
   import { goToFootnote, insertFootnote } from './footnotes'
   import { insertImages } from './imageThumbs'
   import { updateWikiHost } from './wikiLinks'
@@ -139,6 +140,11 @@
   /** Inserts an empty table at the cursor and moves into it. */
   export function insertTableAtCursor(): void {
     if (view) insertTable(view)
+  }
+
+  /** Adds a table of contents (`(cnt)`) at the cursor. */
+  export function insertContentsAtCursor(): void {
+    if (view) insertContents(view)
   }
 
   /** Puts pictures (as Markdown) at the cursor. */

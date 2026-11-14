@@ -1,4 +1,4 @@
-import { RangeSetBuilder } from '@codemirror/state'
+import { RangeSetBuilder, type ChangeSpec } from '@codemirror/state'
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from '@codemirror/view'
 import { findMarkers } from '@writingapp/core'
 
@@ -61,3 +61,33 @@ export const contentsChip = [
     },
   }),
 ]
+
+/**
+ * What inserting a table of contents at `pos` changes: `(cnt)` on a line of its
+ * own, with a blank line around it, and the cursor placed after it. Does nothing
+ * if the line at `pos` already is one.
+ */
+export function insertContentsChange(doc: string, pos: number): { changes: ChangeSpec; cursor: number } | null {
+  const lineFrom = doc.lastIndexOf('\n', pos - 1) + 1
+  const end = doc.indexOf('\n', pos)
+  const line = doc.slice(lineFrom, end === -1 ? doc.length : end)
+  if (line.trim() === '(cnt)') return null
+  // At the start of an empty line: fill it. Otherwise start a new paragraph after the line.
+  const blank = line.trim() === ''
+  const at = blank ? lineFrom : end === -1 ? doc.length : end
+  const before = blank ? '' : '\n\n'
+  const insert = `${before}(cnt)\n\n`
+  const rest = doc.slice(blank ? (end === -1 ? doc.length : end) : at)
+  // Don't pile blank lines up if one follows already.
+  const trimmedRest = blank ? rest.replace(/^\n/, '') : rest.replace(/^\n+/, '')
+  const removed = rest.length - trimmedRest.length
+  return { changes: { from: at, to: at + removed, insert }, cursor: at + insert.length }
+}
+
+/** Inserts a table of contents at the cursor. */
+export function insertContents(view: EditorView): void {
+  const head = view.state.selection.main.head
+  const result = insertContentsChange(view.state.doc.toString(), head)
+  if (!result) return
+  view.dispatch({ changes: result.changes, selection: { anchor: result.cursor }, scrollIntoView: true, userEvent: 'input' })
+}

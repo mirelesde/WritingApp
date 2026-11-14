@@ -54,6 +54,7 @@ export type MenuCommand =
   | 'toggle-sheets'
   | 'insert-table'
   | 'insert-footnote'
+  | 'insert-contents'
   | 'go-to-footnote'
   | 'insert-image'
   | 'clean-images'
