@@ -13,6 +13,7 @@ export type FormatKind =
   | 'numbered'
   | 'task'
   | 'strike'
+  | 'highlight'
   | 'code'
   | 'codeblock'
   | 'comment'
@@ -144,6 +145,8 @@ export function formatSpec(state: EditorState, kind: FormatKind): TransactionSpe
   switch (kind) {
     case 'strike':
       return toggleWrap(state, '~~')
+    case 'highlight':
+      return toggleWrap(state, '==')
     case 'code':
       return toggleWrap(state, '`')
     case 'codeblock':

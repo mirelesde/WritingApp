@@ -261,6 +261,7 @@ function buildMenu(): Menu {
         { label: 'Bold', ...shown('CmdOrCtrl+B'), click: () => sendCommand('format-bold') },
         { label: 'Italic', ...shown('CmdOrCtrl+I'), click: () => sendCommand('format-italic') },
         { label: 'Strikethrough', click: () => sendCommand('format-strike') },
+        { label: 'Highlight', click: () => sendCommand('format-highlight') },
         { label: 'Inline Code', click: () => sendCommand('format-code') },
         { label: 'Link', ...shown('CmdOrCtrl+K'), click: () => sendCommand('format-link') },
         { type: 'separator' },

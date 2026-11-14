@@ -88,3 +88,21 @@ describe('indented paragraphs', () => {
     expect(htmlDocument('T', '<p>a</p>', { indentParagraphs: true })).toContain('p + p { text-indent: 1.5em; }')
   })
 })
+
+describe('inline marks in export', () => {
+  it('keeps strikethrough', () => {
+    expect(markdownToHtml('a ~~gone~~ b')).toContain('<del>gone</del>')
+  })
+  it('turns ==text== into a mark, with other formatting inside', () => {
+    expect(markdownToHtml('a ==hi **there**== b')).toContain('<mark>hi <strong>there</strong></mark>')
+  })
+  it('leaves stray equals signs alone', () => {
+    expect(markdownToHtml('a == b == c')).not.toContain('<mark>')
+    expect(markdownToHtml('x === y')).not.toContain('<mark>')
+    expect(markdownToHtml('1 ==2')).not.toContain('<mark>')
+  })
+  it('works in footnotes and leaves code alone', () => {
+    expect(markdownToHtml('a[^1]\n\n[^1]: see ==this==')).toContain('<mark>this</mark>')
+    expect(markdownToHtml('`==x==`')).not.toContain('<mark>')
+  })
+})

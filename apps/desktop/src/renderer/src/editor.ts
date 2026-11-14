@@ -18,6 +18,7 @@ import { richPaste } from './richPaste'
 import { blankLines } from './blankLines'
 import { taskBoxes } from './taskBoxes'
 import { tableWidgets } from './tableWidget'
+import { highlightSyntax, highlightTag } from './highlightMark'
 import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
 import { formattingKeymap } from './formatting'
@@ -109,6 +110,8 @@ const markdownStyle = HighlightStyle.define([
   { tag: tags.strong, fontWeight: '700' },
   { tag: tags.emphasis, fontStyle: 'italic' },
   { tag: tags.strikethrough, textDecoration: 'line-through' },
+  // ==Highlighted== text.
+  { tag: highlightTag, backgroundColor: 'var(--mark)', borderRadius: '3px' },
   { tag: tags.link, color: 'var(--accent)' },
   // Commented-out text: kept in the file, left out of exports and counts.
   { tag: tags.comment, color: 'var(--comment)', fontStyle: 'italic' },
@@ -184,7 +187,7 @@ export function editorExtensions({
     // GitHub-flavoured base: strikethrough, task lists, tables.
     // The markdown keymap (included) continues lists on Enter and
     // removes list markers on Backspace.
-    markdown({ base: markdownLanguage }),
+    markdown({ base: markdownLanguage, extensions: [highlightSyntax] }),
     ...emphasisPairs,
     ...bracketPairs,
     linkBehaviour,

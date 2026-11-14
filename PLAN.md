@@ -613,10 +613,7 @@ asked for directly.
     processor pastes as Markdown (headings, emphasis, links, lists), with
     Paste as Plain Text as the escape. HTML-to-Markdown conversion in core,
     with tests; the editor's paste handler calls it.
-53. **More Markdown in the editor and export.** Strikethrough, `==highlight==`,
-    syntax colours in fenced code, and maths (`$...$`), rendered in the
-    editor styling and in HTML and PDF export. Maths needs a renderer
-    (KaTeX) bundled for export.
+53. **More Markdown in the editor and export.** *Partly done:* strikethrough (`~~text~~`, Format menu, editor and export) and `==highlight==` (Format > Highlight, drawn with a background in the editor, `<mark>` in HTML and PDF) are in. Still to do: syntax colours in fenced code, and maths (`$...$`), which needs KaTeX (MathML output, so no fonts to bundle) in the editor and in export.
 54. ~~**Library-wide replace.**~~ **Done.** Replace… in Find in Library: the snippets preview the change, Replace in this sheet, Replace All, one undo step (Undo Library Change). Unsaved edits are saved first rather than skipped. Find in Library gains a Replace field with a
     per-match preview, replace one, replace all, and one undo step for the
     whole replacement. Skips sheets with unsaved edits until they are saved.

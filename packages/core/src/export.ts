@@ -4,8 +4,24 @@ import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
 import type { FileSystem } from './filesystem'
 import type { GroupNode, SheetNode } from './library'
 
+/** `==highlighted==` text becomes `<mark>`. Needs text after the opening marks and before the closing ones. */
+const highlight = {
+  name: 'highlight',
+  level: 'inline' as const,
+  start: (src: string) => src.indexOf('=='),
+  tokenizer(this: { lexer: { inlineTokens: (src: string) => unknown[] } }, src: string) {
+    const match = /^==(?=[^\s=])((?:\\.|[^=\\]|=(?!=))+?)(?<=\S)==(?!=)/.exec(src)
+    if (!match) return undefined
+    return { type: 'highlight', raw: match[0], text: match[1]!, tokens: this.lexer.inlineTokens(match[1]!) }
+  },
+  renderer(this: { parser: { parseInline: (tokens: unknown[]) => string } }, token: { tokens?: unknown[] }) {
+    return `<mark>${this.parser.parseInline(token.tokens ?? [])}</mark>`
+  },
+}
+
 const marked = new Marked({
   gfm: true,
+  extensions: [highlight as never],
   renderer: {
     // Raw HTML in a sheet is shown as text, so an export never carries
     // scripts or markup the writer did not mean to publish.
@@ -102,6 +118,7 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.25; margin: 2em 0 .5em; font-family: sys
 h1 { font-size: 2rem; margin-top: 0; }
 p, ul, ol, blockquote, pre, table { margin: 0 0 1em; }
 blockquote { margin-left: 0; padding-left: 1em; border-left: 3px solid #8885; color: #666; }
+mark { background: #ffe14d88; color: inherit; padding: 0 .1em; border-radius: 2px; }
 code { font: .9em ui-monospace, Menlo, Consolas, monospace; background: #8882; padding: .1em .3em; border-radius: 3px; }
 pre { background: #8882; padding: 1em; overflow-x: auto; border-radius: 4px; }
 pre code { background: none; padding: 0; }

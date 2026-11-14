@@ -320,6 +320,7 @@
     ],
     [
       { kind: 'strike', label: 'Strikethrough' },
+      { kind: 'highlight', label: 'Highlight' },
       { kind: 'code', label: 'Inline code' },
       { kind: 'codeblock', label: 'Code block' },
       { kind: 'comment', label: 'Comment', keys: '/' },
