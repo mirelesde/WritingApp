@@ -206,10 +206,8 @@
   }
   .group {
     padding: 6px 9px 2px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     color: var(--muted);
   }
 </style>

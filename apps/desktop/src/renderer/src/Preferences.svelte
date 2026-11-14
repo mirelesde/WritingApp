@@ -330,7 +330,7 @@
     padding: 0;
   }
   .dialog {
-    width: min(520px, calc(100vw - 32px));
+    width: min(580px, calc(100vw - 32px));
     max-height: 84vh;
     overflow-y: auto;
     padding: 6px 20px 14px;
@@ -346,10 +346,8 @@
   }
   h3 {
     margin: 14px 0 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     color: var(--muted);
   }
   .row {

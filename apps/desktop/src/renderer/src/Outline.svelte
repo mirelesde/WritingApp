@@ -67,10 +67,8 @@
   }
   h2 {
     margin: 0 8px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     color: var(--muted);
   }
   .linked {
