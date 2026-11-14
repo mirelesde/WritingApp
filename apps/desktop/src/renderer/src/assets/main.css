@@ -39,6 +39,7 @@
   --scrim: rgb(0 0 0 / 0.3);
   --on-accent: #fff;
   --danger: #c0392b;
+  /* Type scale: 11 captions, 12 secondary, 13 controls and lists, 15 dialog titles. */
   --z-peek: 30;
   --z-dialog: 40;
   --z-modal: 60;
@@ -168,6 +169,17 @@ html.hang-marks .cm-hang-gap {
 button {
   font: inherit;
   color: inherit;
+}
+/* Keyboard focus shows everywhere; the mouse never draws a ring. */
+button:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
 }
 
 /* Controls: quiet, like the sheet filter in the sidebar. A tinted fill instead

@@ -295,7 +295,7 @@
     height: 180px;
     resize: vertical;
     padding: 8px;
-    font: 12.5px/1.45 ui-monospace, Menlo, Consolas, monospace;
+    font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
     tab-size: 2;
   }
   .editor .actions {
@@ -320,15 +320,20 @@
     flex-direction: column;
     overflow: hidden;
   }
+  header button {
+    padding: 5px 10px;
+    white-space: nowrap;
+  }
   header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
+    gap: 6px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border);
   }
   .name {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 60px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -355,6 +360,7 @@
     opacity: 0.45;
   }
   .pdf {
+    white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 4px;

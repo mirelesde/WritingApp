@@ -163,7 +163,7 @@
     background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--text);
     font: inherit;
-    font-size: 12.5px;
+    font-size: 13px;
   }
   .chip.partial {
     color: var(--muted);

@@ -290,7 +290,7 @@
   .count {
     flex: none;
     margin: 0 8px 0 4px;
-    font-size: 11.5px;
+    font-size: 12px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }

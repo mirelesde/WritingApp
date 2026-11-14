@@ -2631,11 +2631,11 @@
   }
   .sheet-preview {
     color: var(--muted);
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.4;
     margin-top: 3px;
     /* Always three lines tall, so every card is the same height. */
-    height: calc(3 * 1.4 * 12.5px);
+    height: calc(3 * 1.4 * 13px);
     /* Up to three lines, like a card in Ulysses. */
     white-space: normal;
     display: -webkit-box;
@@ -2651,7 +2651,7 @@
   }
   .kw-button {
     font: inherit;
-    font-size: 12.5px;
+    font-size: 13px;
     padding: 0 9px;
     border-radius: 8px;
     border: 1px solid transparent;
@@ -2693,7 +2693,7 @@
   }
   .kw {
     padding: 2px 9px;
-    font-size: 11.5px;
+    font-size: 12px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--muted);
@@ -2703,7 +2703,7 @@
     min-width: 0;
     width: 100%;
     font: inherit;
-    font-size: 12.5px;
+    font-size: 13px;
     color: var(--text);
     background: color-mix(in srgb, var(--text) 7%, transparent);
     border: 1px solid transparent;
@@ -2899,7 +2899,7 @@
   .tab button,
   .tabs .tab-new {
     font: inherit;
-    font-size: 12.5px;
+    font-size: 13px;
     color: inherit;
     background: transparent;
     border: 0;

@@ -104,7 +104,7 @@
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
-    font: 12.5px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font: 13px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
     background: var(--list);
     border: 1px solid var(--border);
     border-radius: 8px;

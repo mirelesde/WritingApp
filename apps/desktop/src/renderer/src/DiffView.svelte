@@ -124,7 +124,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12.5px;
+    font-size: 13px;
     color: var(--muted);
   }
   .all button {
@@ -150,7 +150,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--list);
-    font: 12.5px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font: 13px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   }
   .same {
     padding: 2px 10px;
@@ -162,7 +162,7 @@
     display: block;
     width: 100%;
     font: inherit;
-    font-size: 11.5px;
+    font-size: 12px;
     text-align: center;
     padding: 3px;
     border: 0;
@@ -206,7 +206,7 @@
   .choose {
     align-self: flex-start;
     font: inherit;
-    font-size: 11.5px;
+    font-size: 12px;
     padding: 1px 8px;
     border-radius: 6px;
     border: 1px solid var(--border);

@@ -93,8 +93,8 @@
     text-align: left;
     border: none;
     background: none;
-    border-radius: 5px;
-    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    padding: 5px 8px;
     font: inherit;
     font-size: 13px;
     color: var(--muted);
