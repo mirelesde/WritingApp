@@ -1005,6 +1005,22 @@
     }
   }
 
+  async function saveExportMarkdown(): Promise<void> {
+    exportSaving = true
+    try {
+      const saved = await window.api.saveExportMarkdown(exportPaths)
+      if (saved) {
+        exportPreview = null
+        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
+      }
+    } catch (e) {
+      notice = errorMessage(e)
+      exportPreview = null
+    } finally {
+      exportSaving = false
+    }
+  }
+
   async function saveExportPdf(options: PdfOptions): Promise<void> {
     exportSaving = true
     try {
@@ -1831,6 +1847,7 @@
     saving={exportSaving}
     onsave={saveExport}
     onsavepdf={saveExportPdf}
+    onsavemarkdown={saveExportMarkdown}
     onclose={() => (exportPreview = null)}
   />
 {/if}

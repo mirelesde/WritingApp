@@ -9,6 +9,7 @@
     saving,
     onsave,
     onsavepdf,
+    onsavemarkdown,
     onclose
   }: {
     title: string
@@ -17,6 +18,7 @@
     saving: boolean
     onsave: () => void
     onsavepdf: (options: PdfOptions) => void
+    onsavemarkdown: () => void
     onclose: () => void
   } = $props()
 
@@ -58,6 +60,7 @@
       <button disabled={saving} onclick={() => onsavepdf({ pageSize, margin, pageNumbers })}>
         Save as PDF…
       </button>
+      <button disabled={saving} onclick={onsavemarkdown}>Save as Markdown…</button>
       <button onclick={onclose}>Close</button>
       <button class="primary" bind:this={saveButton} disabled={saving} onclick={onsave}>
         Save as HTML…

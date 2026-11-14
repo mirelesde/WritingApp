@@ -38,6 +38,7 @@ const api: Api = {
     ipcRenderer.invoke('op:replaceAll', query, replacement, only),
   previewExport: (paths) => ipcRenderer.invoke('export:preview', paths),
   saveExport: (paths) => ipcRenderer.invoke('export:save', paths),
+  saveExportMarkdown: (paths) => ipcRenderer.invoke('export:saveMarkdown', paths),
   saveExportPdf: (paths, options) => ipcRenderer.invoke('export:savePdf', paths, options),
   getLastSheet: () => ipcRenderer.invoke('session:lastSheet'),
   setLastSheet: (path) => ipcRenderer.invoke('session:setLastSheet', path),

@@ -1,6 +1,6 @@
 import { promises as nodeFs } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, protocol, shell, app } from 'electron'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
   applyUndo,
@@ -13,6 +13,7 @@ import {
   saveAsTemplate,
   deleteNodeUndoable,
   exportHtml,
+  exportMarkdown,
   glueSheets,
   setGroupColor,
   groupWordCount,
@@ -401,6 +402,36 @@ export function registerLibraryIpc(): void {
       : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
     await fs.writeText(toPosix(result.filePath), built.html)
+    return result.filePath
+  })
+
+  ipcMain.handle('export:saveMarkdown', async (event, paths: unknown) => {
+    if (!Array.isArray(paths) || !currentRoot) throw new Error('No library is open')
+    const chosen = paths.map((p) => inside(p, true))
+    const tree = await load(currentRoot)
+    const root = currentRoot
+    const preview = await exportMarkdown(fs, tree, chosen, 'x')
+    const options: Electron.SaveDialogOptions = {
+      title: 'Export as Markdown',
+      defaultPath: `${preview.title.replace(/[\\/:*?"<>|]+/g, '-')}.md`,
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window
+      ? await dialog.showSaveDialog(window, options)
+      : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) return null
+    const file = toPosix(result.filePath)
+    const folder = `${basename(file, '.md')}-images`
+    const built = await exportMarkdown(fs, tree, chosen, folder)
+    await fs.writeText(file, built.markdown)
+    // The pictures the text uses go beside it, so its links work anywhere.
+    for (const name of built.images) {
+      const from = join(root, ASSETS_DIR, name)
+      if (!(await fs.exists(from))) continue
+      await fs.makeDir(join(dirname(file), folder))
+      await fs.writeBinary(join(dirname(file), folder, name), await fs.readBinary(from))
+    }
     return result.filePath
   })
 

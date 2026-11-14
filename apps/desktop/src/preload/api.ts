@@ -138,6 +138,8 @@ export interface Api {
   /** Asks where to save, then writes the export. Null if the dialog was cancelled. */
   saveExport(paths: string[]): Promise<string | null>
   /** Asks where to save, then writes the export as a paginated PDF. Null if cancelled. */
+  /** Asks where to save, writes the selection as Markdown, and copies the pictures it uses into a folder beside it. */
+  saveExportMarkdown(paths: string[]): Promise<string | null>
   saveExportPdf(paths: string[], options: PdfOptions): Promise<string | null>
   /** The sheet that was open when the app last ran, if any. */
   getLastSheet(): Promise<string | null>

@@ -1,4 +1,4 @@
-import { embedImages } from './images'
+import { assetNameFromUrl, embedImages, findImages } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
@@ -215,4 +215,56 @@ function findGroup(node: GroupNode, path: string): GroupNode | undefined {
     }
   }
   return undefined
+}
+
+export interface MarkdownExport {
+  title: string
+  markdown: string
+  /** The library pictures the text uses, by file name, to be copied next to the file. */
+  images: string[]
+  sheets: number
+}
+
+/**
+ * The selection as one Markdown text, in the same order and with the same
+ * leaving-out of comments as the HTML export. Links to library pictures point
+ * into `imagesFolder` instead, a folder that sits beside the saved file, so
+ * they work in any Markdown app; `images` names the files to copy there.
+ */
+export async function exportMarkdown(
+  fs: FileSystem,
+  root: GroupNode,
+  selection: string[],
+  imagesFolder: string,
+): Promise<MarkdownExport> {
+  const runs = exportRuns(root, selection)
+  if (runs.length === 0) throw new Error('Nothing to export: select sheets or a group')
+  const only = selection.length === 1 ? findGroup(root, selection[0]!) : undefined
+  const title = only ? only.name : runs[0]![0]!.title
+
+  const images = new Set<string>()
+  const parts: string[] = []
+  for (const run of runs) {
+    const texts: string[] = []
+    for (const sheet of run) {
+      let text = stripComments(await fs.readText(sheet.path)).trim()
+      for (const ref of [...findImages(text)].reverse()) {
+        const name = assetNameFromUrl(ref.url)
+        if (!name) continue
+        images.add(name)
+        text =
+          text.slice(0, ref.from) +
+          `![${ref.alt}](${encodeURI(imagesFolder)}/${encodeURIComponent(name)})` +
+          text.slice(ref.to)
+      }
+      texts.push(text)
+    }
+    parts.push(texts.join('\n\n'))
+  }
+  return {
+    title,
+    markdown: parts.join('\n\n---\n\n') + '\n',
+    images: [...images],
+    sheets: runs.reduce((n, run) => n + run.length, 0),
+  }
 }

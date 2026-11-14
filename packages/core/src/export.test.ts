@@ -118,3 +118,21 @@ describe('images in export', () => {
     expect(out.html).toContain('https://e.com/y.png')
   })
 })
+
+describe('exportMarkdown', () => {
+  it('joins the sheets, drops comments, and points pictures at a folder beside the file', async () => {
+    const { exportMarkdown } = await import('./export')
+    const { saveImage } = await import('./images')
+    const fs = new MemoryFileSystem({
+      '/lib/P/a.md': '# A\n\n![my pic](.assets/my%20pic.png) <!-- hidden -->',
+      '/lib/P/b.md': 'Second ![web](https://e.com/w.png)',
+    })
+    await saveImage(fs, '/lib', 'my pic.png', new Uint8Array([1]))
+    const out = await exportMarkdown(fs, await loadLibrary(fs, '/lib'), ['/lib/P'], 'My Book-images')
+    expect(out.images).toEqual(['my pic.png'])
+    expect(out.markdown).toContain('![my pic](My%20Book-images/my%20pic.png)')
+    expect(out.markdown).toContain('![web](https://e.com/w.png)')
+    expect(out.markdown).not.toContain('hidden')
+    expect(out.sheets).toBe(2)
+  })
+})

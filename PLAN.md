@@ -662,7 +662,7 @@ asked for directly.
       so, moves them to the system trash (never automatic; a link anywhere
       in a sheet, even in a code fence or comment, counts as use; merging
       existing duplicates is left out on purpose, as it edits sheets);
-      (4) Markdown export that copies the pictures used into a folder beside
+      (4) **built:** Save as Markdown… in the export dialog, which copies the pictures used into a folder beside
       the file and rewrites the links, so the picture links work outside
       the app. A library already holding same-folder pictures would need a
       one-off migration; not written, as none exists yet.
