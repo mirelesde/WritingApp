@@ -1235,6 +1235,20 @@
     await runOp(() => window.api.renameGroup(path, trimmed))
   }
 
+  /** A click on the empty page around the text (below the last line, beside the column) puts the cursor at the end. */
+  function clickBelowText(e: MouseEvent): void {
+    if (e.button !== 0 || !open) return
+    const target = e.target as HTMLElement
+    if (target.closest('.cm-editor, .seam, button, a, input')) return
+    const box = e.currentTarget as HTMLElement
+    // The scrollbar is part of this element; leave it alone.
+    if (e.clientX > box.getBoundingClientRect().left + box.clientWidth) return
+    const last = open.parts[open.parts.length - 1]
+    if (!last) return
+    e.preventDefault()
+    editors[last.path]?.focusAt('end')
+  }
+
   function edited(path: string, content: string): void {
     autosaver.change(path, content)
     edits[path] = content
@@ -2252,7 +2266,8 @@
           <button class="tab-new" aria-label="New tab" title="New tab ({keyMod}T)" onclick={newTab}>+</button>
         </div>
       {/if}
-      <div class="scroller">
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="scroller" onmousedown={clickBelowText}>
       {#if error}
         <p class="hint">{error}</p>
       {:else if open}

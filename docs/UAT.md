@@ -303,6 +303,8 @@ Known gaps: maths appears as its TeX source; export styles do not apply to Word;
 | 13.17 | Click a sheet under a heading; use the arrow keys down the list; shift-click to select across two sections. | The sheet opens; arrows cross headings; the range selects across sections. |
 | 13.18 | Drag a sheet to another place in its own section; then try dropping it among another section's sheets. | The first reorders; the second shows no drop line. Sorting by title sorts within each section. |
 
+**Click anywhere to write (13.19).** Open an empty sheet and click far below the first line, then in the empty space beside the text: the cursor is in the sheet and typing works. On a long sheet, clicking in the empty space under the last line puts the cursor at the end. Clicking on text still puts the cursor where you click.
+
 ## 14. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
