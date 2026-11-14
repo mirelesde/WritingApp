@@ -719,8 +719,7 @@ asked for directly.
       button (there is no toolbar yet); dropping a file outside the editor
       (the sidebar, say) is unchecked and may make Electron open it as a
       page; alt text and captions can only be edited in the Markdown; a
-      missing picture only fades its thumbnail, with no clear "missing"
-      mark; dragging pictures between sheets inside the app is not handled;
+      missing picture now shows a dashed "missing" box with its file name (done); dragging pictures between sheets inside the app is not handled;
       web pictures (linked by address) get no thumbnail; resizing, cropping
       or choosing the thumbnail crop; merging existing duplicates (left out
       on purpose, it edits sheets); a migration for same-folder pictures

@@ -69,7 +69,14 @@ class ThumbWidget extends WidgetType {
     img.alt = this.alt
     img.title = this.alt
     img.draggable = false
-    img.addEventListener('error', () => box.classList.add('cm-image-missing'))
+    img.addEventListener('error', () => {
+      box.classList.add('cm-image-missing')
+      box.title = `Missing picture: ${this.name}`
+      const label = document.createElement('span')
+      label.className = 'cm-image-missing-label'
+      label.textContent = this.name
+      box.append(label)
+    })
     box.append(img)
     box.addEventListener('mousedown', (event) => {
       event.preventDefault()
@@ -121,7 +128,23 @@ export const imageThumbs = [
       background: 'var(--pane)'
     },
     '.cm-image-thumb img': { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-    '.cm-image-thumb.cm-image-missing': { opacity: '0.4' }
+    '.cm-image-thumb.cm-image-missing': {
+      cursor: 'default',
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '4px',
+      border: '1px dashed var(--muted)',
+      color: 'var(--muted)',
+      fontSize: '11px',
+      textAlign: 'center',
+      padding: '4px',
+      boxSizing: 'border-box'
+    },
+    '.cm-image-thumb.cm-image-missing img': { display: 'none' },
+    '.cm-image-thumb.cm-image-missing::before': { content: '"⚠︎"', fontSize: '20px' },
+    '.cm-image-missing-label': { maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
   })
 ]
 

@@ -189,7 +189,7 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 7.7 | Export as PDF a sheet with a picture. | The picture prints at a sensible size (checked in Electron with the app's settings; **the native save dialog not yet clicked through**). |
 | 7.8 | Remove the last link to a picture, then File > Clean Up Unused Images…. | The picture is listed; confirming moves it to the system trash. |
 | 7.9 | Save as Markdown… with pictures. | The pictures are copied to a `<name>-images` folder beside the file and links are rewritten. |
-| 7.10 | Link a picture that does not exist. | The thumbnail fades; the sheet still opens and edits normally. |
+| 7.10 | Link a picture that does not exist. | A dashed box with a warning mark and the file name replaces the thumbnail (no preview on click); the sheet still opens and edits normally. |
 
 ## 8. Regression sweep
 
