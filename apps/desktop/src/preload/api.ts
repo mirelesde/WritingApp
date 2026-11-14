@@ -58,6 +58,10 @@ export type MenuCommand =
   | 'insert-image'
   | 'clean-images'
   | 'resolve-conflicts'
+  | 'new-tab'
+  | 'close-tab'
+  | 'next-tab'
+  | 'previous-tab'
   /** A Format menu item, e.g. `format-h1`. */
   | `format-${string}`
 
@@ -185,7 +189,13 @@ export interface Api {
     kind: 'sheet' | 'group' | 'root',
     path: string,
     canPaste?: boolean
-  ): Promise<'new-sheet' | 'new-group' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
+  ): Promise<'new-sheet' | 'new-group' | 'open-tab' | 'open-window' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste' | null>
+  /** Opens another window on the same library, on `sheet` when given. */
+  newWindow(sheet?: string): Promise<void>
+  /** The sheet this window was opened for, once; null for an ordinary window. */
+  initialSheet(): Promise<string | null>
+  /** Closes this window. */
+  closeWindow(): Promise<void>
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when files in the open library change outside the app, with the library as it is now. */

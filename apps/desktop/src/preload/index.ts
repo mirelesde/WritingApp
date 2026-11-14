@@ -60,6 +60,9 @@ const api: Api = {
   listThemes: () => ipcRenderer.invoke('themes:list'),
   openThemesFolder: () => ipcRenderer.invoke('themes:openFolder'),
   showNodeMenu: (kind, path, canPaste) => ipcRenderer.invoke('menu:node', kind, path, canPaste),
+  newWindow: (sheet) => ipcRenderer.invoke('window:new', sheet),
+  initialSheet: () => ipcRenderer.invoke('window:initialSheet'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

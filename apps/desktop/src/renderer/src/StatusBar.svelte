@@ -40,7 +40,7 @@
 <style>
   .pill {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 3;
     justify-self: end;
     align-self: start;
     margin: 12px 20px 0 0;

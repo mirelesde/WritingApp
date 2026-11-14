@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, Menu } from 'electron'
+import { app, shell, BrowserWindow, Menu, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -15,16 +15,28 @@ import {
   recentLibraries,
   registerAssetProtocol,
   registerAssetScheme,
-  registerLibraryIpc
+  registerLibraryIpc,
+  inside
 } from './library'
 
 registerAssetScheme()
 
-function createWindow(): void {
+/** Sheets that a new window should open, by the window's web contents. */
+const pendingSheet = new Map<number, string>()
+
+/**
+ * Opens a window on the library. Every window shares the one library, so
+ * a window needs no setup beyond this; `sheet` is what it opens first.
+ */
+function createWindow(sheet?: string): void {
+  // Cascade from the window in front, so a new one does not hide it exactly.
+  const front = BrowserWindow.getFocusedWindow()
+  const at = front && !front.isMaximized() && !front.isFullScreen() ? front.getPosition() : undefined
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    ...(at ? { x: at[0]! + 26, y: at[1]! + 26 } : {}),
     show: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     // macOS: no title bar, traffic lights inside the sidebar, translucent sidebar.
@@ -44,6 +56,9 @@ function createWindow(): void {
   })
 
   attachEditMenu(mainWindow.webContents)
+  const id = mainWindow.webContents.id
+  if (sheet) pendingSheet.set(id, sheet)
+  mainWindow.on('closed', () => pendingSheet.delete(id))
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -73,6 +88,11 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+/** The library is shared, so every window switches to a newly opened one. */
+function announceLibrary(library: unknown): void {
+  for (const window of BrowserWindow.getAllWindows()) window.webContents.send('library:opened', library)
+}
+
 function sendCommand(command: string): void {
   BrowserWindow.getFocusedWindow()?.webContents.send('menu:command', command)
 }
@@ -119,9 +139,8 @@ function buildMenu(): Menu {
           label: 'Open Library…',
           accelerator: 'CmdOrCtrl+O',
           click: async () => {
-            const target = BrowserWindow.getFocusedWindow() ?? undefined
-            const library = await chooseLibrary(target)
-            if (library && target) target.webContents.send('library:opened', library)
+            const library = await chooseLibrary(BrowserWindow.getFocusedWindow() ?? undefined)
+            if (library) announceLibrary(library)
           }
         },
         {
@@ -130,9 +149,8 @@ function buildMenu(): Menu {
             ...recentLibraries().map((path) => ({
               label: path,
               click: async () => {
-                const target = BrowserWindow.getFocusedWindow() ?? undefined
                 const library = await openRecentLibrary(path)
-                if (library && target) target.webContents.send('library:opened', library)
+                if (library) announceLibrary(library)
               }
             })),
             ...(recentLibraries().length > 0 ? [{ type: 'separator' as const }] : []),
@@ -142,6 +160,22 @@ function buildMenu(): Menu {
               click: () => void clearRecent()
             }
           ]
+        },
+        { type: 'separator' },
+        {
+          label: 'New Window',
+          accelerator: 'CmdOrCtrl+Alt+N',
+          click: () => createWindow()
+        },
+        {
+          label: 'New Tab',
+          accelerator: 'CmdOrCtrl+T',
+          click: () => sendCommand('new-tab')
+        },
+        {
+          label: 'Close Tab',
+          accelerator: 'CmdOrCtrl+W',
+          click: () => sendCommand('close-tab')
         },
         { type: 'separator' },
         {
@@ -223,7 +257,12 @@ function buildMenu(): Menu {
               },
               { type: 'separator' as const }
             ]),
-        isMac ? { role: 'close' } : { role: 'quit' }
+        {
+          label: 'Close Window',
+          accelerator: 'CmdOrCtrl+Shift+W',
+          click: () => BrowserWindow.getFocusedWindow()?.close()
+        },
+        ...(isMac ? [] : [{ role: 'quit' as const }])
       ]
     },
     {
@@ -304,7 +343,25 @@ function buildMenu(): Menu {
       ]
     },
     viewMenu(isMac),
-    { role: 'windowMenu' }
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        {
+          label: 'Next Tab',
+          accelerator: 'CmdOrCtrl+Alt+Right',
+          click: () => sendCommand('next-tab')
+        },
+        {
+          label: 'Previous Tab',
+          accelerator: 'CmdOrCtrl+Alt+Left',
+          click: () => sendCommand('previous-tab')
+        },
+        ...(isMac ? [{ type: 'separator' as const }, { role: 'front' as const }] : [])
+      ]
+    }
   ])
 }
 
@@ -315,6 +372,16 @@ app.whenReady().then(async () => {
   registerNodeMenuIpc()
   registerThemeIpc()
   registerExportStyleIpc()
+  ipcMain.handle('window:new', (_event, sheet: unknown) => {
+    createWindow(typeof sheet === 'string' ? inside(sheet) : undefined)
+  })
+  // A new window asks once, on start-up, which sheet it was opened for.
+  ipcMain.handle('window:initialSheet', (event) => {
+    const sheet = pendingSheet.get(event.sender.id) ?? null
+    pendingSheet.delete(event.sender.id)
+    return sheet
+  })
+  ipcMain.handle('window:close', (event) => BrowserWindow.fromWebContents(event.sender)?.close())
   const rebuild = (): void => Menu.setApplicationMenu(buildMenu())
   await loadView(rebuild)
   await loadRecent(rebuild)

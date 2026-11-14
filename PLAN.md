@@ -796,12 +796,28 @@ asked for directly.
     rows and columns, column alignment, write back clean Markdown. The
     cursor entering the table shows raw source. Widget focus, undo
     integration, round-tripping and IME are the risks.
-29. **Tabs and windows (user).** Several sheets open at once as tabs, plus
-    extra windows on the same library. Needs per-tab editor state and
-    unsaved edits, save and reload rules when two views show the same
-    sheet, a window-aware main process (watcher, undo stack and library
-    root are currently one per app), and menu commands routed to the
-    focused window. Touches almost every layer.
+29. ~~**Tabs and windows (user).**~~ **Done (first version).** Windows share
+    one library (the main process keeps a single library root, watcher and
+    undo stack), so a new window only needs its own selection and editor;
+    File > New Window (Cmd/Ctrl+Alt+N) opens one, and right-clicking a sheet
+    offers Open in New Window, which opens on that sheet. Tabs live in the
+    renderer: each holds a sheet path, opening another sheet in the front
+    tab replaces it, and the bar appears only with two or more. File > New
+    Tab (Cmd/Ctrl+T), Close Tab (Cmd/Ctrl+W; the last tab closes the
+    window), Close Window (Cmd/Ctrl+Shift+W), Window > Next/Previous Tab
+    (Cmd/Ctrl+Alt+Right/Left), middle-click closes a tab, and Open in New
+    Tab on a sheet's menu reuses a tab that already shows it. Opening a
+    library from the menu switches every window. Two windows editing one
+    sheet fall back on the save guard's disk check, so the second save
+    raises the usual conflict dialog.
+    Gaps: tabs are not remembered across launches and are not draggable or
+    reorderable; a tab keeps only the sheet, not its group, scroll or cursor
+    (the group list follows the sheet); a sheet renamed or moved by another
+    window drops its tab here instead of following it; Cmd+T copies the
+    current sheet rather than opening a blank tab; no tab-stripe overflow
+    menu (it scrolls); a tab cannot be dragged out into its own window;
+    live checks not done on Windows or Linux; menu accelerators were not
+    pressed by hand (driven through menu items and IPC).
 30. ~~**Wiki-links `[[sheet]]` and backlinks.**~~ **Done (first version).**
     `[[Title]]` and `[[Title|shown text]]` link to a sheet by title
     (case and spacing ignored; the first match in library order wins;

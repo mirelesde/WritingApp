@@ -3,7 +3,7 @@ import { inside } from './library'
 
 export type NodeMenuKind = 'sheet' | 'group' | 'root'
 /** What the renderer is asked to do after a choice; reveal and copy happen here. */
-export type NodeMenuAction = 'new-sheet' | 'new-group' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste'
+export type NodeMenuAction = 'new-sheet' | 'new-group' | 'open-tab' | 'open-window' | 'rename' | 'move' | 'delete' | 'duplicate' | 'copy' | 'cut' | 'paste'
 
 const isMac = process.platform === 'darwin'
 
@@ -20,6 +20,13 @@ export function nodeMenuTemplate(
     items.push(
       { label: 'New Sheet', click: () => choose('new-sheet') },
       { label: 'New Group', click: () => choose('new-group') },
+      { type: 'separator' }
+    )
+  }
+  if (kind === 'sheet') {
+    items.push(
+      { label: 'Open in New Tab', click: () => choose('open-tab') },
+      { label: 'Open in New Window', click: () => choose('open-window') },
       { type: 'separator' }
     )
   }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte'
+  import { onMount, tick, untrack } from 'svelte'
   import {
     extractHeadings,
     backlinksTo,
@@ -559,6 +559,82 @@
     document.querySelector(`[data-path="${CSS.escape(path)}"]`)?.scrollIntoView({ block: 'start' })
   }
 
+  // --- Tabs ----------------------------------------------------------------
+
+  // Each tab holds a sheet; opening another sheet in the front tab replaces it. The
+  // bar shows only when there are two or more.
+  let tabs = $state<string[]>([])
+  let activeTab = $state(0)
+
+  $effect(() => {
+    const only = selection.length === 1 ? selection[0] : undefined
+    if (!only) return
+    untrack(() => {
+      if (tabs.length === 0) {
+        tabs = [only]
+        activeTab = 0
+      } else if (tabs[activeTab] !== only) {
+        tabs = tabs.map((p, i) => (i === activeTab ? only : p))
+      }
+    })
+  })
+
+  // Sheets that were deleted or moved away take their tabs with them.
+  $effect(() => {
+    const tree = library?.tree
+    if (!tree) return
+    untrack(() => {
+      const kept = tabs.filter((p) => sheetExists(tree, p))
+      if (kept.length === tabs.length) return
+      const front = tabs[activeTab]
+      tabs = kept
+      activeTab = Math.max(0, Math.min(front ? kept.indexOf(front) : activeTab, kept.length - 1))
+      if (activeTab < 0) activeTab = 0
+    })
+  })
+
+  const tabTitles = $derived(
+    new Map((library ? listSheets(library.tree) : []).map((s) => [s.path, s.title || 'Untitled']))
+  )
+
+  async function showTab(index: number): Promise<void> {
+    const path = tabs[index]
+    if (path === undefined) return
+    activeTab = index
+    await revealSheet(path)
+  }
+
+  /** Opens `path` in a tab after the front one, or switches to the tab that already has it. */
+  async function openInTab(path: string | undefined, reuse = true): Promise<void> {
+    if (!path) return
+    const existing = reuse ? tabs.indexOf(path) : -1
+    if (existing >= 0) return showTab(existing)
+    const at = Math.min(activeTab + 1, tabs.length)
+    tabs = [...tabs.slice(0, at), path, ...tabs.slice(at)]
+    await showTab(at)
+  }
+
+  function newTab(): void {
+    void openInTab(selection.length === 1 ? selection[0] : tabs[activeTab], false)
+  }
+
+  function closeTab(index = activeTab): void {
+    if (tabs.length <= 1) {
+      void window.api.closeWindow()
+      return
+    }
+    const wasFront = index === activeTab
+    tabs = tabs.filter((_, i) => i !== index)
+    if (index < activeTab) activeTab--
+    activeTab = Math.min(activeTab, tabs.length - 1)
+    if (wasFront) void showTab(activeTab)
+  }
+
+  function cycleTab(delta: number): void {
+    if (tabs.length < 2) return
+    void showTab((activeTab + delta + tabs.length) % tabs.length)
+  }
+
   // --- Back and forward ---------------------------------------------------
 
   const TRAIL_LIMIT = 100
@@ -663,6 +739,7 @@
       selectedGroup = remap(selectedGroup)
       if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = result.library.tree.path
       selection = selection.map(remap)
+      tabs = tabs.map(remap)
       cursor = cursor && remap(cursor)
       anchor = anchor && remap(anchor)
       expanded = Object.fromEntries(Object.entries(expanded).map(([p, o]) => [remap(p), o]))
@@ -858,6 +935,8 @@
     if (!action) return
     if (action === 'new-sheet') await newSheet()
     else if (action === 'new-group') await newGroup(kind === 'root')
+    else if (action === 'open-tab') await openInTab(path)
+    else if (action === 'open-window') await window.api.newWindow(path)
     else if (action === 'rename') void startRename(path)
     else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
       if (kind === 'group') treeEl?.focus()
@@ -1476,8 +1555,13 @@
 
   /** Runs a menu command; the menus and the command palette both come through here. */
   function handleCommand(command: MenuCommand): void {
+    if (command === 'close-tab' && !library) void window.api.closeWindow()
     if (!library) return
-    if (command === 'toggle-sidebar') toggleSidebar()
+    if (command === 'new-tab') newTab()
+    else if (command === 'close-tab') closeTab()
+    else if (command === 'next-tab') cycleTab(1)
+    else if (command === 'previous-tab') cycleTab(-1)
+    else if (command === 'toggle-sidebar') toggleSidebar()
     else if (command === 'toggle-sheets') toggleSheets()
     else if (command === 'new-sheet') void newSheet()
     else if (command === 'daily-note') void openDailyNote()
@@ -1641,8 +1725,9 @@
         if (!info) return
         showLibrary(info)
         // Pick up where the last session ended.
-        const last = await window.api.getLastSheet()
-        if (last && sheetExists(info.tree, last)) await revealSheet(last, false)
+        // A window opened for a sheet shows that; any other picks up where the last session ended.
+        const wanted = (await window.api.initialSheet()) ?? (await window.api.getLastSheet())
+        if (wanted && sheetExists(info.tree, wanted)) await revealSheet(wanted, false)
       })
       .finally(() => (loading = false))
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
@@ -1904,6 +1989,28 @@
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
       </div>
+      {#if tabs.length > 1 && !zen}
+        <div class="tabs" role="tablist" aria-label="Open sheets">
+          {#each tabs as path, i (i)}
+            <div class="tab" class:active={i === activeTab} role="presentation">
+              <button
+                class="tab-label"
+                role="tab"
+                aria-selected={i === activeTab}
+                title={tabTitles.get(path) ?? path}
+                onclick={() => void showTab(i)}
+                onauxclick={(e) => {
+                  if (e.button === 1) closeTab(i)
+                }}
+              >
+                {tabTitles.get(path) ?? 'Untitled'}
+              </button>
+              <button class="tab-close" aria-label="Close tab" onclick={() => closeTab(i)}>×</button>
+            </div>
+          {/each}
+          <button class="tab-new" aria-label="New tab" title="New tab ({keyMod}T)" onclick={newTab}>+</button>
+        </div>
+      {/if}
       <div class="scroller">
       {#if error}
         <p class="hint">{error}</p>
@@ -2405,12 +2512,12 @@
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+    grid-template-rows: var(--topbar-height) auto minmax(0, 1fr);
     overflow: hidden;
   }
   /* Distraction-free: the tool row floats over the top edge and appears on hover. */
   .layout.zen .editor {
-    grid-template-rows: 0 minmax(0, 1fr);
+    grid-template-rows: 0 0 minmax(0, 1fr);
   }
   .layout.zen .scroller {
     padding-top: 2.5rem;
@@ -2506,15 +2613,82 @@
   .tools.right {
     justify-content: flex-end;
   }
-  .scroller {
+  .tabs {
     grid-column: 1;
     grid-row: 2;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 10px 4px;
+    overflow-x: auto;
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    flex: 0 1 180px;
+    min-width: 90px;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+  .tab:hover {
+    background: var(--hover);
+  }
+  .tab.active {
+    background: var(--hover);
+    color: var(--text);
+  }
+  .tab button,
+  .tabs .tab-new {
+    font: inherit;
+    font-size: 12.5px;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    cursor: default;
+  }
+  .tab-label {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 4px 4px 10px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tab-close {
+    padding: 2px 7px;
+    border-radius: 5px;
+    opacity: 0;
+  }
+  .tab:hover .tab-close,
+  .tab.active .tab-close,
+  .tab-close:focus-visible {
+    opacity: 0.7;
+  }
+  .tab-close:hover {
+    opacity: 1;
+    background: var(--border);
+  }
+  .tabs .tab-new {
+    flex-shrink: 0;
+    padding: 2px 9px;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+  .tabs .tab-new:hover {
+    background: var(--hover);
+  }
+  .scroller {
+    grid-column: 1;
+    grid-row: 3;
     position: relative;
     overflow-y: auto;
   }
   .outline-slot {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     display: flex;
     min-height: 0;
   }

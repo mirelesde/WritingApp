@@ -228,7 +228,23 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 10.7 | Put `@import url(https://example.com/a.css);` in a style. | It is ignored: nothing is fetched. |
 | 10.8 | Reopen Export. | The last style used is still chosen. |
 
-## 11. Regression sweep
+## 11. Tabs and windows
+
+| # | Do | Expect |
+|---|----|--------|
+| 11.1 | Open a sheet, press Cmd/Ctrl+T. | A tab bar appears with two tabs; the new one is in front. |
+| 11.2 | Click another sheet in the list. | The front tab changes to it; the other tab is unchanged. |
+| 11.3 | Click the first tab. | Its sheet opens and the list follows it. |
+| 11.4 | Window > Next Tab / Previous Tab. | The tabs cycle. |
+| 11.5 | Close a tab with × or Cmd/Ctrl+W, or middle-click. | It goes; with one tab left the bar hides. |
+| 11.6 | Right-click a sheet, Open in New Tab (twice). | A tab opens, then the second time switches to it. |
+| 11.7 | Right-click a sheet, Open in New Window. | A second window opens on that sheet; the first is unchanged. |
+| 11.8 | Type in one window. | The other window's list updates; editing the same sheet in both raises the conflict dialog on the later save. |
+| 11.9 | Trash a sheet that has a tab. | Its tab closes. |
+| 11.10 | File > Open Library in one window. | Every window switches. |
+| 11.11 | Cmd/Ctrl+W with a single tab. | The window closes. |
+
+## 12. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 
