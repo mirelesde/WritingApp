@@ -574,7 +574,7 @@ asked for directly.
 
 **Medium**
 
-16. **Rename sheet and group.** *Sheet files now rename themselves to follow the title when you leave the sheet; groups rename from the tree.* Sheets take their name from the first line,
+16. ~~**Rename sheet and group.**~~ **Done.** *Sheet files now rename themselves to follow the title when you leave the sheet; groups rename from the tree.* Sheets take their name from the first line,
     so renaming a sheet means moving focus to that line (and the file
     renames itself on save); groups rename the folder and keep the sidecar.
     Needs a rename operation with undo. Comes before item 17 so the context
@@ -594,7 +594,7 @@ asked for directly.
 21. **Goals and progress.** A word target per sheet or group with a
     progress indicator in the status bar. Stored in the sidecar. (Moved up
     from "Later".)
-22. **Drag and drop to reorder (user).** Drag one or more selected sheets
+22. ~~**Drag and drop to reorder (user).**~~ **Done.** Drag one or more selected sheets
     or groups within and between groups, with a drop indicator and
     auto-expand on hover. Uses `moveNodesUndoable`, so undo already works.
     Must refuse dropping a group into itself. The Move to… command stays as
