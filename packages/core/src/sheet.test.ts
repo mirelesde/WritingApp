@@ -76,3 +76,13 @@ describe('markers on sheet cards', () => {
     expect(sheetPreview('T\n```js\ncode\n```\n---\nend')).toBe('code end')
   })
 })
+
+describe('titles and previews skip comments and markers', () => {
+  it('ignores a leading comment when finding the title', () => {
+    expect(sheetTitle('<!-- note -->\n# **Bold** title\nbody')).toBe('Bold title')
+    expect(sheetTitle('<!--\nmulti\n-->\nTitle')).toBe('Title')
+  })
+  it('drops stray comment openers from previews', () => {
+    expect(sheetPreview('Title\n> **q** <!-->\n__x__ ~~y~~ ==z== <!-- open')).toBe('q x y z')
+  })
+})

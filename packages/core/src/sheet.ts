@@ -14,12 +14,17 @@ function inlinePlain(text: string): string {
     .replace(/(^|\s)_+|_+(?=\s|$)/g, '$1')
 }
 
+/** The text without comments, including a stray or unfinished `<!--` (which hides the rest of its line) and `<!-->`. */
+function withoutComments(content: string): string {
+  return stripComments(content).replace(/<!--[^\n]*/g, '').replace(/-->/g, '')
+}
+
 /**
  * A sheet's title is its first non-blank line, without the Markdown
  * heading marker or emphasis marks if it has them.
  */
 export function sheetTitle(content: string): string {
-  for (const line of content.split(/\r?\n/)) {
+  for (const line of withoutComments(content).split(/\r?\n/)) {
     const title = inlinePlain(line.replace(/^\s{0,3}#{1,6}\s+/, '')).trim()
     if (title !== '') return title
   }
@@ -57,7 +62,7 @@ function withoutTables(lines: string[]): string[] {
  * whitespace collapsed and truncated with an ellipsis.
  */
 export function sheetPreview(content: string): string {
-  const lines = stripFootnotes(stripComments(content)).split(/\r?\n/)
+  const lines = stripFootnotes(withoutComments(content)).split(/\r?\n/)
   const titleIndex = lines.findIndex((line) => line.replace(/^\s{0,3}#{1,6}\s+/, '').trim() !== '')
   if (titleIndex === -1) return ''
   const rest = withoutTables(lines.slice(titleIndex + 1))
