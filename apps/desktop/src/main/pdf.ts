@@ -2,7 +2,9 @@ import { promises as nodeFs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { BrowserWindow } from 'electron'
+import { hasContentsLinks, pagesBySlug, withPageNumbers } from '@writingapp/core'
 import type { PdfOptions } from '../preload/api'
+import { readOutline } from './pdfOutline'
 
 const MARGIN_INCHES = { narrow: 0.6, normal: 1, wide: 1.4 } as const
 
@@ -16,9 +18,24 @@ export function parsePdfOptions(value: unknown): PdfOptions {
 
 /**
  * Renders a standalone HTML page to PDF in a hidden window that cannot run
- * scripts, using the page's own print stylesheet.
+ * scripts, using the page's own print stylesheet. With a table of contents it
+ * prints twice: once to see which page each heading falls on, then again with
+ * those numbers filled in (they take the room the placeholders held).
  */
 export async function renderPdf(html: string, options: PdfOptions): Promise<Buffer> {
+  if (!hasContentsLinks(html)) return print(html, options, false)
+  const draft = withPageNumbers(html, null)
+  const first = await print(draft, options, true)
+  let pages: Record<string, number> = {}
+  try {
+    pages = pagesBySlug(html, await readOutline(first))
+  } catch {
+    // Without the page numbers the contents still lists every heading.
+  }
+  return print(withPageNumbers(html, pages), options, false)
+}
+
+async function print(html: string, options: PdfOptions, outline: boolean): Promise<Buffer> {
   const dir = await nodeFs.mkdtemp(join(tmpdir(), 'writingapp-pdf-'))
   const file = join(dir, 'export.html')
   await nodeFs.writeFile(file, html, 'utf8')
@@ -36,7 +53,8 @@ export async function renderPdf(html: string, options: PdfOptions): Promise<Buff
       headerTemplate: '<span></span>',
       footerTemplate:
         '<div style="width:100%;text-align:center;font-size:9px;font-family:sans-serif;color:#555"><span class="pageNumber"></span> / <span class="totalPages"></span></div>',
-      printBackground: false
+      printBackground: false,
+      ...(outline ? { generateDocumentOutline: true, generateTaggedPDF: true } : {})
     })
   } finally {
     window.destroy()

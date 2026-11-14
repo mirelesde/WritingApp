@@ -1257,14 +1257,20 @@ tested with the in-memory one)
     from the counts (which use core `findMatches`); a library search stops at
     2,000 sheets.
 77. **Automatic table of contents.** **Done.** A line holding only `(cnt)`
-    (Ulysses writes it the same way) is a table of contents. In the editor it
-    shows as a "Table of Contents" chip until the cursor is on the line. On
-    export, HTML gets a nested list of the headings that come after it, across
-    every exported sheet, linked to anchors on the headings; Markdown and Word
-    get the same list without links. The sheet card still shows `(cnt)`.
-    Limits: no page numbers; only headings after the marker are listed;
-    setext (underlined) headings get no anchor; no menu item yet, you type
-    `(cnt)`; PDF and print follow the HTML export.
+    (Ulysses writes it the same way) is a table of contents. Insert > Table of
+    Contents (also in the command palette) puts one at the cursor. In the
+    editor it shows as a "Table of Contents" chip until the cursor is on the
+    line. On export it lists the headings that come after it, across every
+    exported sheet. HTML: a nested list linked to anchors on the headings.
+    Markdown: the same list as plain text. PDF: the list gets dotted leaders and
+    page numbers; the PDF is printed twice, the first time with the PDF outline
+    switched on so each heading's page can be read (pdf-lib), then again with the
+    numbers in. Word: `(cnt)` becomes a real TOC field over the headings that
+    follow; Word fills in page numbers when the file is opened and asks to update
+    fields. Limits: Word's page numbers are untested in Word itself (no copy here);
+    other apps show the stored list without numbers; only headings after the
+    marker are listed; setext (underlined) headings get no link or page number;
+    no menu shortcut; HTML has no page numbers (it has no pages).
 
 ## Later, in rough order
 

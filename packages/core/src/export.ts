@@ -1,7 +1,7 @@
 import { assetNameFromUrl, embedImages, findImages, imagesSize, linkImagesToFolder } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
-import { addHeadingIds, expandContents } from './contents'
+import { addHeadingIds, expandContents, markContentsLinks } from './contents'
 import { mathToHtml } from './math'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
 import { sanitizeCss, STYLE_BLOCK_OPEN } from './exportStyles'
@@ -262,7 +262,7 @@ export async function exportHtml(
     const mine = expanded.slice(at, (at += texts.length))
     return markdownToHtml(mine.join('\n\n'))
   })
-  const body = addHeadingIds(parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n'), flat)
+  const body = markContentsLinks(addHeadingIds(parts.map((p) => `<section>\n${p}</section>`).join('\n<hr class="break">\n'), flat))
   const images = [...used]
   return {
     title,

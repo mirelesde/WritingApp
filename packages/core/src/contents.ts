@@ -77,7 +77,7 @@ export function expandContents(texts: string[], links: boolean): string[] {
       const lines = after.map(({ heading, slug }) => {
         const indent = '  '.repeat(Math.min(heading.level - top, 5))
         const label = heading.text.replace(/([\[\]\\])/g, '\\$1')
-        return `${indent}- ${links ? `[${label}](#${slug})` : heading.text}`
+        return `${indent}- ${links ? `[${label}](#${slug} "toc")` : heading.text}`
       })
       const end = text.indexOf('\n', at)
       const lineEnd = end === -1 ? text.length : end
@@ -85,6 +85,71 @@ export function expandContents(texts: string[], links: boolean): string[] {
     }
     return out
   })
+}
+
+/** What the HTML of a table of contents entry looks like once rendered, with its marker title swapped for a class. */
+export function markContentsLinks(html: string): string {
+  return html.replace(/<a href="#([^"]+)" title="toc">/g, '<a class="toc-link" href="#$1">')
+}
+
+const normText = (t: string): string =>
+  t
+    .replace(/<[^>]*>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/** Whether the page has table of contents entries to put page numbers on. */
+export function hasContentsLinks(html: string): boolean {
+  return html.includes('class="toc-link"')
+}
+
+/**
+ * Which page each anchored heading landed on. `outline` is the PDF's own list of
+ * headings in reading order, each with its page; they are paired with the
+ * headings of the HTML by title, in order, so a heading one side lacks is skipped.
+ */
+export function pagesBySlug(html: string, outline: { title: string; page: number }[]): Record<string, number> {
+  const found: { text: string; slug: string | null }[] = []
+  for (const m of html.matchAll(/<h([1-6])(?: id="([^"]*)")?>([\s\S]*?)<\/h\1>/g)) found.push({ text: normText(m[3]!), slug: m[2] ?? null })
+  const pages: Record<string, number> = {}
+  let at = 0
+  for (const entry of outline) {
+    const title = normText(entry.title)
+    for (let i = at; i < found.length; i++) {
+      if (found[i]!.text !== title) continue
+      const slug = found[i]!.slug
+      if (slug !== null) pages[slug] = entry.page
+      at = i + 1
+      break
+    }
+  }
+  return pages
+}
+
+const PAGE_CSS = `<style>
+.toc-link { display: flex; gap: .4em; align-items: baseline; color: inherit; text-decoration: none; }
+.toc-dots { flex: 1; border-bottom: 1px dotted currentColor; opacity: .5; transform: translateY(-.25em); }
+.toc-page { font-variant-numeric: tabular-nums; }
+</style>`
+
+/**
+ * Lays the table of contents entries out with a dotted leader and a page number.
+ * Without `pages` every number is a placeholder, so a first print takes the room
+ * the real one will.
+ */
+export function withPageNumbers(html: string, pages: Record<string, number> | null): string {
+  const laid = html.replace(
+    /<a class="toc-link" href="#([^"]+)">([\s\S]*?)<\/a>/g,
+    (_m, slug: string, inner: string) =>
+      `<a class="toc-link" href="#${slug}"><span class="toc-text">${inner}</span><span class="toc-dots"></span><span class="toc-page">${pages?.[slug] ?? '00'}</span></a>`,
+  )
+  return laid.includes('</head>') ? laid.replace('</head>', `${PAGE_CSS}\n</head>`) : PAGE_CSS + laid
 }
 
 /** Gives the headings of rendered HTML the anchors `expandContents` links to. Headings the outline does not know (setext ones) get none. */

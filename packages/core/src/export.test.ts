@@ -172,7 +172,7 @@ describe('table of contents in exports', () => {
     })
     const tree = await loadLibrary(fs, '/Lib')
     const html = await exportHtml(fs, tree, ['/Lib/Book'])
-    expect(html.html).toContain('<a href="#one">One</a>')
+    expect(html.html).toContain('<a class="toc-link" href="#one">One</a>')
     expect(html.html).toContain('<h1 id="one">One</h1>')
     const md = await exportMarkdown(fs, tree, ['/Lib/Book'], 'x')
     expect(md.markdown).toContain('- One\n  - Sub')

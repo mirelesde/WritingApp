@@ -25,7 +25,8 @@
     "@codemirror/search": "^6.7.2",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "@writingapp/core": "*"
+    "@writingapp/core": "*",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@codemirror/autocomplete": "^6.20.4",
