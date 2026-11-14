@@ -890,6 +890,13 @@ tested with the in-memory one)
 
 ## Still open
 
+- **Scope for Find in Library (to decide).** Find and Replace in the
+  library search every sheet. Option: a "Look in" selector (Library,
+  Project, Group, Sheet) that limits both the results and Replace All,
+  defaulting to the selected group or project. `replaceInLibrary` already
+  accepts a list of sheet paths; `searchLibrary` and the dialog would need
+  a scope. Open question: whether "Sheet" belongs there or stays with the
+  editor's own find bar (Cmd/Ctrl+F), which already has Replace.
 - Get signing certificates (Apple Developer ID, a Windows code-signing
   certificate) and run the release workflow once end to end.
 - Try export, watching and builds on Windows and Linux.
