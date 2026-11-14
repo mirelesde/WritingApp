@@ -176,7 +176,22 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 6.5 | Repeat in dark mode. | The bar stays visible. |
 | 6.6 | Drag several selected sheets. | Same bars; all move together. |
 
-## 7. Regression sweep
+## 7. Images
+
+| # | Steps | Expected |
+|---|-------|----------|
+| 7.1 | Insert > Image… (Cmd/Ctrl+Alt+I), pick one or more files. | A square thumbnail appears at the cursor for each; the raw `![name](.assets/name.png)` shows while the cursor is on it. **(native picker not yet clicked through)** |
+| 7.2 | Paste a screenshot, then a picture file copied in the file manager. | Each saves into the library's hidden `.assets` folder and shows a thumbnail. |
+| 7.3 | Drop picture files on the editor. | Thumbnails land where dropped. |
+| 7.4 | Insert the same picture twice. | Only one file is stored in `.assets`. |
+| 7.5 | Click a thumbnail. | A full-size preview opens; click or Escape closes it. |
+| 7.6 | Export (HTML preview) a sheet with a picture; choose "folder" for pictures. | The picture shows in the preview; the folder option is preselected when embedding would add 50% or more. |
+| 7.7 | Export as PDF a sheet with a picture. | The picture prints at a sensible size (checked in Electron with the app's settings; **the native save dialog not yet clicked through**). |
+| 7.8 | Remove the last link to a picture, then File > Clean Up Unused Images…. | The picture is listed; confirming moves it to the system trash. |
+| 7.9 | Save as Markdown… with pictures. | The pictures are copied to a `<name>-images` folder beside the file and links are rewritten. |
+| 7.10 | Link a picture that does not exist. | The thumbnail fades; the sheet still opens and edits normally. |
+
+## 8. Regression sweep
 
 Quick checks that earlier features still work with today's changes.
 

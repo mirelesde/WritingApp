@@ -712,8 +712,9 @@ asked for directly.
       HTML and PDF export. Unreadable or missing images show a placeholder
       rather than failing the sheet.
     - **Image gaps, for later (not built):**
-      PDF export with pictures has never been run (it should embed like
-      HTML); the native Insert menu item, file picker and export save
+      PDF export with pictures was run in Electron with the app's own
+      settings (scripts off, hidden window) and the picture printed
+      correctly; only the native save dialog was not clicked through; the native Insert menu item, file picker and export save
       dialog were tested only underneath, never clicked through; no toolbar
       button (there is no toolbar yet); dropping a file outside the editor
       (the sidebar, say) is unchecked and may make Electron open it as a
