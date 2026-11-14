@@ -127,33 +127,104 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i])
 }
 
+/** A content hash of some bytes, as text. The platform supplies it (the core has no crypto of its own). */
+export type Hasher = (data: Uint8Array) => string | Promise<string>
+
+/** What the index remembers about a picture file, and the file's state when it was hashed. */
+export interface ImageIndexEntry {
+  size: number
+  modified: number
+  hash: string
+}
+
+const INDEX_NAME = '.index.json'
+
+async function readIndex(fs: FileSystem, dir: string): Promise<Record<string, ImageIndexEntry>> {
+  try {
+    const data: unknown = JSON.parse(await fs.readText(joinPath(dir, INDEX_NAME)))
+    const entries = (data as { entries?: unknown }).entries
+    if (typeof entries !== 'object' || entries === null) return {}
+    const clean: Record<string, ImageIndexEntry> = {}
+    for (const [name, e] of Object.entries(entries)) {
+      const v = e as Partial<ImageIndexEntry>
+      if (typeof v.size === 'number' && typeof v.modified === 'number' && typeof v.hash === 'string') {
+        clean[name] = { size: v.size, modified: v.modified, hash: v.hash }
+      }
+    }
+    return clean
+  } catch {
+    return {} // Missing or damaged: it is rebuilt.
+  }
+}
+
 /**
  * The picture already in the assets folder that has exactly these bytes, if
- * there is one. Files of another size are skipped without being read, where
- * the file system can tell sizes cheaply.
+ * there is one.
+ *
+ * Without a `hash`, same-size files are compared byte for byte. With one, the
+ * hash of each picture is kept in `.assets/.index.json`, keyed by size and
+ * modified time, so only new or changed files are read; the index is
+ * rebuilt if it is missing or damaged.
  */
-async function findIdentical(fs: FileSystem, root: string, data: Uint8Array): Promise<string | null> {
+async function findIdentical(fs: FileSystem, root: string, data: Uint8Array, hash?: Hasher): Promise<string | null> {
   const dir = joinPath(root, ASSETS_DIR)
   if (!(await fs.exists(dir))) return null
-  for (const entry of await fs.list(dir)) {
-    if (entry.kind !== 'file' || !isImageName(entry.name)) continue
-    const path = joinPath(dir, entry.name)
-    const size = (await fs.fileTimes?.(path))?.size
-    if (size !== undefined && size !== data.length) continue
-    if (sameBytes(await fs.readBinary(path), data)) return entry.name
+  const entries = (await fs.list(dir)).filter((e) => e.kind === 'file' && isImageName(e.name))
+  if (!hash) {
+    for (const entry of entries) {
+      const path = joinPath(dir, entry.name)
+      const size = (await fs.fileTimes?.(path))?.size
+      if (size !== undefined && size !== data.length) continue
+      if (sameBytes(await fs.readBinary(path), data)) return entry.name
+    }
+    return null
   }
-  return null
+
+  const index = await readIndex(fs, dir)
+  const fresh: Record<string, ImageIndexEntry> = {}
+  let found: string | null = null
+  const wanted = await hash(data)
+  for (const entry of entries) {
+    const stat = await fs.fileTimes?.(joinPath(dir, entry.name))
+    const known = index[entry.name]
+    if (known && stat?.size === known.size && stat.modified === known.modified) {
+      fresh[entry.name] = known
+    } else {
+      const bytes = await fs.readBinary(joinPath(dir, entry.name))
+      fresh[entry.name] = { size: bytes.length, modified: stat?.modified ?? 0, hash: await hash(bytes) }
+    }
+    if (found === null && fresh[entry.name]!.hash === wanted) found = entry.name
+  }
+  if (JSON.stringify(fresh) !== JSON.stringify(index)) await writeIndex(fs, dir, fresh)
+  return found
+}
+
+async function writeIndex(fs: FileSystem, dir: string, entries: Record<string, ImageIndexEntry>): Promise<void> {
+  await fs.writeText(joinPath(dir, INDEX_NAME), JSON.stringify({ version: 1, entries }) + '\n')
 }
 
 /** Stores the bytes once: reuses an identical picture, or writes a new file. */
-async function store(fs: FileSystem, root: string, originalName: string, data: Uint8Array): Promise<ImportedImage> {
+async function store(
+  fs: FileSystem,
+  root: string,
+  originalName: string,
+  data: Uint8Array,
+  hash?: Hasher,
+): Promise<ImportedImage> {
   const alt = (n: string): string => n.replace(/\.[^.]*$/, '')
-  const existing = await findIdentical(fs, root, data)
+  const existing = await findIdentical(fs, root, data, hash)
   if (existing) return { name: existing, markdown: imageMarkdown(existing, alt(originalName)), reused: true }
   const dir = joinPath(root, ASSETS_DIR)
   await fs.makeDir(dir)
   const name = assetName(originalName, await takenNames(fs, root))
   await fs.writeBinary(joinPath(dir, name), data)
+  if (hash) {
+    // Remember the new file now, so the next check does not read it again.
+    const index = await readIndex(fs, dir)
+    const stat = await fs.fileTimes?.(joinPath(dir, name))
+    index[name] = { size: data.length, modified: stat?.modified ?? 0, hash: await hash(data) }
+    await writeIndex(fs, dir, index)
+  }
   return { name, markdown: imageMarkdown(name, alt(name)), reused: false }
 }
 
@@ -162,12 +233,17 @@ async function store(fs: FileSystem, root: string, originalName: string, data: U
  * for each. A picture already there, byte for byte, is reused rather than
  * stored again. Files that are not images are skipped.
  */
-export async function importImages(fs: FileSystem, root: string, sources: string[]): Promise<ImportedImage[]> {
+export async function importImages(
+  fs: FileSystem,
+  root: string,
+  sources: string[],
+  hash?: Hasher,
+): Promise<ImportedImage[]> {
   const done: ImportedImage[] = []
   for (const source of sources) {
     const original = fileNameOf(source)
     if (!isImageName(original)) continue
-    done.push(await store(fs, root, original, await fs.readBinary(source)))
+    done.push(await store(fs, root, original, await fs.readBinary(source), hash))
   }
   return done
 }
@@ -178,8 +254,9 @@ export async function saveImage(
   root: string,
   originalName: string,
   data: Uint8Array,
+  hash?: Hasher,
 ): Promise<ImportedImage> {
-  return store(fs, root, originalName, data)
+  return store(fs, root, originalName, data, hash)
 }
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'

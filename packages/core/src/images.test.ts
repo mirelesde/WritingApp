@@ -105,3 +105,40 @@ describe('finding unused pictures', () => {
     expect(await unusedImages(fs, '/lib', tree)).toEqual([{ name: 'b.png', size: 2 }])
   })
 })
+
+describe('the hash index', () => {
+  // A file system that can tell size and modified time, as the real one can.
+  const withTimes = (fs: MemoryFileSystem): MemoryFileSystem => {
+    return Object.assign(fs, {
+      fileTimes: async (path: string) => ({ modified: 1, created: 1, size: (await fs.readBinary(path)).length }),
+    })
+  }
+  const counting = (): { hash: (d: Uint8Array) => string; calls: () => number } => {
+    let n = 0
+    return { hash: (d) => ((n++), Array.from(d).join(',')), calls: () => n }
+  }
+
+  it('finds an identical picture and does not hash the old ones again', async () => {
+    const fs = withTimes(new MemoryFileSystem({ '/lib/a.md': '' }))
+    const h = counting()
+    const a = await saveImage(fs, '/lib', 'a.png', new Uint8Array([1, 2, 3]), h.hash)
+    await saveImage(fs, '/lib', 'b.png', new Uint8Array([4, 5]), h.hash)
+    const before = h.calls()
+    const again = await saveImage(fs, '/lib', 'c.png', new Uint8Array([1, 2, 3]), h.hash)
+    expect(again).toMatchObject({ name: a.name, reused: true })
+    expect(h.calls() - before).toBe(1) // only the new picture
+    expect(await fs.exists('/lib/.assets/.index.json')).toBe(true)
+  })
+
+  it('rehashes a file that changed, and rebuilds a damaged index', async () => {
+    const fs = withTimes(new MemoryFileSystem({ '/lib/a.md': '' }))
+    const h = counting()
+    await saveImage(fs, '/lib', 'a.png', new Uint8Array([1]), h.hash)
+    await fs.writeText('/lib/.assets/.index.json', '{broken')
+    const out = await saveImage(fs, '/lib', 'x.png', new Uint8Array([1]), h.hash)
+    expect(out.reused).toBe(true)
+    // A file replaced with other bytes of another size is noticed.
+    await fs.writeBinary('/lib/.assets/a.png', new Uint8Array([7, 7]))
+    expect((await saveImage(fs, '/lib', 'y.png', new Uint8Array([1]), h.hash)).reused).toBe(false)
+  })
+})

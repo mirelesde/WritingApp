@@ -653,8 +653,10 @@ asked for directly.
       project folder.
     - **Still to build for B, in this order, one commit each:**
       (1) **built:** identical pictures stored once; insert, paste and drop
-      compare the bytes with what `.assets/` holds (same size first) and
-      reuse the file already there; (2) **built, with (3):** an index of which sheets
+      compare a SHA-256 of the picture with a stored index
+      (`.assets/.index.json`: size, modified time and hash per file), so
+      only new or changed files are ever read, and reuse the file already
+      there; a missing or damaged index is rebuilt; (2) **built, with (3):** an index of which sheets
       link which pictures, kept in the sheet cache, so "which pictures does
       nothing use" is a lookup; checked in the background after load, shown
       as a quiet count ("3 unused images, 4.2 MB"); (3) **built:** Clean Up Unused

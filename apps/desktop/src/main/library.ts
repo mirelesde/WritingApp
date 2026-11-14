@@ -50,6 +50,9 @@ import { createSettingsStore, withRecent } from './settings'
 import { parseSheetCache, serializeSheetCache } from './sheetCache'
 import { createJournal } from './journal'
 
+/** Hashes picture bytes, for spotting a picture the library already holds. */
+const hashImage = (data: Uint8Array): string => createHash('sha256').update(data).digest('hex')
+
 const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
 let settings: ReturnType<typeof createSettingsStore>
 let currentRoot: string | undefined
@@ -293,14 +296,14 @@ export function registerLibraryIpc(): void {
       ? await dialog.showOpenDialog(window, options)
       : await dialog.showOpenDialog(options)
     if (result.canceled) return []
-    return (await importImages(fs, currentRoot, result.filePaths.map(toPosix))).map((i) => i.markdown)
+    return (await importImages(fs, currentRoot, result.filePaths.map(toPosix), hashImage)).map((i) => i.markdown)
   })
 
   ipcMain.handle('image:save', async (_event, name: unknown, data: unknown) => {
     if (!currentRoot || typeof name !== 'string' || !(data instanceof Uint8Array)) {
       throw new Error('Bad image')
     }
-    return (await saveImage(fs, currentRoot, name, data)).markdown
+    return (await saveImage(fs, currentRoot, name, data, hashImage)).markdown
   })
 
   ipcMain.handle('image:unused', async () => {

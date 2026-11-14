@@ -113,4 +113,4 @@ export {
   saveImage,
   toBase64,
 } from './images'
-export type { ImageRef, ImportedImage, UnusedImage } from './images'
+export type { Hasher, ImageIndexEntry, ImageRef, ImportedImage, UnusedImage } from './images'
