@@ -119,3 +119,13 @@ export { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLin
 export type { Backlink, WikiLink } from './wikiLinks'
 export { importedMarkdown, rtfToMarkdown, textToMarkdown } from './importText'
 export { findMath, mathToHtml, type MathSpan } from './math'
+export {
+  changeCount,
+  conflictCopyOf,
+  diffHunks,
+  diffSequences,
+  diffWords,
+  findConflictCopies,
+  mergeHunks
+} from './diff'
+export type { ConflictPair, DiffRun, Hunk, WordSegment } from './diff'
