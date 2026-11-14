@@ -1232,6 +1232,17 @@ tested with the in-memory one)
     round trip through our own reader, which agree), and `textutil` shows
     numbered lists as bullets, which looks like its own limitation.
 
+74. **Subgroup sections in the sheet list.** **Done.** Selecting a group lists
+    its own sheets, then the sheets of every group inside it, each run under
+    a heading with the group's name (nested groups read `Parent › Child`),
+    as Ulysses does. Sorting applies within each section; the filter applies
+    across them; arrow keys and range selection walk the whole list. Sheets
+    can be put in a new order by dragging within their own section (a
+    selection spanning sections can still be dragged to another group), and
+    New Sheet adds to the selected group. Selecting the library root lists
+    every sheet in it, which is slow for very large libraries (no
+    virtualised list yet). No setting turns this off.
+
 ## Later, in rough order
 
 - Export styles beyond item 69: title page, table of contents, per-style page setup.

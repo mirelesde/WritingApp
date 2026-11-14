@@ -295,6 +295,14 @@ Known gaps: maths appears as its TeX source; export styles do not apply to Word;
 | 13.14 | Look at any section label (Preferences, Outline). | Sentence case, not spaced capitals; text is in Inter on every OS. |
 | 13.15 | Preferences > Accent colour > the last swatch. | The system colour panel opens (kept on purpose). |
 
+**Subgroup sections (13.16).**
+
+| # | Steps | Expected |
+|---|-------|----------|
+| 13.16 | Make a group with two sheets, a subgroup with one, and a sub-subgroup with one. Select the outer group. | The list shows the group's own sheets, then a heading with the subgroup's name and its sheet, then `Sub › Subsub` and its sheet. Empty subgroups get no heading. |
+| 13.17 | Click a sheet under a heading; use the arrow keys down the list; shift-click to select across two sections. | The sheet opens; arrows cross headings; the range selects across sections. |
+| 13.18 | Drag a sheet to another place in its own section; then try dropping it among another section's sheets. | The first reorders; the second shows no drop line. Sorting by title sorts within each section. |
+
 ## 14. Regression sweep
 
 Quick checks that earlier features still work with today's changes.

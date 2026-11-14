@@ -217,7 +217,6 @@
   })
 
   const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
-  const sheets = $derived((group?.children.filter((c) => c.kind === 'sheet') ?? []) as SheetNode[])
   let filter = $state('')
   let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
   const sortBy = $derived(prefs?.sheetSort ?? 'manual')
@@ -241,17 +240,36 @@
   /** True while the filter names keywords: the list then spans the whole library, not just the group. */
   const keywordMode = $derived(parsedFilter.keywords.length > 0)
   const knownKeywords = $derived(library ? libraryKeywords(library.tree) : [])
-  const shown = $derived.by(() => {
+  /**
+   * The sheets of the selected group, then those of each group inside it, in
+   * tree order, each under the name of its group (relative to the selected one).
+   * A keyword filter lists the whole library as one run instead.
+   */
+  const sections = $derived.by((): { node: GroupNode; label: string; sheets: SheetNode[] }[] => {
+    if (!group) return []
+    if (keywordMode && library) return [{ node: library.tree, label: '', sheets: librarySheets(library.tree) }]
+    const out: { node: GroupNode; label: string; sheets: SheetNode[] }[] = []
+    const visit = (node: GroupNode, names: string[]): void => {
+      const own = node.children.filter((c) => c.kind === 'sheet') as SheetNode[]
+      if (own.length > 0 || names.length === 0) out.push({ node, label: names.join(' › '), sheets: sortSheets(own, sortBy) })
+      for (const child of node.children) if (child.kind === 'group') visit(child, [...names, child.name])
+    }
+    visit(group, [])
+    return out
+  })
+  /** Every sheet the list can show, before filtering. */
+  const listed = $derived(sections.flatMap((x) => x.sheets))
+  const shownSections = $derived.by(() => {
     const needle = parsedFilter.text.toLowerCase()
     const wanted = parsedFilter.keywords.map((k) => k.toLowerCase())
-    const pool = keywordMode && library ? librarySheets(library.tree) : sheets
-    const ordered = sortSheets(pool, sortBy)
-    return ordered.filter(
-      (s) =>
-        wanted.every((k) => s.keywords.some((own) => own.toLowerCase() === k)) &&
-        (!needle || `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
-    )
+    const keep = (s: SheetNode): boolean =>
+      wanted.every((k) => s.keywords.some((own) => own.toLowerCase() === k)) &&
+      (!needle || `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
+    return sections
+      .map((x) => ({ ...x, sheets: x.sheets.filter(keep) }))
+      .filter((x) => x.sheets.length > 0)
   })
+  const shown = $derived(shownSections.flatMap((x) => x.sheets))
   let keywordPicker = $state(false)
   /** Adds or removes `#keyword` in the filter box. */
   function toggleFilterKeyword(keyword: string): void {
@@ -287,14 +305,13 @@
     keywordEdit = null
     await runOp(() => window.api.changeKeywords(paths, add, remove))
   }
-  const sheetPaths = $derived(sheets.map((s) => s.path))
   /** The sheets in the order the list shows them, for keyboard and range selection. */
   const listPaths = $derived(shown.map((s) => s.path))
   // Sheets that follow a glued sheet, so a run can be drawn as one bar.
   const gluedFrom = $derived(
     new Set(
-      (group?.children ?? []).flatMap((c, i) =>
-        c.kind === 'sheet' && c.glued ? [group?.children[i + 1]?.path ?? ''] : []
+      sections.flatMap(({ node }) =>
+        node.children.flatMap((c, i) => (c.kind === 'sheet' && c.glued ? [node.children[i + 1]?.path ?? ''] : []))
       )
     )
   )
@@ -1222,7 +1239,7 @@
     autosaver.change(path, content)
     edits[path] = content
     // Keep the sheet list's title and preview in step with what is typed.
-    const sheet = sheets.find((s) => s.path === path)
+    const sheet = listed.find((s) => s.path === path)
     if (sheet) {
       sheet.title = sheetTitle(content)
       sheet.preview = sheetPreview(content)
@@ -1503,11 +1520,10 @@
   function sheetDragStart(path: string, e: DragEvent): void {
     const chosen = selection.includes(path) ? [...selection] : [path]
     if (!selection.includes(path)) void setSelection([path], path)
-    drag = {
-      kind: 'sheets',
-      paths: sheetPaths.filter((p) => chosen.includes(p)),
-      parent: selectedGroup
-    }
+    const paths = listPaths.filter((p) => chosen.includes(p))
+    // Sheets from one group can be put in a new order; a mixed selection can only be moved to another group.
+    const parents = new Set(paths.map((p) => p.slice(0, p.lastIndexOf('/'))))
+    drag = { kind: 'sheets', paths, parent: parents.size === 1 ? [...parents][0]! : '' }
     e.dataTransfer?.setData('text/plain', drag.paths.join('\n'))
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
   }
@@ -1522,7 +1538,7 @@
 
   function sheetDragOver(path: string, e: DragEvent): void {
     if (sortBy !== 'manual') return
-    if (drag?.kind !== 'sheets' || drag.parent !== selectedGroup || drag.paths.includes(path))
+    if (drag?.kind !== 'sheets' || drag.parent === '' || path.slice(0, path.lastIndexOf('/')) !== drag.parent || drag.paths.includes(path))
       return
     e.preventDefault()
     e.stopPropagation()
@@ -1536,7 +1552,7 @@
     const dragged = drag
     const hint = sheetHint
     endDrag()
-    const parent = group
+    const parent = dragged ? findGroup(library?.tree ?? ({} as GroupNode), dragged.parent) : undefined
     if (!dragged || !parent || !hint) return
     let slot: number | undefined
     if (hint !== 'end') {
@@ -2059,7 +2075,7 @@
           <ToolButton icon="new-sheet" label="New sheet" hint="{keyMod}N" onclick={() => void newSheet()} />
         </span>
       </header>
-      {#if sheets.length > 0}
+      {#if listed.length > 0}
         <div class="filter">
           <input
             type="search"
@@ -2103,13 +2119,17 @@
       {:else if keywordMode}
         <p class="placeholder small">No Sheets</p>
       {/if}
-      {#if sheets.length === 0}
+      {#if listed.length === 0}
         <p class="placeholder small">No Sheets</p>
       {:else if shown.length === 0}
         <p class="placeholder small">No Matches</p>
       {:else}
         <ul>
-          {#each shown as sheet (sheet.path)}
+          {#each shownSections as section (section.node.path)}
+            {#if section.label}
+              <li class="sheet-section" role="presentation">{section.label}</li>
+            {/if}
+          {#each section.sheets as sheet (sheet.path)}
             <li>
               <button
                 class="sheet"
@@ -2147,6 +2167,7 @@
                 {/if}
               </button>
             </li>
+          {/each}
           {/each}
         </ul>
       {/if}
@@ -2657,6 +2678,14 @@
     right: 0;
     transform: none;
     min-width: 160px;
+  }
+  .sheet-section {
+    margin: 14px 4px 2px;
+    padding: 0 6px 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
   }
   .sheet-head {
     display: flex;
