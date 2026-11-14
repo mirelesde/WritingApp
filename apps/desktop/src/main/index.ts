@@ -276,6 +276,16 @@ function buildMenu(): Menu {
       ]
     },
     {
+      label: 'Fold',
+      submenu: [
+        { label: 'Fold Section', ...shown('CmdOrCtrl+Alt+['), click: () => sendCommand('fold-section') },
+        { label: 'Unfold Section', ...shown('CmdOrCtrl+Alt+]'), click: () => sendCommand('unfold-section') },
+        { type: 'separator' },
+        { label: 'Fold All Sections', click: () => sendCommand('fold-all') },
+        { label: 'Unfold All Sections', click: () => sendCommand('unfold-all') }
+      ]
+    },
+    {
       label: 'Insert',
       submenu: [
         { label: 'Table', click: () => sendCommand('insert-table') },

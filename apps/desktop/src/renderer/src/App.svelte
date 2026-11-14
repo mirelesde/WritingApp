@@ -324,6 +324,16 @@
     editors[path]?.insertImagesAtCursor(markdown)
   }
 
+  function foldHere(fold: boolean): void {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (path) editors[path]?.foldSectionAtCursor(fold)
+  }
+
+  function foldAll(fold: boolean): void {
+    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    if (path) editors[path]?.foldSections(fold)
+  }
+
   function goToFootnote(): void {
     const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
     if (path && !editors[path]?.goToFootnoteAtCursor()) showInfo('This sheet has no footnotes.')
@@ -1390,6 +1400,10 @@
     else if (command === 'insert-image') void insertImage()
     else if (command === 'clean-images') void openCleanUp()
     else if (command === 'go-to-footnote') goToFootnote()
+    else if (command === 'fold-section') foldHere(true)
+    else if (command === 'unfold-section') foldHere(false)
+    else if (command === 'fold-all') foldAll(true)
+    else if (command === 'unfold-all') foldAll(false)
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
     else if (command === 'delete') void deleteSelected()
     else if (command === 'duplicate') void duplicateSelected()
@@ -1487,6 +1501,8 @@
       menu('Insert', 'Image…', 'insert-image', `${keyMod}⌥I`),
       menu('Insert', 'Footnote', 'insert-footnote'),
       menu('Insert', 'Go to Footnote', 'go-to-footnote', `${keyMod}⌥J`),
+      menu('Fold', 'Fold All Sections', 'fold-all'),
+      menu('Fold', 'Unfold All Sections', 'unfold-all'),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
       menu('View', 'Toggle Sheet List', 'toggle-sheets'),
       menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
@@ -1800,6 +1816,7 @@
                   hideMarkers={prefs?.hideMarkers}
                   focusScope={prefs?.focusScope}
                   typewriterAt={prefs?.typewriterPosition}
+                  foldKey={part.path}
                   autofocus={focusEditor && part.path === selection[0]}
                   titles={sheetTitles}
                   onwiki={(target) => void followWikiLink(target)}

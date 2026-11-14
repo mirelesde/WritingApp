@@ -606,10 +606,16 @@ asked for directly.
     ranges). List bullets, task boxes, fences, tables, images, wiki links
     and footnotes stay visible. Not built: revealing per element rather
     than per line, hiding fence lines.
-42. **Folding sections.** Collapse the text under a heading from a gutter
-    arrow or Cmd/Ctrl+Alt+[ and ]; fold all and unfold all. Fold state is
-    remembered per sheet. The outline and quick jump (item 36) keep
-    working on folded text.
+42. ~~**Folding sections.**~~ **Done.** A heading folds the text under it, up
+    to the next heading of the same or a higher level (headings inside code
+    fences do not count). A chevron hangs in the left margin of each
+    foldable heading and shows only while the pointer is near it; a folded
+    section shows a "…" pill that unfolds on click. Cmd/Ctrl+Alt+[ and ]
+    fold and unfold the section at the cursor; a Fold menu has Fold All and
+    Unfold All. Folds are remembered per sheet (by heading text, in local
+    storage) and reopen on a jump from the outline or search. Not built:
+    folding lists or code blocks, and fold state that follows a renamed
+    heading.
 
 52. ~~**Paste rich text as Markdown.**~~ **Done.** `htmlToMarkdown` in core (own tag reader, handles Word and Google Docs styles); `richPaste.ts` in the editor; Cmd/Ctrl+Shift+V pastes plain. Copying from a web page or a word
     processor pastes as Markdown (headings, emphasis, links, lists), with

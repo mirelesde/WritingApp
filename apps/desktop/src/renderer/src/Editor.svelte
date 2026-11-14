@@ -12,6 +12,9 @@
   import { insertImages } from './imageThumbs'
   import { updateWikiHost } from './wikiLinks'
   import { hideMarkers as hideMarkersExtension } from './hideMarkers'
+  import { toggleCurrent, foldAllSections, foldedHeadings, restoreFolds, reveal, unfoldAllSections } from './foldSections'
+  import { recallFolds, rememberFolds } from './foldMemory'
+  import { foldedRanges } from '@codemirror/language'
   import { formatCommand, styleOfLine, type FormatKind, type LineStyle } from './blockStyle'
 
   interface Props {
@@ -47,6 +50,8 @@
     titles?: string[]
     /** A wiki link was Cmd/Ctrl-clicked. */
     onwiki?: (target: string) => void
+    /** Identifies the sheet, so its folded sections are remembered. */
+    foldKey?: string
     /** Put the cursor in the editor when it opens. */
     autofocus?: boolean
   }
@@ -63,6 +68,7 @@
     lineNumbers = false,
     autofocus = false,
     titles = [],
+    foldKey,
     onwiki
   }: Props = $props()
   let view: EditorView | undefined
@@ -85,6 +91,7 @@
   export function goTo(offset: number): void {
     if (!view) return
     const anchor = Math.min(offset, view.state.doc.length)
+    reveal(view, anchor)
     view.dispatch({
       selection: { anchor },
       effects: EditorView.scrollIntoView(anchor, { y: 'start', yMargin: 24 })
@@ -104,6 +111,19 @@
             ? linkCommand
             : formatCommand(kind)
     command(view)
+    view.focus()
+  }
+
+  /** Folds or opens the section under the heading nearest above the cursor. */
+  export function foldSectionAtCursor(fold: boolean): void {
+    if (view) toggleCurrent(fold)(view)
+  }
+
+  /** Folds every section, or opens them all. */
+  export function foldSections(fold: boolean): void {
+    if (!view) return
+    if (fold) foldAllSections(view)
+    else unfoldAllSections(view)
     view.focus()
   }
 
@@ -198,11 +218,17 @@
           ),
           gutter.of(lineNumbers ? lineNumbersExtension() : []),
           typography.of(smart ? smartTypography : []),
-          markers.of(hide ? hideMarkersExtension : [])
+          markers.of(hide ? hideMarkersExtension : []),
+          EditorView.updateListener.of((update) => {
+            if (foldKey && foldedRanges(update.state) !== foldedRanges(update.startState)) {
+              rememberFolds(foldKey, foldedHeadings(update.state))
+            }
+          })
         ]
       )
     })
     updateWikiHost(view, { titles: [...titles], open: (target) => onwiki?.(target) })
+    if (foldKey) restoreFolds(view, recallFolds(foldKey))
     if (autofocus) view.focus()
     return () => view?.destroy()
   })

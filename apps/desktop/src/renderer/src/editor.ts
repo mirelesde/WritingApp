@@ -22,6 +22,7 @@ import { highlightSyntax, highlightTag } from './highlightMark'
 import { footnoteKeymap, footnotes } from './footnotes'
 import { linkChips } from './linkChips'
 import { wikiLinks } from './wikiLinks'
+import { foldSections } from './foldSections'
 import { imagePaste, imageThumbs } from './imageThumbs'
 import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
@@ -48,7 +49,7 @@ const theme = EditorView.theme({
     padding: '0 64px',
     caretColor: 'var(--text)'
   },
-  '.cm-line': { padding: '0', transition: 'opacity 0.2s' },
+  '.cm-line': { padding: '0', transition: 'opacity 0.2s', position: 'relative' },
   // One outlined chip around the whole [text](address) link.
   '.cm-link-chip': {
     border: '1px solid color-mix(in srgb, var(--accent) 55%, transparent)',
@@ -72,6 +73,36 @@ const theme = EditorView.theme({
     fontSize: '13px'
   },
   '.cm-tooltip-autocomplete > ul > li[aria-selected]': { backgroundColor: 'var(--selection)', color: 'var(--text)' },
+  // Fold chevron: hung in the left margin of a heading, shown only while the pointer is near.
+  '.cm-fold-chevron': {
+    position: 'absolute',
+    left: '-60px',
+    top: '0',
+    width: '48px',
+    height: '1.3em',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingRight: '6px',
+    fontSize: '14px',
+    lineHeight: '1',
+    color: 'var(--faint)',
+    cursor: 'pointer',
+    opacity: '0',
+    transition: 'opacity 0.15s',
+    userSelect: 'none'
+  },
+  '.cm-line:hover .cm-fold-chevron, .cm-fold-chevron:hover': { opacity: '1' },
+  '.cm-fold-chevron:hover': { color: 'var(--accent)' },
+  '.cm-fold-placeholder': {
+    color: 'var(--faint)',
+    border: '1px solid var(--border)',
+    borderRadius: '5px',
+    padding: '0 6px',
+    margin: '0 4px',
+    cursor: 'pointer',
+    fontSize: '0.8em'
+  },
   '.cm-line.cm-dim': { opacity: 'var(--dim-opacity, 0.3)' },
   '.cm-dim-text': { opacity: 'var(--dim-opacity, 0.3)', transition: 'opacity 0.2s' },
   // The blank line between paragraphs: its height is the paragraph spacing setting.
@@ -216,6 +247,7 @@ export function editorExtensions({
     richPaste,
     linkChips,
     wikiLinks,
+    foldSections,
     // Find and replace within this sheet; Find in Library searches all of them.
     search({ top: true }),
     highlightSelectionMatches(),
