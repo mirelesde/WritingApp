@@ -15,7 +15,7 @@
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
   import { RecoveryFlow } from './recoveryFlow.svelte'
-  import { sheetsKey, treeKey, windowKey } from './keyActions'
+  import { KeyboardFlow } from './keyboardFlow'
   import { DragDrop } from './dragDrop.svelte'
   import { NodeOps } from './nodeOps.svelte'
   import { SheetRun } from './sheetRun.svelte'
@@ -75,7 +75,6 @@
   import {
     errorMessage,
     runOf,
-    visibleGroups,
   } from './organise'
   import {
     findGroup,
@@ -671,61 +670,34 @@
 
   // --- Keyboard -----------------------------------------------------------
 
-  function treeKeydown(e: KeyboardEvent): void {
-    if (!library || ops.renaming) return
-    const result = treeKey(e, visibleGroups(library.tree, nav.expanded), nav.selectedGroup, nav.expanded, () =>
-      ops.clipboardKey(e)
-    )
-    if (result.handled) e.preventDefault()
-    const action = result.action
-    if (!action) return
-    if (action.kind === 'select') void selectGroup(action.path)
-    else if (action.kind === 'expand') nav.expanded[action.path] = action.open
-    else if (action.kind === 'rename') void ops.startRename(action.path)
-    else void runOp(() => window.api.move(action.paths, action.parent, action.slot))
-  }
-
-  function sheetsKeydown(e: KeyboardEvent): void {
-    const result = sheetsKey(
-      e,
-      {
-        listPaths: list.paths,
-        // a plain array: state proxies cannot cross the bridge
-        selected: [...sel.paths],
-        cursor: sel.cursor,
-        anchor: sel.anchor,
-        manual: sortBy === 'manual',
-        siblings: (where) => {
-          const parent = library ? findGroup(library.tree, where) : undefined
-          return parent?.children.map((c) => c.path)
-        }
-      },
-      () => ops.clipboardKey(e)
-    )
-    if (result.handled) e.preventDefault()
-    const action = result.action
-    if (!action) return
-    if (action.kind === 'move') void runOp(() => window.api.move(action.paths, action.parent, action.slot))
-    else if (action.kind === 'edit') {
-      if (sel.paths[0]) editors[sel.paths[0]]?.focus()
-    } else {
-      if (action.anchor !== undefined) sel.anchor = action.anchor
-      void setSelection(action.paths, action.cursor)
-    }
-  }
-
-  function windowKeydown(e: KeyboardEvent): void {
-    const action = windowKey(e, library !== null, sel.paths[0] !== undefined)
-    if (!action) return
-    if (action === 'back') void trail.step(-1)
-    else if (action === 'forward') void trail.step(1)
-    else if (action === 'focus-library') {
+  const keys = new KeyboardFlow({
+    tree: () => library?.tree,
+    expanded: () => nav.expanded,
+    setExpanded: (path, open) => (nav.expanded[path] = open),
+    selectedGroup: () => nav.selectedGroup,
+    selectGroup: (path) => void selectGroup(path),
+    renaming: () => ops.renaming !== null,
+    startRename: (path) => void ops.startRename(path),
+    clipboardKey: (e) => ops.clipboardKey(e),
+    move: (paths, parent, slot) => void runOp(() => window.api.move(paths, parent, slot)),
+    listPaths: () => list.paths,
+    // plain arrays: state proxies cannot cross the bridge
+    selection: () => ({ paths: [...sel.paths], cursor: sel.cursor, anchor: sel.anchor }),
+    setAnchor: (path) => (sel.anchor = path),
+    setSelection: (paths, cursor) => void setSelection(paths, cursor),
+    manualOrder: () => sortBy === 'manual',
+    siblings: (where) => {
+      const parent = library ? findGroup(library.tree, where) : undefined
+      return parent?.children.map((c) => c.path)
+    },
+    focusEditor: (path) => editors[path]?.focus(),
+    step: (delta) => void trail.step(delta),
+    focusLibrary: () => {
       if (ui.sidebarHidden) ui.sidebarPeek = true
       treeEl?.focus()
-    } else if (action === 'focus-sheets') sheetsEl?.focus()
-    else if (sel.paths[0]) editors[sel.paths[0]]?.focus()
-    e.preventDefault()
-  }
+    },
+    focusSheets: () => sheetsEl?.focus()
+  })
 
   /** Clicking a row selects it but keeps focus on the pane, so keys keep working. */
   function keepFocus(pane: HTMLElement | undefined) {
@@ -886,7 +858,7 @@
   })
 </script>
 
-<svelte:window onkeydown={windowKeydown} />
+<svelte:window onkeydown={keys.window} />
 
 {#if loading}
   <Welcome loading />
@@ -922,7 +894,7 @@
       {keyShift}
       bind:el={treeEl}
       dnd={dnd.tree}
-      onkeydown={treeKeydown}
+      onkeydown={keys.tree}
       onmousedown={keepFocus(treeEl)}
       onfocusout={(e) => {
         const box = e.currentTarget.closest('.sidebar')
@@ -956,7 +928,7 @@
       sheetHint={dnd.sheetHint}
       {keyMod}
       whereIs={list.whereIs}
-      onkeydown={sheetsKeydown}
+      onkeydown={keys.sheets}
       onmousedown={keepFocus(sheetsEl)}
       onpaneover={dnd.paneOver}
       onpanedrop={dnd.drop}
