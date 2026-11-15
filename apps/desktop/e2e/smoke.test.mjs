@@ -146,7 +146,7 @@ describe('the app', () => {
 
   it('marks the keyword button while a keyword filter is on', async () => {
     await start()
-    await app.eval(`window.api.changeKeywords([${JSON.stringify(join(library, 'Novel', 'Alpha.md'))}], ['draft'], [])`)
+    await app.eval(`window.api.changeKeywords([${JSON.stringify(join(library, 'Novel', 'Alpha.md').replaceAll('\\', '/'))}], ['draft'], [])`)
     await until(() => app.eval(`document.querySelector('.kw-button') !== null`), 'the keyword button')
     const before = await app.eval(`getComputedStyle(document.querySelector('.kw-button')).color`)
     await app.type('#draft', '.filter input')
