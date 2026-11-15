@@ -53,6 +53,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { KeywordEdit } from './keywordEdit.svelte'
   import { FindFlow } from './findFlow.svelte'
   import { MoveFlow } from './moveFlow.svelte'
   import { runMenuCommand, type CommandActions } from './menuCommands'
@@ -215,23 +216,13 @@
     return library ? whereIsIn(library.tree, path) : ''
   }
 
-  // Keywords dialog: edits the selected sheets.
-  let keywordEdit = $state<{ path: string; title: string; keywords: string[] }[] | null>(null)
-  function openKeywords(): void {
-    if (!library) return
-    const wanted = new Set(sel.paths)
-    const chosen = librarySheets(library.tree).filter((s) => wanted.has(s.path))
-    if (chosen.length === 0) {
-      notice = 'Select a sheet first.'
-      return
-    }
-    keywordEdit = chosen.map((s) => ({ path: s.path, title: s.title, keywords: [...s.keywords] }))
-  }
-  async function applyKeywords(add: string[], remove: string[]): Promise<void> {
-    const paths = keywordEdit?.map((s) => s.path) ?? []
-    keywordEdit = null
-    await runOp(() => window.api.changeKeywords(paths, add, remove))
-  }
+  const keywords = new KeywordEdit({
+    sheets: () => (library ? librarySheets(library.tree) : []),
+    selected: () => [...sel.paths],
+    warn: (text) => (notice = text),
+    runOp: (op) => runOp(op),
+    change: (paths, add, remove) => window.api.changeKeywords(paths, add, remove)
+  })
   /** The sheets in the order the list shows them, for keyboard and range selection. */
   const listPaths = $derived(shown.map((s) => s.path))
   // Sheets that follow a glued sheet, so a run can be drawn as one bar.
@@ -273,9 +264,6 @@
     sel.clear()
     run.clear()
   }
-
-  /** Collapsed, the sidebar slides in while the pointer is at the left edge or over it. */
-
 
   /** The sheet being typed in: the only one selected, else the first of the open run. */
   function activeEditor(): (typeof editors)[string] | undefined {
@@ -562,7 +550,7 @@
     else if (action === 'new-group') await ops.newGroup(kind === 'root')
     else if (action === 'open-tab') await tabFlow.open(path)
     else if (action === 'open-window') await window.api.newWindow(path)
-    else if (action === 'keywords') openKeywords()
+    else if (action === 'keywords') keywords.open()
     else if (action === 'rename') void ops.startRename(path)
     else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
       if (kind === 'group') treeEl?.focus()
@@ -903,7 +891,7 @@
     split: () => void ops.split(),
     merge: () => void ops.merge(),
     glue: (glued) => void ops.glue(glued),
-    editKeywords: () => openKeywords(),
+    editKeywords: keywords.open,
     undo: () => void ops.undo(),
     newGroup: (project) => void ops.newGroup(project)
   }
@@ -1260,12 +1248,12 @@
   />
 {/if}
 
-{#if keywordEdit}
+{#if keywords.current}
   <KeywordsDialog
-    sheets={keywordEdit}
+    sheets={keywords.current}
     known={knownKeywords}
-    onapply={(add, remove) => void applyKeywords(add, remove)}
-    oncancel={() => (keywordEdit = null)}
+    onapply={(add, remove) => void keywords.apply(add, remove)}
+    oncancel={keywords.close}
   />
 {/if}
 
