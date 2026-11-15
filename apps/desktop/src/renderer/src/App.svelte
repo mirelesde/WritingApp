@@ -24,6 +24,7 @@
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
   import { TabsState } from './tabsState.svelte'
+  import { SelectionState } from './selectionState.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
@@ -77,9 +78,7 @@
   let expanded = $state<Record<string, boolean>>({})
   // Sheet selection: any number of sheets; `cursor` is the one that arrow
   // keys move from, `anchor` the fixed end of a Shift-extended range.
-  let selection = $state<string[]>([])
-  let cursor = $state<string | null>(null)
-  let anchor = $state<string | null>(null)
+  const sel = new SelectionState()
   // The sheets being edited: one, or a whole glued run. Set only once their text has loaded.
   let open = $state<{ parts: { path: string; text: string }[] } | null>(null)
   let error = $state('')
@@ -214,7 +213,7 @@
 
   // Remember the open sheet, so the next launch can come back to it.
   $effect(() => {
-    const only = selection.length === 1 ? selection[0] : undefined
+    const only = sel.only
     if (only) void window.api.setLastSheet(only)
   })
 
@@ -285,7 +284,7 @@
   let keywordEdit = $state<{ path: string; title: string; keywords: string[] }[] | null>(null)
   function openKeywords(): void {
     if (!library) return
-    const wanted = new Set(selection)
+    const wanted = new Set(sel.paths)
     const chosen = librarySheets(library.tree).filter((s) => wanted.has(s.path))
     if (chosen.length === 0) {
       notice = 'Select a sheet first.'
@@ -397,9 +396,7 @@
   }
 
   function clearSheets(): void {
-    selection = []
-    cursor = null
-    anchor = null
+    sel.clear()
     open = null
     error = ''
     readId++
@@ -410,32 +407,32 @@
 
   /** Applies bold, italic or link to the sheet being typed in (the last one focused in a run). */
   function formatActive(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path) editors[path]?.format(kind)
   }
 
   function insertTable(): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path) editors[path]?.insertTableAtCursor()
   }
 
   function insertFootnote(): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path) editors[path]?.insertFootnoteAtCursor()
   }
 
   function activeEditor(): (typeof editors)[string] | undefined {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     return path ? editors[path] : undefined
   }
 
   function insertContents(): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path) editors[path]?.insertContentsAtCursor()
   }
 
   async function insertImage(): Promise<void> {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (!path || !editors[path]) return
     const markdown = await window.api.chooseImages()
     editors[path]?.insertImagesAtCursor(markdown)
@@ -444,7 +441,7 @@
   async function importFiles(): Promise<void> {
     const parent = group
     if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === cursor)
+    const at = parent.children.findIndex((c) => c.path === sel.cursor)
     const result = await runOp(() => window.api.importFiles(parent.path, at >= 0 ? at + 1 : undefined))
     if (result?.copied?.length) await selectCopies(result.copied)
     const done = result?.copied?.length ?? 0
@@ -458,17 +455,17 @@
   }
 
   function foldHere(fold: boolean): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path) editors[path]?.foldSectionAtCursor(fold)
   }
 
   function foldAll(fold: boolean): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path) editors[path]?.foldSections(fold)
   }
 
   function goToFootnote(): void {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     if (path && !editors[path]?.goToFootnoteAtCursor()) showInfo('This sheet has no footnotes.')
   }
 
@@ -476,7 +473,7 @@
   let styleNow = $state<LineStyle>('body')
   function toggleStyleMenu(): void {
     if (!styleOpen) {
-      const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+      const path = sel.only ?? open?.parts[0]?.path
       styleNow = (path && editors[path]?.lineStyle()) || 'body'
     }
     styleOpen = !styleOpen
@@ -602,7 +599,7 @@
   const tabs = new TabsState()
 
   $effect(() => {
-    const only = selection.length === 1 ? selection[0] : undefined
+    const only = sel.only
     if (!only) return
     untrack(() => tabs.follow(only, manual(), tabHasChanges))
   })
@@ -682,7 +679,7 @@
   }
 
   function newTab(): void {
-    void openInTab(selection.length === 1 ? selection[0] : tabs.front, false)
+    void openInTab(sel.only ?? tabs.front, false)
   }
 
   async function closeTab(index = tabs.active): Promise<void> {
@@ -797,9 +794,9 @@
   /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
   async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
     await settle()
-    const left = selection.filter((p) => !paths.includes(p))
-    selection = paths
-    cursor = to
+    const left = sel.paths.filter((p) => !paths.includes(p))
+    sel.paths = paths
+    sel.cursor = to
     if (paths.length === 1) {
       const path = paths[0]!
       visit(path)
@@ -831,9 +828,8 @@
 
   /** The cursor moved into another sheet of the open run: the list follows. */
   function focusedPart(path: string): void {
-    if (selection.length === 1 && selection[0] === path) return
-    selection = [path]
-    cursor = anchor = path
+    if (sel.only === path) return
+    sel.selectOnly(path)
     visit(path)
   }
 
@@ -848,15 +844,15 @@
 
   function clickSheet(path: string, e: MouseEvent): Promise<void> {
     if (keywordMode && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
-      anchor = path
+      sel.anchor = path
       return revealSheet(path, false)
     }
-    if (e.shiftKey && anchor) return setSelection(pathRange(listPaths, anchor, path), path)
-    anchor = path
+    if (e.shiftKey && sel.anchor) return setSelection(pathRange(listPaths, sel.anchor, path), path)
+    sel.anchor = path
     if (e.metaKey || e.ctrlKey) {
-      const next = selection.includes(path)
-        ? selection.filter((p) => p !== path)
-        : [...selection, path]
+      const next = sel.has(path)
+        ? sel.paths.filter((p) => p !== path)
+        : [...sel.paths, path]
       return setSelection(next, path)
     }
     return setSelection([path], path)
@@ -871,10 +867,8 @@
       library = result.library
       selectedGroup = remap(selectedGroup)
       if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = result.library.tree.path
-      selection = selection.map(remap)
+      sel.remap(remap)
       tabs.remap(remap)
-      cursor = cursor && remap(cursor)
-      anchor = anchor && remap(anchor)
       expanded = Object.fromEntries(Object.entries(expanded).map(([p, o]) => [remap(p), o]))
       await refreshOpen(reload)
       notice = ''
@@ -889,16 +883,15 @@
   async function refreshOpen(force: boolean): Promise<void> {
     if (!library) return
     const tree = library.tree
-    selection = selection.filter((p) => sheetExists(tree, p))
-    if (selection.length === 0) cursor = anchor = null
-    if (selection.length !== 1) {
+    sel.prune((p) => sheetExists(tree, p))
+    if (sel.paths.length !== 1) {
       if (open) {
         open = null
         readId++
       }
       return
     }
-    if (force || !runIsOpen(selection[0]!)) await loadRun(selection[0]!)
+    if (force || !runIsOpen(sel.paths[0]!)) await loadRun(sel.paths[0]!)
   }
 
   function showInfo(text: string): void {
@@ -917,30 +910,30 @@
     const path = part.path
     const result = await runOp(() => window.api.split(path, where.text, where.offset), true)
     if (result?.created) {
-      anchor = result.created
+      sel.anchor = result.created
       await setSelection([result.created], result.created, true)
     }
   }
 
   async function mergeSelected(): Promise<void> {
-    if (selection.length < 2) {
+    if (sel.paths.length < 2) {
       notice = 'Select two or more sheets to merge.'
       return
     }
-    const chosen = [...selection]
+    const chosen = [...sel.paths]
     const result = await runOp(() => window.api.merge(chosen), true)
     if (result?.created) {
-      anchor = result.created
+      sel.anchor = result.created
       await setSelection([result.created], result.created)
     }
   }
 
   async function glueSelected(glue: boolean): Promise<void> {
-    if (selection.length === 0) {
+    if (sel.paths.length === 0) {
       notice = 'Select a sheet first.'
       return
     }
-    const chosen = [...selection]
+    const chosen = [...sel.paths]
     await runOp(() => (glue ? window.api.glue(chosen) : window.api.unglue(chosen)))
   }
 
@@ -950,14 +943,14 @@
     const inTree = treeEl?.contains(document.activeElement) ?? false
     let paths: string[]
     let fallback = selectedGroup
-    if (inTree || selection.length === 0) {
+    if (inTree || sel.paths.length === 0) {
       if (selectedGroup === library.tree.path) {
         notice = 'Select a sheet or group to delete first.'
         return
       }
       paths = [selectedGroup]
       fallback = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
-    } else paths = [...selection] // a plain array: state proxies cannot cross the bridge
+    } else paths = [...sel.paths] // a plain array: state proxies cannot cross the bridge
     const result = await runOp(() => window.api.deleteNodes(paths))
     if (!result) return
     if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = fallback
@@ -973,10 +966,10 @@
   function nodeTargets(): string[] {
     if (!library) return []
     const inTree = treeEl?.contains(document.activeElement) ?? false
-    if (inTree || selection.length === 0) {
+    if (inTree || sel.paths.length === 0) {
       return selectedGroup === library.tree.path ? [] : [selectedGroup]
     }
-    return [...selection] // a plain array: state proxies cannot cross the bridge
+    return [...sel.paths] // a plain array: state proxies cannot cross the bridge
   }
 
   const dirOf = (path: string): string => path.slice(0, path.lastIndexOf('/'))
@@ -985,7 +978,7 @@
   async function selectCopies(paths: string[]): Promise<void> {
     if (!library || paths.length === 0) return
     if (paths.every((p) => sheetExists(library!.tree, p))) {
-      anchor = paths[0]!
+      sel.anchor = paths[0]!
       await setSelection(paths, paths[0]!, false)
     } else if (findGroup(library.tree, paths[0]!)) {
       selectGroup(paths[0]!)
@@ -1022,7 +1015,7 @@
     const parent = group
     if (!library || !clip || !parent) return
     const inTree = treeEl?.contains(document.activeElement) ?? false
-    const at = inTree ? -1 : parent.children.findIndex((c) => c.path === cursor)
+    const at = inTree ? -1 : parent.children.findIndex((c) => c.path === sel.cursor)
     const index = at >= 0 ? at + 1 : undefined
     const paths = [...clip.paths]
     if (clip.cut) {
@@ -1077,7 +1070,7 @@
   async function nodeMenu(kind: 'sheet' | 'group' | 'root', path: string, at: { x: number; y: number }): Promise<void> {
     if (!library) return
     if (kind === 'sheet') {
-      if (!selection.includes(path)) await setSelection([path], path)
+      if (!sel.has(path)) await setSelection([path], path)
     } else if (selectedGroup !== path) {
       selectGroup(path)
       await tick()
@@ -1120,7 +1113,7 @@
   const sheetTitles = $derived(library ? listSheets(library.tree).map((s) => s.title) : [])
   /** The sheets that link to the open one. */
   const backlinks = $derived(
-    library && selection.length === 1 ? backlinksTo(library.tree, selection[0]!) : []
+    library && sel.paths.length === 1 ? backlinksTo(library.tree, sel.paths[0]!) : []
   )
 
   /** Opens the sheet a [[link]] names; a link to nothing creates that sheet beside the current one. */
@@ -1135,7 +1128,7 @@
     const parent = group
     if (!parent) return
     await autosaver.flush()
-    const at = parent.children.findIndex((c) => c.path === cursor)
+    const at = parent.children.findIndex((c) => c.path === sel.cursor)
     const result = await runOp(() =>
       window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
     )
@@ -1147,12 +1140,12 @@
   async function newSheet(): Promise<void> {
     const parent = group
     if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === cursor)
+    const at = parent.children.findIndex((c) => c.path === sel.cursor)
     const result = await runOp(() =>
       window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
     )
     if (result?.created) {
-      anchor = result.created
+      sel.anchor = result.created
       await setSelection([result.created], result.created, true)
     }
   }
@@ -1162,12 +1155,12 @@
   async function newFromTemplate(template: string): Promise<void> {
     const parent = group
     if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === cursor)
+    const at = parent.children.findIndex((c) => c.path === sel.cursor)
     const result = await runOp(() =>
       window.api.newFromTemplate(parent.path, template, at >= 0 ? at + 1 : undefined)
     )
     if (result?.created) {
-      anchor = result.created
+      sel.anchor = result.created
       await setSelection([result.created], result.created, true)
     }
   }
@@ -1177,13 +1170,13 @@
     if (!parent) return
     const result = await runOp(() => window.api.dailyNote(parent.path))
     if (result?.created) {
-      anchor = result.created
+      sel.anchor = result.created
       await setSelection([result.created], result.created, true)
     }
   }
 
   async function saveAsTemplate(): Promise<void> {
-    const path = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+    const path = sel.only ?? open?.parts[0]?.path
     const text = path ? editors[path]?.getText() : undefined
     if (text === undefined) return
     await window.api.saveTemplate(text)
@@ -1257,7 +1250,7 @@
     // Open the first sheet, so choosing a group rarely leaves the editor empty.
     const first = listed[0]
     if (first) {
-      anchor = first.path
+      sel.anchor = first.path
       await setSelection([first.path], first.path, false)
     }
   }
@@ -1335,7 +1328,7 @@
     if (!library) return []
     const root = library.tree.path
     const list: { value: FindScope; label: string; name: string; path: string | undefined }[] = []
-    const sheetPath = selection.length === 1 ? selection[0] : undefined
+    const sheetPath = sel.only
     if (sheetPath && open) {
       list.push({ value: 'sheet', label: 'Look in sheet', name: tabTitles.get(sheetPath) ?? 'this sheet', path: sheetPath })
     }
@@ -1371,7 +1364,7 @@
   function closeFind(): void {
     finding = null
     for (const e of Object.values(editors)) e?.clearMarks()
-    const path = selection.length === 1 ? selection[0] : undefined
+    const path = sel.only
     if (path && editors[path]) editors[path]!.focus()
     else searchReturnFocus?.focus()
   }
@@ -1384,14 +1377,14 @@
 
   const findHost: FindHost = {
     sheet() {
-      const path = selection.length === 1 ? selection[0] : undefined
+      const path = sel.only
       const editor = path ? editors[path] : undefined
       if (!path || !editor) return null
       return { path, text: editor.getText(), cursor: editor.cursorOffset() }
     },
     async reveal(path, from, to) {
       if (!library) return
-      if (!(selection.length === 1 && selection[0] === path && editors[path])) {
+      if (!(sel.paths.length === 1 && sel.paths[0] === path && editors[path])) {
         if (listed.some((x) => x.path === path)) await setSelection([path], path, false)
         else {
           const parent = path.slice(0, path.lastIndexOf('/'))
@@ -1458,7 +1451,7 @@
   async function openExport(): Promise<void> {
     if (!library) return
     const inTree = treeEl?.contains(document.activeElement) ?? false
-    exportPaths = !inTree && selection.length > 0 ? [...selection] : [selectedGroup]
+    exportPaths = !inTree && sel.paths.length > 0 ? [...sel.paths] : [selectedGroup]
     try {
       exportPreview = await window.api.previewExport(exportPaths)
       notice = ''
@@ -1564,7 +1557,7 @@
       from = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
       heading = `Move “${labelOf(group) ?? 'group'}” to…`
     } else {
-      paths = [...selection]
+      paths = [...sel.paths]
       if (paths.length === 0) return
       moving = []
       from = selectedGroup
@@ -1623,8 +1616,8 @@
   }
 
   function sheetDragStart(path: string, e: DragEvent): void {
-    const chosen = selection.includes(path) ? [...selection] : [path]
-    if (!selection.includes(path)) void setSelection([path], path)
+    const chosen = sel.has(path) ? [...sel.paths] : [path]
+    if (!sel.has(path)) void setSelection([path], path)
     const paths = listPaths.filter((p) => chosen.includes(p))
     // Sheets from one group can be put in a new order; a mixed selection can only be moved to another group.
     const parents = new Set(paths.map((p) => p.slice(0, p.lastIndexOf('/'))))
@@ -1769,8 +1762,8 @@
     if (mod && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault()
       const parent = group
-      if (!parent || selection.length === 0) return
-      const chosen = [...selection] // a plain array: state proxies cannot cross the bridge
+      if (!parent || sel.paths.length === 0) return
+      const chosen = [...sel.paths] // a plain array: state proxies cannot cross the bridge
       const slot = moveSlot(
         parent.children.map((c) => c.path),
         listPaths,
@@ -1782,16 +1775,16 @@
     }
     if (mod && e.key.toLowerCase() === 'a') {
       e.preventDefault()
-      void setSelection([...listPaths], cursor ?? listPaths[0] ?? null)
+      void setSelection([...listPaths], sel.cursor ?? listPaths[0] ?? null)
       return
     }
     if (nodeClipboardKey(e)) return
     if (mod || e.altKey) return
 
-    const at = cursor ? listPaths.indexOf(cursor) : -1
+    const at = sel.cursor ? listPaths.indexOf(sel.cursor) : -1
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (selection[0]) editors[selection[0]]?.focus()
+      if (sel.paths[0]) editors[sel.paths[0]]?.focus()
       return
     }
     const target = listKeyTarget(e.key, at, listPaths.length)
@@ -1799,10 +1792,10 @@
     e.preventDefault()
     const path = listPaths[target]
     if (path === undefined) return
-    if (e.shiftKey && anchor) {
-      void setSelection(pathRange(listPaths, anchor, path), path)
+    if (e.shiftKey && sel.anchor) {
+      void setSelection(pathRange(listPaths, sel.anchor, path), path)
     } else {
-      anchor = path
+      sel.anchor = path
       void setSelection([path], path)
     }
   }
@@ -1817,7 +1810,7 @@
       treeEl?.focus()
     }
     else if (e.key === '2') sheetsEl?.focus()
-    else if (e.key === '3' && selection[0]) editors[selection[0]]?.focus()
+    else if (e.key === '3' && sel.paths[0]) editors[sel.paths[0]]?.focus()
     else return
     e.preventDefault()
   }
@@ -1894,7 +1887,7 @@
 
   function toggleZen(): void {
     if (ui.toggleZen()) {
-      const only = selection.length === 1 ? selection[0] : open?.parts[0]?.path
+      const only = sel.only ?? open?.parts[0]?.path
       if (only) editors[only]?.focus()
     }
   }
@@ -2260,7 +2253,7 @@
             <li>
               <button
                 class="sheet"
-                class:selected={selection.includes(sheet.path)}
+                class:selected={sel.has(sheet.path)}
                 class:run-start={sheet.glued && !gluedFrom.has(sheet.path)}
                 class:run-middle={sheet.glued && gluedFrom.has(sheet.path)}
                 class:run-end={!sheet.glued && gluedFrom.has(sheet.path)}
@@ -2427,7 +2420,7 @@
                   focusScope={prefs?.focusScope}
                   typewriterAt={prefs?.typewriterPosition}
                   foldKey={part.path}
-                  autofocus={focusEditor && part.path === selection[0]}
+                  autofocus={focusEditor && part.path === sel.paths[0]}
                   titles={sheetTitles}
                   onwiki={(target) => void followWikiLink(target)}
                 />
@@ -2435,8 +2428,8 @@
             {/each}
           </div>
         {/key}
-      {:else if selection.length > 1}
-        <p class="placeholder">{selection.length} Sheets Selected</p>
+      {:else if sel.paths.length > 1}
+        <p class="placeholder">{sel.paths.length} Sheets Selected</p>
       {:else}
         <p class="placeholder">No Sheet Selected</p>
       {/if}
