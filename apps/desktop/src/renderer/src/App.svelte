@@ -42,6 +42,7 @@
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
   import LibraryPane from './LibraryPane.svelte'
+  import Welcome from './Welcome.svelte'
   import MovePicker from './MovePicker.svelte'
   import FindBar, { type FindHost, type FindScope } from './FindBar.svelte'
   import QuickOpen from './QuickOpen.svelte'
@@ -1804,16 +1805,9 @@
 <svelte:window onkeydown={windowKeydown} />
 
 {#if loading}
-  <main class="empty"></main>
+  <Welcome loading />
 {:else if !library}
-  <main class="empty">
-    <h1>WritingApp</h1>
-    <p>
-      Choose a folder to use as your library. Its folders become projects and groups, and its
-      Markdown files become sheets.
-    </p>
-    <button class="primary" onclick={chooseLibrary}>Choose library folder…</button>
-  </main>
+  <Welcome onchoose={chooseLibrary} />
 {:else}
   <div
     class="layout"
@@ -2125,35 +2119,6 @@
 {/if}
 
 <style>
-  .empty {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 24px;
-    text-align: center;
-  }
-  .empty h1 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-  .empty p {
-    margin: 0;
-    max-width: 380px;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-  .primary {
-    background: var(--accent);
-    color: var(--on-accent);
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    padding: 5px 12px;
-    cursor: default;
-  }
   .layout {
     height: 100%;
     display: grid;
