@@ -54,6 +54,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { GroupWords } from './groupWords.svelte'
   import { takeExternalChange, type ExternalHost } from './externalChanges'
   import { KeywordEdit } from './keywordEdit.svelte'
   import { FindFlow } from './findFlow.svelte'
@@ -101,7 +102,7 @@
     trust: (path, text) => guard.trust(path, text),
     pending: (path) => autosaver.pending(path)
   })
-  let groupWords = $state<number | null>(null)
+  const words = new GroupWords(window.api)
   let saveStatus = $state<SaveStatus>('saved')
   let notice = $state('')
   let info = $state('')
@@ -177,21 +178,11 @@
   })
 
   // Total for the selected group, recounted shortly after the tree or a save changes.
-  let wordsRequest = 0
   $effect(() => {
     const path = nav.selectedGroup
     void library
     if (!library || saveStatus !== 'saved') return
-    const id = ++wordsRequest
-    const timer = setTimeout(() => {
-      window.api
-        .groupWords(path)
-        .then((total) => {
-          if (id === wordsRequest) groupWords = total
-        })
-        .catch(() => {})
-    }, 300)
-    return () => clearTimeout(timer)
+    return words.schedule(path)
   })
 
   const group = $derived(library ? findGroup(library.tree, nav.selectedGroup) : undefined)
@@ -1172,7 +1163,7 @@
       {/if}
       </div>
       {#if run.open}
-        <StatusBar text={run.text} selected={run.selectedText} {groupWords} />
+        <StatusBar text={run.text} selected={run.selectedText} groupWords={words.total} />
       {/if}
       {#if ui.outlineOpen && !ui.zen}
         <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} {backlinks} onbacklink={(p) => void revealSheet(p)} /></div>
