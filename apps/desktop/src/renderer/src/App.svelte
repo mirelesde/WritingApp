@@ -343,7 +343,11 @@
     dirty: () => dirty,
     name: sheetName,
     ask: (names, what) => unsavedPrompt.ask(names, what),
-    discard: (path) => autosaver.discard(path),
+    discard: (path) => {
+      autosaver.discard(path)
+      // The card showed the typed text; show what is on disk again.
+      void window.api.readSheet(path).then((saved) => list.edited(path, saved), () => {})
+    },
     flush: (paths) => autosaver.flush(paths),
     unsaved: () => autosaver.unsavedPaths(),
     warn: (text) => (notice = text)
