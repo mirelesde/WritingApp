@@ -398,3 +398,25 @@ Quick checks that earlier features still work with today's changes.
 1. In a library folder, add a file you cannot read (`chmod 000 locked.md`) and a very large one (`head -c 60000000 /dev/zero | tr '\0' a > huge.md`). The library still loads. The locked file is listed under its file name with no preview; the huge one says "Too large to preview".
 2. Opening the huge file shows an error saying it is too large; the app stays responsive. Find in Library and Replace All skip both files and still work on the rest.
 3. `chmod 644` the locked file: it shows its real title and text after the library reloads.
+
+## 13.32 Find: more slow patterns
+
+1. With the regular-expression toggle on, type `(a|aa)+$` and `(\w|\d)+x`: the bar says the pattern could take far too long; the app stays responsive.
+2. Type `.*a.*b.*c.*d`: the same message. `.*a.*b` and `(foo|bar)+` still work.
+
+## 13.33 A crashed window comes back
+
+1. Start the app, then in a terminal kill its renderer process (Activity Monitor → the "WritingApp Helper (Renderer)" process → Force Quit). The window reloads by itself within a second or two and shows the library again.
+2. If you had typed just before, the text is offered back by the recovery dialog.
+3. Killing the renderer three times within a minute shows "This window keeps crashing" instead of reloading again.
+4. `errors.log` in the app's data folder (`~/Library/Application Support/WritingApp`) has a line for each crash.
+
+## 13.34 Split and merge never half-finish
+
+1. Make a sheet's folder read-only mid-way is hard to do by hand, so this is covered by automated tests: a failure while splitting leaves the original sheet whole and no new sheet; a failure while merging leaves every sheet as it was.
+2. Check the normal case still works: split a sheet at the cursor, merge two sheets, and undo each.
+
+## 13.35 Settings survive a crash; the watcher recovers
+
+1. Settings and export styles are written through a temporary file (automated tests). Change the sidebar width, force quit at once, reopen: the setting is either old or new, never lost, and recent libraries are intact.
+2. After changing a file in the library from another app, the library updates by itself. This keeps working after a long session or after the disk was briefly unavailable (automated tests simulate the watcher failing and restarting).

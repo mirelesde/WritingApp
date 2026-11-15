@@ -1335,6 +1335,17 @@ tested with the in-memory one)
     page numbers in the contents. Not checked live: the PDF timeout itself
     (unit-tested only) and closing with the disk failing.
 
+83. **Stability pass 2.** **Done.** A window whose page crashes reloads itself
+    (up to three times a minute, then says so), errors nothing caught are
+    logged to `errors.log`, split and merge put everything back if a step
+    fails, settings and export styles are written through a temporary file, and
+    the folder watcher restarts after an error with a growing pause. The slow
+    regular-expression guard also covers overlapping repeated alternatives and
+    long `.*` chains. Crash reload was checked live; the rest is unit-tested.
+    Still open: Windows and Linux runs, empty `catch {}` blocks that hide real
+    failures (ExportPreview, the group word count), and `App.svelte` at about
+    3,200 lines with no component tests.
+
 ## Later, in rough order
 
 - Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).
