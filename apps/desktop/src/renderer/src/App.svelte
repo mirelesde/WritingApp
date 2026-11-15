@@ -20,12 +20,13 @@
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
-  import type { EditMenuInfo, EpubDialogOptions, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet, TitlePage } from '../../preload/api'
+  import type { EditMenuInfo, LibraryInfo, MenuCommand, OpResult, RecoveredSheet } from '../../preload/api'
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
   import { GroupNav } from './groupNav.svelte'
+  import { ExportFlow } from './exportFlow.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
@@ -1436,101 +1437,17 @@
 
   // --- Export ----------------------------------------------------------------
 
-  let exportPreview = $state<{ title: string; html: string; sheets: number; imageBytes: number } | null>(null)
-  let exportPaths: string[] = [] // plain, so it can cross the bridge
-  let exportSaving = $state(false)
+  const exporter = new ExportFlow(window.api, {
+    fail: (e) => (notice = errorMessage(e)),
+    info: showInfo,
+    clearNotice: () => (notice = '')
+  })
 
   /** Previews the HTML export of the selected sheets, or of the group when the tree has focus. */
   async function openExport(): Promise<void> {
     if (!library) return
     const inTree = treeEl?.contains(document.activeElement) ?? false
-    exportPaths = !inTree && sel.paths.length > 0 ? [...sel.paths] : [nav.selectedGroup]
-    try {
-      exportPreview = await window.api.previewExport(exportPaths)
-      notice = ''
-    } catch (e) {
-      notice = errorMessage(e)
-    }
-  }
-
-  async function saveExport(pictures: 'embed' | 'folder', css: string, titlePage: TitlePage | null): Promise<void> {
-    exportSaving = true
-    try {
-      const saved = await window.api.saveExport(exportPaths, pictures, css, titlePage ? { ...titlePage } : null)
-      if (saved) {
-        exportPreview = null
-        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
-      }
-    } catch (e) {
-      notice = errorMessage(e)
-      exportPreview = null
-    } finally {
-      exportSaving = false
-    }
-  }
-
-  async function saveExportMarkdown(): Promise<void> {
-    exportSaving = true
-    try {
-      const saved = await window.api.saveExportMarkdown(exportPaths)
-      if (saved) {
-        exportPreview = null
-        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
-      }
-    } catch (e) {
-      notice = errorMessage(e)
-      exportPreview = null
-    } finally {
-      exportSaving = false
-    }
-  }
-
-  async function saveExportDocx(options: PdfOptions): Promise<void> {
-    exportSaving = true
-    try {
-      const saved = await window.api.saveExportDocx(exportPaths, { ...options })
-      if (saved) {
-        exportPreview = null
-        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
-      }
-    } catch (e) {
-      notice = errorMessage(e)
-      exportPreview = null
-    } finally {
-      exportSaving = false
-    }
-  }
-
-  async function saveExportEpub(options: EpubDialogOptions, css: string): Promise<void> {
-    exportSaving = true
-    try {
-      const saved = await window.api.saveExportEpub(exportPaths, { ...options }, css)
-      if (saved) {
-        exportPreview = null
-        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
-      }
-    } catch (e) {
-      notice = errorMessage(e)
-      exportPreview = null
-    } finally {
-      exportSaving = false
-    }
-  }
-
-  async function saveExportPdf(options: PdfOptions, css: string, titlePage: TitlePage | null): Promise<void> {
-    exportSaving = true
-    try {
-      const saved = await window.api.saveExportPdf(exportPaths, { ...options }, css, titlePage ? { ...titlePage } : null)
-      if (saved) {
-        exportPreview = null
-        showInfo('Exported to ' + saved.split(/[\\/]/).pop())
-      }
-    } catch (e) {
-      notice = errorMessage(e)
-      exportPreview = null
-    } finally {
-      exportSaving = false
-    }
+    await exporter.open(!inTree && sel.paths.length > 0 ? sel.paths : [nav.selectedGroup])
   }
 
   // --- Move to… ------------------------------------------------------------
@@ -2532,19 +2449,19 @@
   <QuickOpen items={listSheets(library.tree)} onpick={revealSheet} oncancel={closeQuick} />
 {/if}
 
-{#if exportPreview}
+{#if exporter.preview}
   <ExportPreview
-    title={exportPreview.title}
-    html={exportPreview.html}
-    sheets={exportPreview.sheets}
-    imageBytes={exportPreview.imageBytes}
-    saving={exportSaving}
-    onsave={saveExport}
-    onsavepdf={saveExportPdf}
-    onsavemarkdown={saveExportMarkdown}
-    onsavedocx={saveExportDocx}
-    onsaveepub={saveExportEpub}
-    onclose={() => (exportPreview = null)}
+    title={exporter.preview.title}
+    html={exporter.preview.html}
+    sheets={exporter.preview.sheets}
+    imageBytes={exporter.preview.imageBytes}
+    saving={exporter.saving}
+    onsave={exporter.save}
+    onsavepdf={exporter.savePdf}
+    onsavemarkdown={exporter.saveMarkdown}
+    onsavedocx={exporter.saveDocx}
+    onsaveepub={exporter.saveEpub}
+    onclose={exporter.close}
   />
 {/if}
 
