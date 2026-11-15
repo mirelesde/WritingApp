@@ -9,6 +9,10 @@ type CreationApi = Pick<
 
 /** What making sheets needs from the rest of the app. */
 export interface CreationHost {
+  /** The sheet a [[link]] names, if there is one. */
+  resolveLink(target: string): string | undefined
+  /** Opens the sheet and selects it. */
+  reveal(path: string): Promise<void>
   /** The group whose sheets are listed. */
   group(): GroupNode | undefined
   /** Saves anything outstanding, runs the change, then brings the UI in line with the result. */
@@ -73,6 +77,13 @@ export class SheetCreation {
     const parent = this.host.group()
     if (!parent) return
     await this.open(await this.host.runOp(() => this.api.dailyNote(parent.path)))
+  }
+
+  /** Follows a [[link]]: opens the sheet it names, or makes it. */
+  follow = async (target: string): Promise<void> => {
+    const path = this.host.resolveLink(target)
+    if (path) await this.host.reveal(path)
+    else await this.forLink(target)
   }
 
   /** A [[link]] to nothing: makes that sheet beside the current one, titled by the link. */

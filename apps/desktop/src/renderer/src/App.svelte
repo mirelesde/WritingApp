@@ -49,6 +49,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { sheetToFocusAtEnd } from './pageClick'
   import { runInOwnGroup, tabHasChanges as tabHasChangesIn, sheetName as sheetNameIn } from './tabRuns'
   import { SheetList } from './sheetList.svelte'
   import { GroupWords } from './groupWords.svelte'
@@ -521,17 +522,9 @@
   )
 
   /** Opens the sheet a [[link]] names; a link to nothing creates that sheet beside the current one. */
-  async function followWikiLink(target: string): Promise<void> {
-    if (!library) return
-    const path = resolveWikiLink(library.tree, target)
-    if (path) {
-      await revealSheet(path)
-      return
-    }
-    await creation.forLink(target)
-  }
-
   const creation = new SheetCreation(window.api, sel, {
+    resolveLink: (target) => (library ? resolveWikiLink(library.tree, target) : null) ?? undefined,
+    reveal: (path) => revealSheet(path),
     group: () => group,
     runOp: (op) => runOp(op),
     setSelection,
@@ -546,18 +539,21 @@
     warn: (text) => (notice = text)
   })
 
-  /** A click on the empty page around the text (below the last line, beside the column) puts the cursor at the end. */
+  /** A click on the empty page around the text puts the cursor at the end. */
   function clickBelowText(e: MouseEvent): void {
-    if (e.button !== 0 || !run.open) return
-    const target = e.target as HTMLElement
-    if (target.closest('.cm-editor, .seam, button, a, input')) return
     const box = e.currentTarget as HTMLElement
-    // The scrollbar is part of this element; leave it alone.
-    if (e.clientX > box.getBoundingClientRect().left + box.clientWidth) return
-    const last = run.open.parts[run.open.parts.length - 1]
-    if (!last) return
+    const path = sheetToFocusAtEnd(
+      {
+        button: e.button,
+        onContent: (e.target as HTMLElement).closest('.cm-editor, .seam, button, a, input') !== null,
+        clientX: e.clientX,
+        contentRight: box.getBoundingClientRect().left + box.clientWidth
+      },
+      run.open?.parts ?? []
+    )
+    if (!path) return
     e.preventDefault()
-    editors[last.path]?.focusAt('end')
+    editors[path]?.focusAt('end')
   }
 
   function edited(path: string, content: string): void {
@@ -1105,7 +1101,7 @@
                   foldKey={part.path}
                   autofocus={focusEditor && part.path === sel.paths[0]}
                   titles={sheetTitles}
-                  onwiki={(target) => void followWikiLink(target)}
+                  onwiki={(target) => void creation.follow(target)}
                 />
               </div>
             {/each}

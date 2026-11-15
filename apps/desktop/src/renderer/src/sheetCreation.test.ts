@@ -22,6 +22,8 @@ function setup(group: GroupNode | null = parent) {
     listTemplates: vi.fn(async () => [{ name: 'Scene', path: '/t/Scene' }])
   }
   const host = {
+    resolveLink: vi.fn((target: string) => (target === 'Known' ? '/L/A/known' : undefined)),
+    reveal: vi.fn(async () => undefined),
     group: () => group ?? undefined,
     runOp: vi.fn(async (op: () => Promise<OpResult>) => op()),
     setSelection: vi.fn(async () => undefined),
@@ -77,6 +79,14 @@ describe('SheetCreation', () => {
     expect(t.host.flush).toHaveBeenCalled()
     expect(t.api.writeSheet).toHaveBeenCalledWith('/L/A/new', '# Castle\n\n')
     expect(t.host.setSelection).toHaveBeenCalledWith(['/L/A/new'], '/L/A/new', true)
+  })
+
+  it('opens the sheet a link names, or makes it when there is none', async () => {
+    await t.make.follow('Known')
+    expect(t.host.reveal).toHaveBeenCalledWith('/L/A/known')
+    expect(t.api.createSheet).not.toHaveBeenCalled()
+    await t.make.follow('Missing')
+    expect(t.api.writeSheet).toHaveBeenCalledWith('/L/A/new', '# Missing\n\n')
   })
 
   it('selects imported sheets and says how many', async () => {
