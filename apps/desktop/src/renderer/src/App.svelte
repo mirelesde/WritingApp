@@ -28,7 +28,8 @@
   import { TabDrag } from './tabDrag'
   import { SheetCreation } from './sheetCreation.svelte'
   import { Trail } from './trail.svelte'
-  import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
+  import { UnsavedPrompt } from './unsavedPrompt.svelte'
+  import { UnsavedResolver } from './unsavedResolver'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
   import { GroupNav } from './groupNav.svelte'
@@ -406,29 +407,18 @@
 
   const sheetName = (path: string): string => tabTitles.get(path) ?? path.slice(path.lastIndexOf('/') + 1)
 
-  /** Asks what to do with unsaved changes; resolves at once when saving is not manual or there are none. */
   const unsavedPrompt = new UnsavedPrompt()
-  function askUnsaved(paths: string[], what: UnsavedWhat): Promise<UnsavedAnswer> {
-    if (!manual() || paths.length === 0) return Promise.resolve('save')
-    return unsavedPrompt.ask(paths.map(sheetName), what)
-  }
-
-  /** Settles the unsaved text of `paths`: saves it, or drops it. False when the user cancelled or a save failed. */
-  async function resolveUnsaved(paths: string[], what: UnsavedWhat): Promise<boolean> {
-    const unsaved = paths.filter((p) => dirty.includes(p))
-    const answer = await askUnsaved(unsaved, what)
-    if (answer === 'cancel') return false
-    if (answer === 'discard') {
-      for (const p of unsaved) autosaver.discard(p)
-      return true
-    }
-    await autosaver.flush(unsaved.length > 0 ? unsaved : undefined)
-    if (autosaver.unsavedPaths().some((p) => unsaved.includes(p))) {
-      notice = 'Could not save, so nothing was closed.'
-      return false
-    }
-    return true
-  }
+  const unsavedResolver = new UnsavedResolver({
+    manual,
+    dirty: () => dirty,
+    name: sheetName,
+    ask: (names, what) => unsavedPrompt.ask(names, what),
+    discard: (path) => autosaver.discard(path),
+    flush: (paths) => autosaver.flush(paths),
+    unsaved: () => autosaver.unsavedPaths(),
+    warn: (text) => (notice = text)
+  })
+  const resolveUnsaved = unsavedResolver.resolve
 
   const tabFlow = new TabFlow(tabs, {
     only: () => sel.only,
