@@ -1,6 +1,6 @@
 import { promises as nodeFs } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, protocol, shell, app } from 'electron'
-import { basename, dirname, extname, join } from 'node:path'
+import { basename, dirname, extname, join, normalize } from 'node:path'
 import { createHash } from 'node:crypto'
 import {
   docxToMarkdown,
@@ -67,7 +67,8 @@ import { logError } from './crash'
 /** Hashes picture bytes, for spotting a picture the library already holds. */
 const hashImage = (data: Uint8Array): string => createHash('sha256').update(data).digest('hex')
 
-const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(path))
+// The app's paths use forward slashes; Windows' recycle bin wants its own backslashes.
+const fs: FileSystem = createNodeFileSystem((path) => shell.trashItem(normalize(path)))
 let settings: ReturnType<typeof createSettingsStore>
 let currentRoot: string | undefined
 let stopWatching: (() => void) | undefined
