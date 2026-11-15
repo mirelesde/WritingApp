@@ -1,5 +1,5 @@
 import type { DirEntry, FileSystem } from './filesystem'
-import { sheetFileName, stemFitsTitle } from './filename'
+import { readableName, sheetFileName, stemFitsTitle } from './filename'
 import { sheetTitle } from './sheet'
 import { cleanKeywords } from './keywords'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
@@ -25,6 +25,9 @@ interface Folder {
   entries: DirEntry[]
   /** The folder's colour name, if it has one. */
   color?: string
+  /** On-screen name for a group whose folder name is a cleaned-up version of it, and the folder name that applies to. */
+  title?: string
+  titleFor?: string
   /** Keywords by sheet name. */
   keywords: Map<string, string[]>
 }
@@ -40,6 +43,8 @@ async function readFolder(fs: FileSystem, dir: string): Promise<Folder> {
     glued: new Set(glued),
     entries,
     color: sidecar.color,
+    title: sidecar.title,
+    titleFor: sidecar.titleFor,
     keywords: new Map(Object.entries(keywords)),
   }
 }
@@ -50,6 +55,7 @@ async function writeFolder(fs: FileSystem, dir: string, folder: Folder): Promise
     order: folder.order,
     glued: folder.order.filter((name) => folder.glued.has(name)),
     ...(folder.color ? { color: folder.color } : {}),
+    ...(folder.title && folder.titleFor ? { title: folder.title, titleFor: folder.titleFor } : {}),
     ...(keywordRecord(folder) ? { keywords: keywordRecord(folder)! } : {}),
   }
   await fs.writeText(joinPath(dir, SIDECAR_NAME), JSON.stringify(sidecar, null, 2) + '\n')
@@ -103,12 +109,16 @@ function uniqueName(name: string, ext: string, sep: string, taken: Set<string>):
   return candidate
 }
 
-function validateGroupName(raw: string): string {
-  const name = raw.trim()
-  if (name === '') throw new Error('A group needs a name')
-  if (/[/\\:*?"<>|\0]/.test(name)) throw new Error(`Invalid group name: ${raw}`)
-  if (name.startsWith('.')) throw new Error('A group name cannot start with a dot')
-  return name
+/**
+ * Turns what the user typed for a group into the name to show and the name
+ * for its folder. The folder name drops characters disks refuse (: ? and so
+ * on); `title` is set only when it differs, so the typed name still shows.
+ */
+function groupNames(raw: string): { folder: string; title?: string } {
+  const typed = raw.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)
+  if (typed === '') throw new Error('A group needs a name')
+  const folder = readableName(typed)
+  return folder === typed ? { folder } : { folder, title: typed }
 }
 
 /**
@@ -161,10 +171,17 @@ export async function renameGroupUndoable(
   path: string,
   newName: string,
 ): Promise<{ path: string; undo: UndoAction[] }> {
-  const dir = parentPath(trimSlashes(path))
+  const from = trimSlashes(path)
+  const dir = parentPath(from)
   const before = await snapshotSidecar(fs, dir)
+  const own = await snapshotSidecar(fs, from)
   const to = await renameGroup(fs, path, newName)
-  return { path: to, undo: to === trimSlashes(path) ? [] : [{ kind: 'rename', from: to, to: trimSlashes(path) }, before] }
+  if (to === from) {
+    const after = await snapshotSidecar(fs, from)
+    return { path: to, undo: after.kind === 'sidecar' && own.kind === 'sidecar' && after.text === own.text ? [] : [own] }
+  }
+  // Put the folder back first, then its own sidecar (title) and its parent's order.
+  return { path: to, undo: [{ kind: 'rename', from: to, to: from }, own, before] }
 }
 
 /**
@@ -179,35 +196,50 @@ export async function createGroup(
 ): Promise<string> {
   const dir = trimSlashes(parent)
   const folder = await readFolder(fs, dir)
-  const finalName = uniqueName(validateGroupName(name), '', ' ', takenNames(folder))
+  const names = groupNames(name)
+  const finalName = uniqueName(names.folder, '', ' ', takenNames(folder))
   await fs.makeDir(joinPath(dir, finalName))
   insertName(folder, finalName, index)
   await writeFolder(fs, dir, folder)
+  if (names.title) {
+    const own = await readFolder(fs, joinPath(dir, finalName))
+    await writeFolder(fs, joinPath(dir, finalName), { ...own, title: names.title, titleFor: finalName })
+  }
   return joinPath(dir, finalName)
 }
 
 /**
  * Renames a group in place, keeping its position, and returns its new
- * path. Throws if a sibling already has the name.
+ * path. The typed name is what shows; the folder gets a copy with the
+ * characters disks refuse removed. Throws if a sibling folder already has
+ * exactly that name (a cleaned-up name that collides gets " 2" instead).
  */
 export async function renameGroup(fs: FileSystem, path: string, newName: string): Promise<string> {
   const from = trimSlashes(path)
   const dir = parentPath(from)
   const oldName = baseName(from)
-  const name = validateGroupName(newName)
+  const names = groupNames(newName)
   const folder = await readFolder(fs, dir)
   if (!folder.entries.some((e) => e.name === oldName && e.kind === 'directory')) {
     throw new Error(`Not a group: ${from}`)
   }
-  if (name === oldName) return from
-  const clash = folder.entries.some(
-    (e) => e.name !== oldName && e.name.toLowerCase() === name.toLowerCase(),
-  )
-  if (clash) throw new Error(`"${name}" already exists in this folder`)
-  await fs.rename(from, joinPath(dir, name))
-  folder.order[folder.order.indexOf(oldName)] = name
-  await writeFolder(fs, dir, folder)
-  return joinPath(dir, name)
+  const others = new Set(folder.entries.filter((e) => e.name !== oldName).map((e) => e.name.toLowerCase()))
+  let name = names.folder
+  if (others.has(name.toLowerCase())) {
+    if (!names.title) throw new Error(`"${name}" already exists in this folder`)
+    name = uniqueName(name, '', ' ', others)
+  }
+  const own = await readFolder(fs, from)
+  const sameTitle = (own.title && own.titleFor === oldName ? own.title : undefined) === names.title
+  if (name === oldName && sameTitle) return from
+  if (name !== oldName) {
+    await fs.rename(from, joinPath(dir, name))
+    folder.order[folder.order.indexOf(oldName)] = name
+    await writeFolder(fs, dir, folder)
+  }
+  const to = joinPath(dir, name)
+  await writeFolder(fs, to, { ...own, title: names.title, titleFor: names.title ? name : undefined })
+  return to
 }
 
 /**

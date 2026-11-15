@@ -101,6 +101,8 @@ export interface GroupNode {
   kind: 'group'
   /** Folder name. */
   name: string
+  /** What to show instead of the folder name, when the typed name had characters a folder cannot have. */
+  title?: string
   path: string
   /** Colour name from GROUP_COLORS, if one was chosen. */
   color?: string
@@ -195,5 +197,6 @@ async function loadGroup(ctx: LoadContext, path: string, name: string): Promise<
       }
     }),
   )
-  return { kind: 'group', name, path, ...(sidecar.color ? { color: sidecar.color } : {}), children: nodes }
+  const title = sidecar.title !== undefined && sidecar.titleFor === name ? sidecar.title : undefined
+  return { kind: 'group', name, ...(title ? { title } : {}), path, ...(sidecar.color ? { color: sidecar.color } : {}), children: nodes }
 }

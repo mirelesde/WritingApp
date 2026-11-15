@@ -13,6 +13,10 @@ export interface Sidecar {
   glued: string[]
   /** Optional colour name (a key of GROUP_COLORS) shown on this folder's icon. */
   color?: string
+  /** What this folder (a group) is called on screen, when its folder name had to drop characters such as : or ?. */
+  title?: string
+  /** The folder name `title` was written for; if the folder is renamed elsewhere, the title no longer applies. */
+  titleFor?: string
   /** Keywords by sheet file name; sheets without any are left out. */
   keywords?: Record<string, string[]>
 }
@@ -58,9 +62,13 @@ export function parseSidecar(text: string | undefined): Sidecar {
     return empty
   }
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return empty
-  const { order, glued, color, keywords } = data as Record<string, unknown>
+  const { order, glued, color, keywords, title, titleFor } = data as Record<string, unknown>
   const result: Sidecar = { version: 1, order: strings(order), glued: strings(glued) }
   if (typeof color === 'string' && Object.hasOwn(GROUP_COLORS, color)) result.color = color
+  if (typeof title === 'string' && typeof titleFor === 'string' && titleFor !== '') {
+    const clean = title.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)
+    if (clean !== '') Object.assign(result, { title: clean, titleFor })
+  }
   if (typeof keywords === 'object' && keywords !== null && !Array.isArray(keywords)) {
     const kept: Record<string, string[]> = {}
     for (const [name, list] of Object.entries(keywords)) {

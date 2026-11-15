@@ -7,10 +7,12 @@ import {
   moveNode,
   moveNodes,
   renameGroup,
+  renameGroupUndoable,
   reorderNode,
   setGroupColor,
   syncSheetName,
 } from './operations'
+import { applyUndo } from './undo'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
 const sidecar = (order: string[], glued: string[] = []) =>
@@ -98,13 +100,31 @@ describe('createGroup', () => {
     expect(await createGroup(fs, '/Lib')).toBe('/Lib/Untitled Group 2')
   })
 
-  it('trims the name and rejects invalid ones', async () => {
+  it('trims the name and rejects an empty one', async () => {
     const fs = new MemoryFileSystem()
     await fs.makeDir('/Lib')
     expect(await createGroup(fs, '/Lib', '  Act I  ')).toBe('/Lib/Act I')
     await expect(createGroup(fs, '/Lib', '   ')).rejects.toThrow()
-    await expect(createGroup(fs, '/Lib', 'a/b')).rejects.toThrow()
-    await expect(createGroup(fs, '/Lib', '.hidden')).rejects.toThrow()
+  })
+
+  it('shows what was typed while the folder drops characters disks refuse', async () => {
+    const fs = new MemoryFileSystem()
+    await fs.makeDir('/Lib')
+    const path = await createGroup(fs, '/Lib', 'Why? Because: yes')
+    expect(path).toBe('/Lib/Why Because yes')
+    const shown = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(shown.name).toBe('Why Because yes')
+    expect(shown.title).toBe('Why? Because: yes')
+    expect(await createGroup(fs, '/Lib', 'Plain')).toBe('/Lib/Plain')
+    expect(((await loadLibrary(fs, '/Lib')).children[1] as GroupNode).title).toBeUndefined()
+    expect(await createGroup(fs, '/Lib', '.hidden')).toBe('/Lib/hidden')
+  })
+
+  it('gives a second cleaned-up name its own folder', async () => {
+    const fs = new MemoryFileSystem()
+    await fs.makeDir('/Lib')
+    await createGroup(fs, '/Lib', 'Notes')
+    expect(await createGroup(fs, '/Lib', 'Notes?')).toBe('/Lib/Notes 2')
   })
 
   it('inserts at an index', async () => {
@@ -444,5 +464,42 @@ describe('syncSheetName', () => {
       '/Lib/untitled.md': 'The Station'
     })
     expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/The Station 2.md')
+  })
+})
+
+describe('renameGroup display names', () => {
+  it('keeps the typed name, follows renames, and ignores a title after an outside rename', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/Old/a.md': 'A' })
+    const to = await renameGroup(fs, '/Lib/Old', 'Act I: The Storm?')
+    expect(to).toBe('/Lib/Act I The Storm')
+    let node = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(node.title).toBe('Act I: The Storm?')
+    expect(node.children).toHaveLength(1)
+    // Same folder, new title only.
+    expect(await renameGroup(fs, to, 'Act I: The Storm.')).toBe(to)
+    node = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(node.title).toBe('Act I: The Storm.')
+    // A plain name clears the title.
+    const plain = await renameGroup(fs, to, 'Act One')
+    node = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(node.title).toBeUndefined()
+    expect(plain).toBe('/Lib/Act One')
+    // Renamed in Finder: the title no longer applies.
+    await renameGroup(fs, plain, 'Why?')
+    const why = '/Lib/Why'
+    await fs.rename(why, '/Lib/Other')
+    node = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(node.name).toBe('Other')
+    expect(node.title).toBeUndefined()
+  })
+
+  it('undoes to the old name and title', async () => {
+    const fs = new MemoryFileSystem({ '/Lib/Old/a.md': 'A' })
+    const { path, undo } = await renameGroupUndoable(fs, '/Lib/Old', 'New: one')
+    await applyUndo(fs, undo)
+    expect(path).toBe('/Lib/New one')
+    const node = (await loadLibrary(fs, '/Lib')).children[0] as GroupNode
+    expect(node.name).toBe('Old')
+    expect(node.title).toBeUndefined()
   })
 })
