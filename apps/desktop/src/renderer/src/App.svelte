@@ -51,6 +51,7 @@
   import { createAutosaver, type SaveStatus } from './autosave'
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
+  import { EditorActions } from './editorActions'
   import LibraryPane from './LibraryPane.svelte'
   import Welcome from './Welcome.svelte'
   import MovePicker from './MovePicker.svelte'
@@ -277,66 +278,28 @@
   /** Collapsed, the sidebar slides in while the pointer is at the left edge or over it. */
 
 
-  /** Applies bold, italic or link to the sheet being typed in (the last one focused in a run). */
-  function formatActive(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path) editors[path]?.format(kind)
-  }
-
-  function insertTable(): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path) editors[path]?.insertTableAtCursor()
-  }
-
-  function insertFootnote(): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path) editors[path]?.insertFootnoteAtCursor()
-  }
-
+  /** The sheet being typed in: the only one selected, else the first of the open run. */
   function activeEditor(): (typeof editors)[string] | undefined {
     const path = sel.only ?? run.open?.parts[0]?.path
     return path ? editors[path] : undefined
   }
-
-  function insertContents(): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path) editors[path]?.insertContentsAtCursor()
-  }
-
-  async function insertImage(): Promise<void> {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (!path || !editors[path]) return
-    const markdown = await window.api.chooseImages()
-    editors[path]?.insertImagesAtCursor(markdown)
-  }
-
-  function foldHere(fold: boolean): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path) editors[path]?.foldSectionAtCursor(fold)
-  }
-
-  function foldAll(fold: boolean): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path) editors[path]?.foldSections(fold)
-  }
-
-  function goToFootnote(): void {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    if (path && !editors[path]?.goToFootnoteAtCursor()) showInfo('This sheet has no footnotes.')
-  }
+  const editing = new EditorActions({
+    editor: activeEditor,
+    chooseImages: () => window.api.chooseImages(),
+    info: (message) => showInfo(message)
+  })
 
   let styleOpen = $state(false)
   let styleNow = $state<LineStyle>('body')
   function toggleStyleMenu(): void {
     if (!styleOpen) {
-      const path = sel.only ?? run.open?.parts[0]?.path
-      styleNow = (path && editors[path]?.lineStyle()) || 'body'
+      styleNow = activeEditor()?.lineStyle() || 'body'
     }
     styleOpen = !styleOpen
   }
   function applyStyle(kind: FormatKind): void {
     styleOpen = false
-    formatActive(kind)
+    editing.format(kind)
   }
   /** `hint` is the digit after Cmd/Ctrl+Alt; `keys` is a whole shortcut, for the rest. */
   const STYLES: { kind: FormatKind; label: string; hint?: string; keys?: string }[][] = [
@@ -1095,28 +1058,26 @@
     else if (command === 'command-palette') openPalette()
     else if (command === 'distraction-free') toggleZen()
     else if (command === 'preferences') preferencesOpen = true
-    else if (command === 'insert-table') insertTable()
-    else if (command === 'insert-footnote') insertFootnote()
-    else if (command === 'insert-contents') insertContents()
-    else if (command === 'insert-image') void insertImage()
+    else if (command === 'insert-table') editing.insertTable()
+    else if (command === 'insert-footnote') editing.insertFootnote()
+    else if (command === 'insert-contents') editing.insertContents()
+    else if (command === 'insert-image') void editing.insertImage()
     else if (command === 'clean-images') void unused.open()
     else if (command === 'resolve-conflicts') conflicts.restart()
-    else if (command === 'go-to-footnote') goToFootnote()
-    else if (command === 'toggle-task') {
-      if (!activeEditor()?.toggleTaskAtCursor()) showInfo('Put the cursor on a task item (- [ ]) first.')
-    }
-    else if (command === 'previous-heading') activeEditor()?.jumpHeading('previous')
-    else if (command === 'next-heading') activeEditor()?.jumpHeading('next')
+    else if (command === 'go-to-footnote') editing.goToFootnote()
+    else if (command === 'toggle-task') editing.toggleTask()
+    else if (command === 'previous-heading') editing.jumpHeading('previous')
+    else if (command === 'next-heading') editing.jumpHeading('next')
     else if (command === 'find-replace') openFind('sheet', true)
     else if (command === 'copy-sheets') ops.copy(false)
     else if (command === 'cut-sheets') ops.copy(true)
     else if (command === 'paste-sheets') void ops.paste()
     else if (command === 'import') void creation.importFiles()
-    else if (command === 'fold-section') foldHere(true)
-    else if (command === 'unfold-section') foldHere(false)
-    else if (command === 'fold-all') foldAll(true)
-    else if (command === 'unfold-all') foldAll(false)
-    else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
+    else if (command === 'fold-section') editing.foldHere(true)
+    else if (command === 'unfold-section') editing.foldHere(false)
+    else if (command === 'fold-all') editing.foldAll(true)
+    else if (command === 'unfold-all') editing.foldAll(false)
+    else if (command.startsWith('format-')) editing.format(command.slice(7) as FormatKind)
     else if (command === 'delete') void ops.remove()
     else if (command === 'duplicate') void ops.duplicate()
     else if (command === 'split') void ops.split()
@@ -1334,8 +1295,8 @@
         ontoggleoutline={ui.toggleOutline}
         onstep={(d) => void trail.step(d)}
         ontogglefind={() => (finding ? closeFind() : openFind())}
-        onformat={formatActive}
-        oninsertimage={() => void insertImage()}
+        onformat={editing.format}
+        oninsertimage={() => void editing.insertImage()}
         onstylemenu={toggleStyleMenu}
         onstyleclose={() => (styleOpen = false)}
         onstyle={applyStyle}
