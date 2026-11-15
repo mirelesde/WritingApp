@@ -19,9 +19,9 @@ If you are picking this up in a new session, read [ARCHITECTURE.md](ARCHITECTURE
 - **epubcheck:** the validator needs a download, which the project does not do without explicit permission. Alternative: open an exported EPUB in a real reader.
 - **Decisions waiting on the owner:** see "Open questions" at the end.
 
-## 2. Release (never run end to end)
+## 2. Release (workflow dry-run passed; installers untested)
 
-- **Dry run.** Push a throwaway pre-release tag such as `v0.1.0-rc.1` so `release.yml` builds the Mac dmg, Windows installer and Linux AppImage, unsigned. Install each and run the UAT list on the packaged build. Likeliest differences from the dev build: file access under the sandbox, the `wa-asset://` picture protocol, PDF export, fonts. A tag pushes to the owner's GitHub and triggers builds, so it needs their go-ahead.
+- **Dry run.** Done for the build: a throwaway tag built the Mac dmg, Windows installer and Linux AppImage, unsigned, and was deleted. Still to do: install each and run the UAT list on the packaged build. The .deb is deferred until a public maintainer email is chosen. Likeliest differences from the dev build: file access under the sandbox, the `wa-asset://` picture protocol, PDF export, fonts. A real tag pushes to the owner's GitHub and triggers builds, so it needs their go-ahead.
 - **Auto-update (optional).** `electron-updater` with the GitHub release feed; on Mac it needs signed builds.
 - **Release hygiene:** release notes drafted from the CHANGELOG, a README install section, the app icon and About text, and a version scheme (suggested: `0.x` betas, `1.0` once signed and verified). Review this register for anything that must be fixed before a stable label; data-loss paths come first.
 - Details of the pipeline: [RELEASING.md](RELEASING.md).
