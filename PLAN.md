@@ -1374,8 +1374,9 @@ tested with the in-memory one)
     answer, and Cancel also cancels a quit); ⌘S saves the front sheet and ⌘⌥S saves all;
     tabs with changes cannot be dragged out of their window; the journal still guards
     against crashes. Checked live: dots, new tabs, restoring typed text, the tab and
-    window prompts including the hold. Not checked live: quit (⌘Q), choosing a library,
-    a failing save from the prompt, and dragging a tab (UAT 13.39). Limits: see 13.39.
+    window prompts including the hold, and quit (Cancel cancels it; Save saves and exits).
+    Not checked live: choosing a library, a failing save from the prompt, and dragging a
+    tab (UAT 13.39). Limits: see 13.39.
 
 ## Later, in rough order
 
