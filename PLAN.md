@@ -1366,6 +1366,8 @@ tested with the in-memory one)
 
 ## Later, in rough order
 
+- Save mode "Manual, with tabs" (VS Code style), a third choice in Preferences ▸ Saving beside Autosave and "Save when I choose". Nothing saves by itself; clicking a sheet opens or switches to a tab; a tab with changes shows a dot; closing a tab, a window or quitting with changes asks Save / Don't Save / Cancel ("Don't Save" also drops the journal entry). Needs care with export, search and merge (save or ask first), the sheet list preview (show unsaved text), and the same sheet open in two windows.
+- Preferences navigation: top tabs are right for four sections; move to a sidebar (wider dialog, icons, a search box for settings) when there are about six or more, for example Shortcuts, Export or Library.
 - Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
