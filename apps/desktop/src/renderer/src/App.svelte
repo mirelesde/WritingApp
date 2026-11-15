@@ -23,6 +23,7 @@
   import type { EditMenuInfo, EpubDialogOptions, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet, TitlePage } from '../../preload/api'
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
+  import { TabsState } from './tabsState.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
@@ -56,7 +57,6 @@
     runOf,
     visibleGroups,
     listKeyTarget,
-    reorderTabs,
     type DropZone,
     type MoveTarget,
     type TreeDnd
@@ -599,43 +599,19 @@
 
   // Each tab holds a sheet; opening another sheet in the front tab replaces it. The
   // bar shows only when there are two or more.
-  let tabs = $state<string[]>([])
-  let activeTab = $state(0)
+  const tabs = new TabsState()
 
   $effect(() => {
     const only = selection.length === 1 ? selection[0] : undefined
     if (!only) return
-    untrack(() => {
-      if (tabs.length === 0) {
-        tabs = [only]
-        activeTab = 0
-      } else if (tabs[activeTab] !== only) {
-        const existing = tabs.indexOf(only)
-        if (manual() && existing >= 0) {
-          activeTab = existing
-        } else if (manual() && tabHasChanges(tabs[activeTab]!)) {
-          // The front tab has unsaved changes, so it stays; the sheet opens in a tab beside it.
-          activeTab += 1
-          tabs = [...tabs.slice(0, activeTab), only, ...tabs.slice(activeTab)]
-        } else {
-          tabs = tabs.map((p, i) => (i === activeTab ? only : p))
-        }
-      }
-    })
+    untrack(() => tabs.follow(only, manual(), tabHasChanges))
   })
 
   // Sheets that were deleted or moved away take their tabs with them.
   $effect(() => {
     const tree = library?.tree
     if (!tree) return
-    untrack(() => {
-      const kept = tabs.filter((p) => sheetExists(tree, p))
-      if (kept.length === tabs.length) return
-      const front = tabs[activeTab]
-      tabs = kept
-      activeTab = Math.max(0, Math.min(front ? kept.indexOf(front) : activeTab, kept.length - 1))
-      if (activeTab < 0) activeTab = 0
-    })
+    untrack(() => tabs.prune((p) => sheetExists(tree, p)))
   })
 
   const tabTitles = $derived(
@@ -694,73 +670,58 @@
   }
 
   async function showTab(index: number): Promise<void> {
-    const path = tabs[index]
+    const path = tabs.select(index)
     if (path === undefined) return
-    activeTab = index
     await revealSheet(path)
   }
 
   /** Opens `path` in a tab after the front one, or switches to the tab that already has it. */
   async function openInTab(path: string | undefined, reuse = true): Promise<void> {
     if (!path) return
-    const existing = reuse ? tabs.indexOf(path) : -1
-    if (existing >= 0) return showTab(existing)
-    const at = Math.min(activeTab + 1, tabs.length)
-    tabs = [...tabs.slice(0, at), path, ...tabs.slice(at)]
-    await showTab(at)
+    await showTab(tabs.open(path, reuse))
   }
 
   function newTab(): void {
-    void openInTab(selection.length === 1 ? selection[0] : tabs[activeTab], false)
+    void openInTab(selection.length === 1 ? selection[0] : tabs.front, false)
   }
 
-  async function closeTab(index = activeTab): Promise<void> {
-    if (tabs.length <= 1) {
+  async function closeTab(index = tabs.active): Promise<void> {
+    if (tabs.list.length <= 1) {
       // The window asks about unsaved changes itself when it closes.
       void window.api.closeWindow()
       return
     }
-    const closing = tabs[index]
+    const closing = tabs.list[index]
     if (closing !== undefined && !(await resolveUnsaved(runFor(closing), 'tab'))) return
-    if (tabs[index] !== closing) return
-    const wasFront = index === activeTab
-    tabs = tabs.filter((_, i) => i !== index)
-    if (index < activeTab) activeTab--
-    activeTab = Math.min(activeTab, tabs.length - 1)
-    if (wasFront) void showTab(activeTab)
+    if (tabs.list[index] !== closing) return
+    if (tabs.remove(index)) void showTab(tabs.active)
   }
 
   const TAB_MIME = 'application/x-writingapp-tab'
   /** Set on a drag whose tab has unsaved changes: only this window can take it, since the text lives here. */
   const DIRTY_MIME = 'application/x-writingapp-unsaved'
-  /** The tab being dragged from this window, and where a drop would put it. */
-  let dragTab = $state<number | null>(null)
-  let tabHint = $state<number | null>(null)
-  let tabDropped = false
-
   function tabDragStart(i: number, e: DragEvent): void {
     if (!e.dataTransfer) return
-    e.dataTransfer.setData(TAB_MIME, tabs[i] ?? '')
-    if (tabHasChanges(tabs[i] ?? '')) e.dataTransfer.setData(DIRTY_MIME, '1')
+    e.dataTransfer.setData(TAB_MIME, tabs.list[i] ?? '')
+    if (tabHasChanges(tabs.list[i] ?? '')) e.dataTransfer.setData(DIRTY_MIME, '1')
     e.dataTransfer.effectAllowed = 'move'
-    dragTab = i
-    tabDropped = false
+    tabs.startDrag(i)
   }
 
   /** Where in the bar a drag at this point would land: before or after the tab under it. */
   function tabSlot(e: DragEvent): number {
     const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]')
-    if (!tab) return tabs.length
+    if (!tab) return tabs.list.length
     const box = tab.getBoundingClientRect()
     return Number(tab.dataset.tab) + (e.clientX > box.left + box.width / 2 ? 1 : 0)
   }
 
   function tabDragOver(e: DragEvent): void {
     if (!e.dataTransfer?.types.includes(TAB_MIME)) return
-    if (e.dataTransfer.types.includes(DIRTY_MIME) && dragTab === null) return
+    if (e.dataTransfer.types.includes(DIRTY_MIME) && tabs.dragFrom === null) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    tabHint = tabSlot(e)
+    tabs.hint = tabSlot(e)
   }
 
   async function tabDrop(e: DragEvent): Promise<void> {
@@ -768,33 +729,28 @@
     if (!path) return
     e.preventDefault()
     const at = tabSlot(e)
-    tabHint = null
-    tabDropped = true
-    if (dragTab !== null) {
+    tabs.hint = null
+    tabs.dropped = true
+    if (tabs.dragFrom !== null) {
       // Reordered within this window; the front tab stays in front.
-      const from = dragTab
-      const next = reorderTabs(tabs, activeTab, from, at)
-      tabs = next.tabs
-      activeTab = next.active
+      tabs.reorder(tabs.dragFrom, at)
     } else if (library && sheetExists(library.tree, path)) {
       // Brought over from another window, which closes its copy.
-      tabs = [...tabs.slice(0, at), path, ...tabs.slice(at)]
+      tabs.insert(at, path)
       await showTab(at)
     }
   }
 
   function tabDragEnd(e: DragEvent): void {
-    const from = dragTab
-    dragTab = null
-    tabHint = null
-    if (from === null || tabDropped) return
+    const from = tabs.endDrag()
+    if (from === null) return
     const outside =
       e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight
-    const path = tabs[from]
+    const path = tabs.list[from]
     if (e.dataTransfer?.dropEffect === 'move') {
       // Another window took it.
       closeTab(from)
-    } else if (outside && path && tabs.length > 1 && !tabHasChanges(path)) {
+    } else if (outside && path && tabs.list.length > 1 && !tabHasChanges(path)) {
       // Dropped on the desktop: it becomes a window of its own.
       void window.api.newWindow(path, { x: e.screenX, y: e.screenY })
       closeTab(from)
@@ -802,8 +758,8 @@
   }
 
   function cycleTab(delta: number): void {
-    if (tabs.length < 2) return
-    void showTab((activeTab + delta + tabs.length) % tabs.length)
+    const to = tabs.cycleTarget(delta)
+    if (to !== undefined) void showTab(to)
   }
 
   // --- Back and forward ---------------------------------------------------
@@ -916,7 +872,7 @@
       selectedGroup = remap(selectedGroup)
       if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = result.library.tree.path
       selection = selection.map(remap)
-      tabs = tabs.map(remap)
+      tabs.remap(remap)
       cursor = cursor && remap(cursor)
       anchor = anchor && remap(anchor)
       expanded = Object.fromEntries(Object.entries(expanded).map(([p, o]) => [remap(p), o]))
@@ -2392,14 +2348,14 @@
         </span>
       </div>
       <div class="above">
-      {#if (tabs.length > 1 || (manual() && tabs.length > 0)) && !ui.zen}
+      {#if (tabs.list.length > 1 || (manual() && tabs.list.length > 0)) && !ui.zen}
         <div class="tabs" role="tablist" aria-label="Open sheets">
-          {#each tabs as path, i (i)}
+          {#each tabs.list as path, i (i)}
             <div
               class="tab"
-              class:active={i === activeTab}
-              class:before={tabHint === i}
-              class:after={tabHint === tabs.length && i === tabs.length - 1}
+              class:active={i === tabs.active}
+              class:before={tabs.hint === i}
+              class:after={tabs.hint === tabs.list.length && i === tabs.list.length - 1}
               data-tab={i}
               draggable="true"
               role="presentation"
@@ -2409,7 +2365,7 @@
               <button
                 class="tab-label"
                 role="tab"
-                aria-selected={i === activeTab}
+                aria-selected={i === tabs.active}
                 title={tabTitles.get(path) ?? path}
                 onclick={() => void showTab(i)}
                 onauxclick={(e) => {
