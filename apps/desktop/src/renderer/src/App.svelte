@@ -13,8 +13,6 @@
     type GroupNode,
     type ColorTheme,
     type SearchOptions,
-    type SheetNode,
-    type SheetSort,
     allSheets as librarySheets,
     libraryKeywords,
     parseFilter
@@ -49,6 +47,7 @@
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import ToolButton from './ToolButton.svelte'
+  import SheetsPane from './SheetsPane.svelte'
   import type { FormatKind, LineStyle } from './blockStyle'
   import Preferences from './Preferences.svelte'
   import SaveIndicator from './SaveIndicator.svelte'
@@ -74,7 +73,7 @@
     findGroup,
     gluedFollowers,
     sheetExists,
-    toggleKeywordInFilter,
+    SORTS,
     whereIs as whereIsIn
   } from './listing'
 
@@ -244,21 +243,6 @@
   let filter = $state('')
   let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
   const sortBy = $derived(prefs?.sheetSort ?? 'manual')
-  let sortOpen = $state(false)
-  const SORTS: [SheetSort, string][] = [
-    ['manual', 'Manual order'],
-    ['title', 'Title'],
-    ['modified', 'Date modified'],
-    ['created', 'Date created'],
-    ['words', 'Word count']
-  ]
-  const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-  /** The small line under a card's title when the sort makes a value worth showing. */
-  function sortNote(sheet: SheetNode): string {
-    if (sortBy === 'words') return `${sheet.words.toLocaleString()} words`
-    const time = sortBy === 'created' ? sheet.created : sortBy === 'modified' ? sheet.modified : undefined
-    return time === undefined ? '' : dateFormat.format(time)
-  }
   /** What the list shows: every sheet, or those whose title or preview contain the filter. */
   const parsedFilter = $derived(parseFilter(filter))
   /** True while the filter names keywords: the list then spans the whole library, not just the group. */
@@ -274,12 +258,6 @@
   const listed = $derived(sections.flatMap((x) => x.sheets))
   const shownSections = $derived(filterSections(sections, parsedFilter.text, parsedFilter.keywords))
   const shown = $derived(shownSections.flatMap((x) => x.sheets))
-  let keywordPicker = $state(false)
-  /** Adds or removes `#keyword` in the filter box. */
-  function toggleFilterKeyword(keyword: string): void {
-    filter = toggleKeywordInFilter(filter, keyword)
-    keywordPicker = false
-  }
   /** The groups a sheet is in, for a card in a library-wide list. */
   function whereIs(path: string): string {
     return library ? whereIsIn(library.tree, path) : ''
@@ -1918,141 +1896,34 @@
       {/if}
     </div>
 
-    <div
-      class="pane sheets"
-      role="listbox"
-      aria-multiselectable="true"
-      aria-label="Sheets"
-      tabindex="0"
-      bind:this={sheetsEl}
+    <SheetsPane
+      title={labelOf(group) ?? ''}
+      {sortBy}
+      {listed}
+      {shown}
+      {shownSections}
+      {knownKeywords}
+      {parsedFilter}
+      {keywordMode}
+      bind:filter
+      bind:el={sheetsEl}
+      {sel}
+      {gluedFrom}
+      {sheetHint}
+      {keyMod}
+      {whereIs}
       onkeydown={sheetsKeydown}
       onmousedown={keepFocus(sheetsEl)}
-      ondragover={sheetsPaneDragOver}
-      ondrop={dropSheets}
-    >
-      <header>
-        <span class="title">{labelOf(group) ?? ''}</span>
-        <span class="tools">
-          <span class="sort-wrap">
-            <ToolButton icon="sort" label="Sort sheets" pressed={sortOpen || sortBy !== 'manual'} onclick={() => (sortOpen = !sortOpen)} />
-            {#if sortOpen}
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div class="scrim" onmousedown={() => (sortOpen = false)}></div>
-              <div class="style-menu sort-menu" role="menu" tabindex="-1" aria-label="Sort sheets">
-                {#each SORTS as [value, label] (value)}
-                  <button
-                    role="menuitemradio"
-                    aria-checked={sortBy === value}
-                    class:current={sortBy === value}
-                    onclick={() => {
-                      sortOpen = false
-                      void window.api.setView({ sheetSort: value })
-                    }}>{label}</button
-                  >
-                {/each}
-              </div>
-            {/if}
-          </span>
-          <ToolButton icon="new-sheet" label="New sheet" hint="{keyMod}N" onclick={() => void newSheet()} />
-        </span>
-      </header>
-      {#if listed.length > 0}
-        <div class="filter">
-          <input
-            type="search"
-            placeholder={knownKeywords.length > 0 ? 'Filter, or #keyword' : 'Filter'}
-            aria-label="Filter sheets"
-            bind:value={filter}
-            onkeydown={(e) => {
-              e.stopPropagation()
-              if (e.key === 'Escape') {
-                filter = ''
-                sheetsEl?.focus()
-              }
-            }}
-          />
-          {#if knownKeywords.length > 0}
-            <button
-              class="kw-button"
-              class:active={keywordMode}
-              aria-label="Filter by keyword"
-              aria-haspopup="menu"
-              aria-expanded={keywordPicker}
-              title="Filter by keyword"
-              onclick={() => (keywordPicker = !keywordPicker)}>#</button
-            >
-          {/if}
-          {#if keywordPicker}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="scrim" onmousedown={() => (keywordPicker = false)}></div>
-            <div class="style-menu kw-menu" role="menu" tabindex="-1" aria-label="Keywords">
-              {#each knownKeywords as item (item.keyword)}
-                <button
-                  role="menuitemcheckbox"
-                  aria-checked={parsedFilter.keywords.some((k) => k.toLowerCase() === item.keyword.toLowerCase())}
-                  class:current={parsedFilter.keywords.some((k) => k.toLowerCase() === item.keyword.toLowerCase())}
-                  onclick={() => toggleFilterKeyword(item.keyword)}>{item.keyword} <small>{item.count}</small></button
-                >
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {:else if keywordMode}
-        <p class="placeholder small">No Sheets</p>
-      {/if}
-      {#if listed.length === 0}
-        <p class="placeholder small">No Sheets</p>
-      {:else if shown.length === 0}
-        <p class="placeholder small">No Matches</p>
-      {:else}
-        <ul>
-          {#each shownSections as section (section.node.path)}
-            {#if section.label}
-              <li class="sheet-section" role="presentation">{section.label}</li>
-            {/if}
-          {#each section.sheets as sheet (sheet.path)}
-            <li>
-              <button
-                class="sheet"
-                class:selected={sel.has(sheet.path)}
-                class:run-start={sheet.glued && !gluedFrom.has(sheet.path)}
-                class:run-middle={sheet.glued && gluedFrom.has(sheet.path)}
-                class:run-end={!sheet.glued && gluedFrom.has(sheet.path)}
-                class:drop-before={sheetHint !== 'end' &&
-                  sheetHint?.path === sheet.path &&
-                  !sheetHint.after}
-                class:drop-after={sheetHint !== 'end' &&
-                  sheetHint?.path === sheet.path &&
-                  sheetHint.after}
-                tabindex="-1"
-                draggable={!keywordMode}
-                ondragstart={(e) => !keywordMode && sheetDragStart(sheet.path, e)}
-                ondragend={endDrag}
-                ondragover={(e) => sheetDragOver(sheet.path, e)}
-                onclick={(e) => clickSheet(sheet.path, e)}
-                oncontextmenu={(e) => {
-                  e.preventDefault()
-                  void nodeMenu('sheet', sheet.path, { x: e.clientX, y: e.clientY })
-                }}
-              >
-                <span class="sheet-head">
-                  <span class="sheet-title">{sheet.title}</span>
-                  {#if sortNote(sheet)}<span class="sheet-note">{sortNote(sheet)}</span>{/if}
-                </span>
-                <span class="sheet-preview" class:blank={sheet.preview === ''}>{sheet.preview || '(No Content)'}</span>
-                {#if keywordMode}<span class="sheet-where">{whereIs(sheet.path) || 'Library'}</span>{/if}
-                {#if sheet.keywords.length > 0}
-                  <span class="sheet-keywords">
-                    {#each sheet.keywords as keyword (keyword)}<span class="kw">{keyword}</span>{/each}
-                  </span>
-                {/if}
-              </button>
-            </li>
-          {/each}
-          {/each}
-        </ul>
-      {/if}
-    </div>
+      onpaneover={sheetsPaneDragOver}
+      onpanedrop={dropSheets}
+      onsheetdragstart={sheetDragStart}
+      onsheetdragend={endDrag}
+      onsheetdragover={sheetDragOver}
+      onsheetclick={clickSheet}
+      onsheetmenu={(path, at) => void nodeMenu('sheet', path, at)}
+      onnew={() => void newSheet()}
+      onsort={(value) => void window.api.setView({ sheetSort: value })}
+    />
 
     </div>
 
@@ -2366,7 +2237,7 @@
   .layout.collapsed {
     grid-template-columns: minmax(0, 1fr);
   }
-  .layout.no-sheets .sheets {
+  .layout.no-sheets :global(.sheets) {
     display: none;
   }
   .layout.no-sheets .sidebar {
@@ -2392,12 +2263,12 @@
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
   /* The sheet list is pushed along to the right, so the library sits beside it. */
-  .layout.no-library .sheets {
+  .layout.no-library :global(.sheets) {
     position: relative;
     z-index: 29;
     transition: transform 140ms ease-out;
   }
-  .layout.no-library .sidebar.peek .sheets {
+  .layout.no-library .sidebar.peek :global(.sheets) {
     transform: translateX(240px);
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
@@ -2425,42 +2296,12 @@
   .pane:focus {
     outline: none;
   }
-  .pane:focus .sheet.selected {
-    background: var(--accent);
-    color: var(--on-accent);
-  }
-  .pane:focus .sheet.selected .sheet-preview {
-    color: inherit;
-    opacity: 0.8;
-  }
   .pane {
     overflow-y: auto;
     min-width: 0;
   }
   .library {
     background: var(--sidebar);
-  }
-  .sheets {
-    background: var(--list);
-    position: relative;
-  }
-  /* Nothing to show: a quiet message in the middle of the pane, under the tool row. */
-  .placeholder {
-    position: absolute;
-    inset: var(--topbar-height) 0 0 0;
-    display: grid;
-    place-items: center;
-    margin: 0;
-    padding: 0 24px 10vh;
-    color: var(--faint);
-    font-size: 30px;
-    font-weight: 300;
-    text-align: center;
-    user-select: none;
-    pointer-events: none;
-  }
-  .placeholder.small {
-    font-size: 17px;
   }
   header {
     display: flex;
@@ -2472,10 +2313,6 @@
     position: sticky;
     top: 0;
     background: inherit;
-  }
-  /* The group's name lines up with the sheet titles below it. */
-  .sheets header {
-    padding-left: 21px;
   }
   header.library-bar {
     justify-content: flex-end;
@@ -2504,12 +2341,6 @@
   .project.selected .project-title {
     background: var(--selected);
   }
-  .title {
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   ul {
     list-style: none;
     margin: 0;
@@ -2517,200 +2348,6 @@
   }
   .library ul {
     padding-bottom: 12px;
-  }
-  .sheets ul {
-    padding: 0 6px 12px;
-  }
-  .sheet {
-    position: relative;
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-bottom: 4px;
-    cursor: default;
-  }
-  .sheet.run-start,
-  .sheet.run-middle,
-  .sheet.run-end {
-    border-left: 3px solid var(--accent);
-    border-radius: 0 6px 6px 0;
-  }
-  /* The members of a glued run touch, so they read as one card. */
-  .sheet.run-start {
-    border-bottom-right-radius: 0;
-    margin-bottom: 0;
-  }
-  .sheet.run-middle {
-    border-radius: 0;
-    margin-bottom: 0;
-  }
-  .sheet.run-end {
-    border-top-right-radius: 0;
-  }
-  /* The drop line is straight and stops where the card's rounded corners begin. */
-  .sheet.drop-before::before,
-  .sheet.drop-after::after {
-    content: '';
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    height: 3px;
-    border-radius: 1.5px;
-    background: var(--accent);
-    pointer-events: none;
-  }
-  .sheet.drop-before::before {
-    top: -4px;
-  }
-  .sheet.drop-after::after {
-    bottom: -4px;
-  }
-  .sheet:hover {
-    background: var(--hover);
-  }
-  .sheet.selected {
-    background: var(--selected);
-  }
-  .sort-wrap {
-    position: relative;
-  }
-  .sort-menu {
-    left: auto;
-    right: 0;
-    transform: none;
-    min-width: 160px;
-  }
-  .sheet-section {
-    margin: 14px 4px 2px;
-    padding: 0 6px 5px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-  }
-  .sheet-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .sheet-note {
-    flex-shrink: 0;
-    font-size: 11px;
-    opacity: 0.65;
-    font-variant-numeric: tabular-nums;
-  }
-  .sheet-preview {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .sheet-title {
-    display: block;
-    white-space: nowrap;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .sheet-preview.blank {
-    display: block;
-    text-align: left;
-    font-style: italic;
-    opacity: 0.7;
-  }
-  .sheet-title {
-    font-weight: 600;
-  }
-  .sheet-preview {
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.4;
-    margin-top: 3px;
-    /* Always three lines tall, so every card is the same height. */
-    height: calc(3 * 1.4 * 13px);
-    /* Up to three lines, like a card in Ulysses. */
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-  }
-  .filter {
-    position: relative;
-    display: flex;
-    gap: 6px;
-    padding: 0 10px 8px;
-  }
-  .kw-button {
-    font: inherit;
-    font-size: 13px;
-    padding: 0 9px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    background: color-mix(in srgb, var(--text) 7%, transparent);
-    color: var(--muted);
-    cursor: default;
-  }
-  .kw-button.active {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-  .kw-menu {
-    left: auto;
-    right: 10px;
-    top: 100%;
-    transform: none;
-    min-width: 170px;
-    max-height: 260px;
-    overflow: auto;
-  }
-  .kw-menu small {
-    margin-left: 6px;
-    color: var(--muted);
-  }
-  .sheet-where {
-    display: block;
-    margin-top: 2px;
-    font-size: 11px;
-    opacity: 0.65;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .sheet-keywords {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 4px;
-  }
-  .kw {
-    padding: 2px 9px;
-    font-size: 12px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--text) 8%, transparent);
-    color: var(--muted);
-  }
-  .filter input {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    font: inherit;
-    font-size: 13px;
-    color: var(--text);
-    background: color-mix(in srgb, var(--text) 7%, transparent);
-    border: 1px solid transparent;
-    border-radius: 8px;
-    padding: 5px 9px;
-    outline: none;
-  }
-  .filter input:focus {
-    border-color: var(--accent);
-  }
-  .filter input::placeholder {
-    color: var(--muted);
   }
   .info {
     margin: 0;
@@ -2792,12 +2429,12 @@
   .style-wrap {
     position: relative;
   }
-  .scrim {
+  :global(.scrim) {
     position: fixed;
     inset: 0;
     z-index: 20;
   }
-  .style-menu {
+  :global(.style-menu) {
     position: absolute;
     top: 100%;
     left: 50%;
@@ -2811,12 +2448,12 @@
     border: 1px solid var(--border);
     box-shadow: var(--shadow-popover);
   }
-  .style-menu hr {
+  :global(.style-menu hr) {
     border: none;
     border-top: 1px solid var(--border);
     margin: 4px 2px;
   }
-  .style-menu button {
+  :global(.style-menu button) {
     display: flex;
     justify-content: space-between;
     gap: 18px;
@@ -2831,14 +2468,14 @@
     text-align: left;
     cursor: default;
   }
-  .style-menu button:hover {
+  :global(.style-menu button:hover) {
     background: var(--hover);
   }
-  .style-menu button.current {
+  :global(.style-menu button.current) {
     color: var(--accent);
     font-weight: 600;
   }
-  .style-menu kbd {
+  :global(.style-menu kbd) {
     font: inherit;
     font-size: 12px;
     color: var(--muted);

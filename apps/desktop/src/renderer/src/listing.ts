@@ -91,3 +91,12 @@ export function toggleKeywordInFilter(filter: string, keyword: string): string {
   else words.push(token)
   return words.join(' ') + (at >= 0 || words.length === 0 ? '' : ' ')
 }
+
+/** The orders a list of sheets can be sorted in, with the names the menu shows. */
+export const SORTS: [SheetSort, string][] = [
+  ['manual', 'Manual order'],
+  ['title', 'Title'],
+  ['modified', 'Date modified'],
+  ['created', 'Date created'],
+  ['words', 'Word count']
+]
