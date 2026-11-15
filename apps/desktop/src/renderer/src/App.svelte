@@ -10,7 +10,6 @@
     resolveWikiLink,
     sheetPreview,
     sheetTitle,
-    sortSheets,
     type GroupNode,
     type ColorTheme,
     type SearchOptions,
@@ -18,7 +17,6 @@
     type SheetSort,
     type ViewSettings,
     allSheets as librarySheets,
-    filterToken,
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
@@ -56,10 +54,21 @@
     remapPath,
     runOf,
     visibleGroups,
+    listKeyTarget,
+    reorderTabs,
     type DropZone,
     type MoveTarget,
     type TreeDnd
   } from './organise'
+  import {
+    buildSections,
+    filterSections,
+    findGroup,
+    gluedFollowers,
+    sheetExists,
+    toggleKeywordInFilter,
+    whereIs as whereIsIn
+  } from './listing'
 
   let library = $state<LibraryInfo | null>(null)
   let loading = $state(true)
@@ -265,47 +274,20 @@
    * tree order, each under the name of its group (relative to the selected one).
    * A keyword filter lists the whole library as one run instead.
    */
-  const sections = $derived.by((): { node: GroupNode; label: string; sheets: SheetNode[] }[] => {
-    if (!group) return []
-    if (keywordMode && library) return [{ node: library.tree, label: '', sheets: librarySheets(library.tree) }]
-    const out: { node: GroupNode; label: string; sheets: SheetNode[] }[] = []
-    const visit = (node: GroupNode, names: string[]): void => {
-      const own = node.children.filter((c) => c.kind === 'sheet') as SheetNode[]
-      if (own.length > 0 || names.length === 0) out.push({ node, label: names.join(' › '), sheets: sortSheets(own, sortBy) })
-      for (const child of node.children) if (child.kind === 'group') visit(child, [...names, groupLabel(child)])
-    }
-    visit(group, [])
-    return out
-  })
+  const sections = $derived(buildSections(group, library?.tree, keywordMode, sortBy))
   /** Every sheet the list can show, before filtering. */
   const listed = $derived(sections.flatMap((x) => x.sheets))
-  const shownSections = $derived.by(() => {
-    const needle = parsedFilter.text.toLowerCase()
-    const wanted = parsedFilter.keywords.map((k) => k.toLowerCase())
-    const keep = (s: SheetNode): boolean =>
-      wanted.every((k) => s.keywords.some((own) => own.toLowerCase() === k)) &&
-      (!needle || `${s.title}\n${s.preview}`.toLowerCase().includes(needle))
-    return sections
-      .map((x) => ({ ...x, sheets: x.sheets.filter(keep) }))
-      .filter((x) => x.sheets.length > 0)
-  })
+  const shownSections = $derived(filterSections(sections, parsedFilter.text, parsedFilter.keywords))
   const shown = $derived(shownSections.flatMap((x) => x.sheets))
   let keywordPicker = $state(false)
   /** Adds or removes `#keyword` in the filter box. */
   function toggleFilterKeyword(keyword: string): void {
-    const token = filterToken(keyword)
-    const words = filter.split(/\s+/).filter((w) => w !== '')
-    const at = words.findIndex((w) => w.toLowerCase() === token.toLowerCase())
-    if (at >= 0) words.splice(at, 1)
-    else words.push(token)
-    filter = words.join(' ') + (at >= 0 || words.length === 0 ? '' : ' ')
+    filter = toggleKeywordInFilter(filter, keyword)
     keywordPicker = false
   }
   /** The groups a sheet is in, for a card in a library-wide list. */
   function whereIs(path: string): string {
-    if (!library) return ''
-    const rel = path.slice(library.tree.path.length + 1).split('/')
-    return rel.slice(0, -1).join(' / ')
+    return library ? whereIsIn(library.tree, path) : ''
   }
 
   // Keywords dialog: edits the selected sheets.
@@ -328,31 +310,11 @@
   /** The sheets in the order the list shows them, for keyboard and range selection. */
   const listPaths = $derived(shown.map((s) => s.path))
   // Sheets that follow a glued sheet, so a run can be drawn as one bar.
-  const gluedFrom = $derived(
-    new Set(
-      sections.flatMap(({ node }) =>
-        node.children.flatMap((c, i) => (c.kind === 'sheet' && c.glued ? [node.children[i + 1]?.path ?? ''] : []))
-      )
-    )
-  )
+  const gluedFrom = $derived(gluedFollowers(sections))
 
   function labelOf(node: GroupNode | undefined): string | undefined {
     return node ? groupLabel(node) : undefined
   }
-  function findGroup(node: GroupNode, path: string): GroupNode | undefined {
-    if (node.path === path) return node
-    for (const child of node.children) {
-      if (child.kind !== 'group') continue
-      const found = findGroup(child, path)
-      if (found) return found
-    }
-    return undefined
-  }
-
-  function sheetExists(node: GroupNode, path: string): boolean {
-    return node.children.some((c) => (c.kind === 'sheet' ? c.path === path : sheetExists(c, path)))
-  }
-
   function showLibrary(info: LibraryInfo): void {
     library = info
     expanded = { [info.tree.path]: true }
@@ -844,17 +806,9 @@
     if (dragTab !== null) {
       // Reordered within this window; the front tab stays in front.
       const from = dragTab
-      const to = at > from ? at - 1 : at
-      const rest = tabs.filter((_, i) => i !== from)
-      rest.splice(to, 0, path)
-      let front = activeTab
-      if (front === from) front = to
-      else {
-        if (from < front) front--
-        if (to <= front) front++
-      }
-      tabs = rest
-      activeTab = front
+      const next = reorderTabs(tabs, activeTab, from, at)
+      tabs = next.tabs
+      activeTab = next.active
     } else if (library && sheetExists(library.tree, path)) {
       // Brought over from another window, which closes its copy.
       tabs = [...tabs.slice(0, at), path, ...tabs.slice(at)]
@@ -1912,27 +1866,13 @@
     if (mod || e.altKey) return
 
     const at = cursor ? listPaths.indexOf(cursor) : -1
-    let target: number
-    switch (e.key) {
-      case 'ArrowDown':
-        target = Math.min(at + 1, listPaths.length - 1)
-        break
-      case 'ArrowUp':
-        target = at < 0 ? 0 : Math.max(at - 1, 0)
-        break
-      case 'Home':
-        target = 0
-        break
-      case 'End':
-        target = listPaths.length - 1
-        break
-      case 'Enter':
-        e.preventDefault()
-        if (selection[0]) editors[selection[0]]?.focus()
-        return
-      default:
-        return
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (selection[0]) editors[selection[0]]?.focus()
+      return
     }
+    const target = listKeyTarget(e.key, at, listPaths.length)
+    if (target === undefined) return
     e.preventDefault()
     const path = listPaths[target]
     if (path === undefined) return

@@ -135,3 +135,43 @@ export function runOf(
   while (children[end]?.glued && children[end + 1]?.kind === 'sheet') end++
   return children.slice(start, end + 1).map((c) => c.path)
 }
+
+/**
+ * Moves the tab at `from` to the slot `at` (a gap in the bar, so 0 to `tabs.length`),
+ * keeping the front tab in front. Returns the new order and the new front index.
+ */
+export function reorderTabs(
+  tabs: string[],
+  active: number,
+  from: number,
+  at: number
+): { tabs: string[]; active: number } {
+  const path = tabs[from]
+  if (path === undefined) return { tabs, active }
+  const to = at > from ? at - 1 : at
+  const rest = tabs.filter((_, i) => i !== from)
+  rest.splice(to, 0, path)
+  let front = active
+  if (front === from) front = to
+  else {
+    if (from < front) front--
+    if (to <= front) front++
+  }
+  return { tabs: rest, active: front }
+}
+
+/** The index in a list of `length` that an arrow, Home or End key moves to from `at` (-1: none), or undefined. */
+export function listKeyTarget(key: string, at: number, length: number): number | undefined {
+  switch (key) {
+    case 'ArrowDown':
+      return Math.min(at + 1, length - 1)
+    case 'ArrowUp':
+      return at < 0 ? 0 : Math.max(at - 1, 0)
+    case 'Home':
+      return 0
+    case 'End':
+      return length - 1
+    default:
+      return undefined
+  }
+}
