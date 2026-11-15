@@ -53,6 +53,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { takeExternalChange, type ExternalHost } from './externalChanges'
   import { KeywordEdit } from './keywordEdit.svelte'
   import { FindFlow } from './findFlow.svelte'
   import { MoveFlow } from './moveFlow.svelte'
@@ -648,22 +649,17 @@
 
   // --- Changes made outside the app -----------------------------------------
 
-  /** Takes in a change to the library folder made by something else: a sync client, a file manager. */
-  async function externalChange(info: LibraryInfo): Promise<void> {
-    if (!library || info.path !== library.path) return
-    if (JSON.stringify(info.tree) === JSON.stringify(library.tree) && !run.open) return
-    if (JSON.stringify(info.tree) !== JSON.stringify(library.tree)) {
-      library = info
-      unused.check()
-      if (nav.keep(info.tree, info.tree.path)) {
-        clearSheets()
-        return
-      }
-      await refreshOpen(false)
-    }
-    if (!run.open) return
-    await diskConflicts.check(run.open.parts.map((p) => p.path))
+  const externalHost: ExternalHost = {
+    library: () => library,
+    setLibrary: (info) => (library = info),
+    openPaths: () => run.open?.parts.map((p) => p.path) ?? [],
+    checkImages: () => unused.check(),
+    keepGroup: (info) => nav.keep(info.tree, info.tree.path),
+    clearSheets,
+    refreshOpen: () => refreshOpen(false),
+    checkConflicts: (paths) => diskConflicts.check(paths)
   }
+  const externalChange = (info: LibraryInfo): Promise<void> => takeExternalChange(info, externalHost)
 
   // --- Quick open --------------------------------------------------------------
 
