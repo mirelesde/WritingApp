@@ -490,3 +490,5 @@ Things the developer could not drive in the test harness. Tick each one on your 
 - [ ] **Inline group rename**: right-click ▸ Rename, type `Act I: Why? Because`, Return; list shows it as typed. 13.40 step 1
 - [ ] **Rename the group's folder in Finder**: the group then shows the folder name. 13.40 step 2
 - [ ] **Sheet file rename**: first line `# Why: is it so?`, leave the sheet: file becomes `Why is it so.md`. 13.40 step 6
+- [ ] **Export dialog layout**: open Export; the preview sits centred, the toolbar fits on one row (or wraps, never overflows), and the Format list opens and closes. 13.27
+- [ ] **Stray marks on sheet cards**: in your own library, no `<!-->` or `**` shows in card previews. 13.31
