@@ -22,6 +22,8 @@
   import { ViewState } from './viewState.svelte'
   import { RecoveryFlow } from './recoveryFlow.svelte'
   import { sheetsKey, treeKey, windowKey } from './keyActions'
+  import { DragDrop } from './dragDrop.svelte'
+  import { TabDrag } from './tabDrag'
   import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
@@ -64,9 +66,7 @@
     remapPath,
     runOf,
     visibleGroups,
-    type DropZone,
-    type MoveTarget,
-    type TreeDnd
+    type MoveTarget
   } from './organise'
   import {
     buildSections,
@@ -574,65 +574,14 @@
     if (tabs.remove(index)) void showTab(tabs.active)
   }
 
-  const TAB_MIME = 'application/x-writingapp-tab'
-  /** Set on a drag whose tab has unsaved changes: only this window can take it, since the text lives here. */
-  const DIRTY_MIME = 'application/x-writingapp-unsaved'
-  function tabDragStart(i: number, e: DragEvent): void {
-    if (!e.dataTransfer) return
-    e.dataTransfer.setData(TAB_MIME, tabs.list[i] ?? '')
-    if (tabHasChanges(tabs.list[i] ?? '')) e.dataTransfer.setData(DIRTY_MIME, '1')
-    e.dataTransfer.effectAllowed = 'move'
-    tabs.startDrag(i)
-  }
-
-  /** Where in the bar a drag at this point would land: before or after the tab under it. */
-  function tabSlot(e: DragEvent): number {
-    const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]')
-    if (!tab) return tabs.list.length
-    const box = tab.getBoundingClientRect()
-    return Number(tab.dataset.tab) + (e.clientX > box.left + box.width / 2 ? 1 : 0)
-  }
-
-  function tabDragOver(e: DragEvent): void {
-    if (!e.dataTransfer?.types.includes(TAB_MIME)) return
-    if (e.dataTransfer.types.includes(DIRTY_MIME) && tabs.dragFrom === null) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    tabs.hint = tabSlot(e)
-  }
-
-  async function tabDrop(e: DragEvent): Promise<void> {
-    const path = e.dataTransfer?.getData(TAB_MIME)
-    if (!path) return
-    e.preventDefault()
-    const at = tabSlot(e)
-    tabs.hint = null
-    tabs.dropped = true
-    if (tabs.dragFrom !== null) {
-      // Reordered within this window; the front tab stays in front.
-      tabs.reorder(tabs.dragFrom, at)
-    } else if (library && sheetExists(library.tree, path)) {
-      // Brought over from another window, which closes its copy.
-      tabs.insert(at, path)
-      await showTab(at)
-    }
-  }
-
-  function tabDragEnd(e: DragEvent): void {
-    const from = tabs.endDrag()
-    if (from === null) return
-    const outside =
-      e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight
-    const path = tabs.list[from]
-    if (e.dataTransfer?.dropEffect === 'move') {
-      // Another window took it.
-      closeTab(from)
-    } else if (outside && path && tabs.list.length > 1 && !tabHasChanges(path)) {
-      // Dropped on the desktop: it becomes a window of its own.
-      void window.api.newWindow(path, { x: e.screenX, y: e.screenY })
-      closeTab(from)
-    }
-  }
+  const tabDrag = new TabDrag(tabs, {
+    hasChanges: tabHasChanges,
+    sheetExists: (path) => (library ? sheetExists(library.tree, path) : false),
+    show: showTab,
+    close: closeTab,
+    newWindow: (path, at) => window.api.newWindow(path, at),
+    windowSize: () => ({ width: window.innerWidth, height: window.innerHeight })
+  })
 
   function cycleTab(delta: number): void {
     const to = tabs.cycleTarget(delta)
@@ -1364,115 +1313,18 @@
 
   // --- Drag and drop -------------------------------------------------------
 
-  // What is being dragged: sheets from the list, or one group from the tree.
-  // Plain, not state: nothing draws from it, and its arrays must cross the IPC bridge.
-  let drag: { kind: 'sheets' | 'group'; paths: string[]; parent: string } | null = null
-  let treeHint = $state<{ path: string; zone: DropZone } | null>(null)
-  // Where dragged sheets would land in the list: before or after a row, or at the end.
-  let sheetHint = $state<{ path: string; after: boolean } | 'end' | null>(null)
-
-  function parentOf(path: string): GroupNode | undefined {
-    return library ? findGroup(library.tree, path.slice(0, path.lastIndexOf('/'))) : undefined
-  }
-
-  function endDrag(): void {
-    drag = null
-    treeHint = null
-    sheetHint = null
-  }
-
-  function canDropOnGroup(target: string, zone: DropZone): boolean {
-    if (!drag || !library) return false
-    if (drag.kind === 'sheets') return zone === 'inside'
-    const dragged = drag.paths[0]!
-    if (target === dragged || target.startsWith(dragged + '/')) return false
-    return zone === 'inside' || target !== library.tree.path // the root has no "before" or "after"
-  }
-
-  function sheetDragStart(path: string, e: DragEvent): void {
-    const chosen = sel.has(path) ? [...sel.paths] : [path]
-    if (!sel.has(path)) void setSelection([path], path)
-    const paths = listPaths.filter((p) => chosen.includes(p))
-    // Sheets from one group can be put in a new order; a mixed selection can only be moved to another group.
-    const parents = new Set(paths.map((p) => p.slice(0, p.lastIndexOf('/'))))
-    drag = { kind: 'sheets', paths, parent: parents.size === 1 ? [...parents][0]! : '' }
-    e.dataTransfer?.setData('text/plain', drag.paths.join('\n'))
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
-  }
-
-  function sheetsPaneDragOver(e: DragEvent): void {
-    // A sorted list has no saved order to rearrange; sheets can still be dragged to a group.
-    if (sortBy !== 'manual') return
-    if (drag?.kind !== 'sheets' || drag.parent !== nav.selectedGroup) return
-    e.preventDefault()
-    sheetHint = 'end'
-  }
-
-  function sheetDragOver(path: string, e: DragEvent): void {
-    if (sortBy !== 'manual') return
-    if (drag?.kind !== 'sheets' || drag.parent === '' || path.slice(0, path.lastIndexOf('/')) !== drag.parent || drag.paths.includes(path))
-      return
-    e.preventDefault()
-    e.stopPropagation()
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    sheetHint = { path, after: e.clientY - rect.top > rect.height / 2 }
-  }
-
-  /** Reorders the dragged sheets to the slot the indicator shows. */
-  function dropSheets(e: DragEvent): void {
-    e.preventDefault()
-    const dragged = drag
-    const hint = sheetHint
-    endDrag()
-    const parent = dragged ? findGroup(library?.tree ?? ({} as GroupNode), dragged.parent) : undefined
-    if (!dragged || !parent || !hint) return
-    let slot: number | undefined
-    if (hint !== 'end') {
-      const rest = parent.children.map((c) => c.path).filter((p) => !dragged.paths.includes(p))
-      slot = rest.indexOf(hint.path) + (hint.after ? 1 : 0)
-    }
-    void runOp(() => window.api.move(dragged.paths, parent.path, slot))
-  }
-
-  const treeDnd: TreeDnd = {
-    get hint() {
-      return treeHint
-    },
-    start(path, e) {
-      drag = { kind: 'group', paths: [path], parent: path.slice(0, path.lastIndexOf('/')) }
-      e.dataTransfer?.setData('text/plain', path)
-      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
-    },
-    over(path, zone, e) {
-      if (!canDropOnGroup(path, zone)) {
-        treeHint = null
-        return
-      }
-      e.preventDefault()
-      treeHint = { path, zone }
-    },
-    drop(path, zone, e) {
-      e.preventDefault()
-      const dragged = drag
-      const ok = canDropOnGroup(path, zone)
-      endDrag()
-      if (!dragged || !ok) return
-      if (zone === 'inside') {
-        void runOp(() => window.api.move(dragged.paths, path)).then((result) => {
-          if (!result) return
-          nav.expanded[path] = true
-          if (dragged.kind === 'sheets') clearSheets()
-        })
-        return
-      }
-      const parent = parentOf(path)
-      if (!parent) return
-      const rest = parent.children.map((c) => c.path).filter((p) => p !== dragged.paths[0])
-      const slot = rest.indexOf(path) + (zone === 'after' ? 1 : 0)
-      void runOp(() => window.api.move(dragged.paths, parent.path, slot))
-    },
-    end: endDrag
-  }
+  const dnd = new DragDrop({
+    tree: () => library?.tree,
+    selectedGroup: () => nav.selectedGroup,
+    manualOrder: () => sortBy === 'manual',
+    listPaths: () => listPaths,
+    isSelected: (path) => sel.has(path),
+    selection: () => [...sel.paths], // a plain array: state proxies cannot cross the bridge
+    selectOnly: (path) => void setSelection([path], path),
+    move: (paths, parent, slot) => runOp(() => window.api.move(paths, parent, slot)),
+    expand: (path) => (nav.expanded[path] = true),
+    clearSheets
+  })
 
   // --- Keyboard -----------------------------------------------------------
 
@@ -1734,7 +1586,7 @@
       {keyMod}
       {keyShift}
       bind:el={treeEl}
-      dnd={treeDnd}
+      dnd={dnd.tree}
       onkeydown={treeKeydown}
       onmousedown={keepFocus(treeEl)}
       onfocusout={(e) => {
@@ -1766,16 +1618,16 @@
       bind:el={sheetsEl}
       {sel}
       {gluedFrom}
-      {sheetHint}
+      sheetHint={dnd.sheetHint}
       {keyMod}
       {whereIs}
       onkeydown={sheetsKeydown}
       onmousedown={keepFocus(sheetsEl)}
-      onpaneover={sheetsPaneDragOver}
-      onpanedrop={dropSheets}
-      onsheetdragstart={sheetDragStart}
-      onsheetdragend={endDrag}
-      onsheetdragover={sheetDragOver}
+      onpaneover={dnd.paneOver}
+      onpanedrop={dnd.drop}
+      onsheetdragstart={dnd.sheetStart}
+      onsheetdragend={dnd.end}
+      onsheetdragover={dnd.sheetOver}
       onsheetclick={clickSheet}
       onsheetmenu={(path, at) => void nodeMenu('sheet', path, at)}
       onnew={() => void newSheet()}
@@ -1784,7 +1636,7 @@
 
     </div>
 
-    <section class="editor" aria-label="Editor" ondragover={tabDragOver} ondrop={(e) => void tabDrop(e)}>
+    <section class="editor" aria-label="Editor" ondragover={tabDrag.over} ondrop={(e) => void tabDrag.drop(e)}>
       <EditorBar
         sidebarCollapsed={ui.sidebarCollapsed}
         sheetsCollapsed={ui.sheetsCollapsed}
@@ -1824,8 +1676,8 @@
           onshow={(i) => void showTab(i)}
           onclose={closeTab}
           onnew={newTab}
-          ondragstart={tabDragStart}
-          ondragend={tabDragEnd}
+          ondragstart={tabDrag.start}
+          ondragend={tabDrag.end}
         />
       {/if}
       {#if finding && !ui.zen}
