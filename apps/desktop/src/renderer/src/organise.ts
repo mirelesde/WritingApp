@@ -175,3 +175,9 @@ export function listKeyTarget(key: string, at: number, length: number): number |
       return undefined
   }
 }
+
+/** The folder every one of `paths` is in, or undefined if they are not all in the same one (or there are none). */
+export function commonParent(paths: string[]): string | undefined {
+  const parents = new Set(paths.map((p) => p.slice(0, p.lastIndexOf('/'))))
+  return parents.size === 1 ? [...parents][0] : undefined
+}

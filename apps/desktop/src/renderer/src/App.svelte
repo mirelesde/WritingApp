@@ -57,6 +57,7 @@
     remapPath,
     runOf,
     visibleGroups,
+    commonParent,
     listKeyTarget,
     type DropZone,
     type MoveTarget,
@@ -1761,12 +1762,15 @@
     const mod = e.metaKey || e.ctrlKey
     if (mod && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault()
-      const parent = group
-      if (!parent || sel.paths.length === 0) return
+      // As with dragging: a sorted list has no saved order to change, and sheets from
+      // different groups can only be moved to another group, not reordered.
       const chosen = [...sel.paths] // a plain array: state proxies cannot cross the bridge
+      const where = commonParent(chosen)
+      const parent = where !== undefined && library ? findGroup(library.tree, where) : undefined
+      if (!parent || sortBy !== 'manual') return
       const slot = moveSlot(
         parent.children.map((c) => c.path),
-        listPaths,
+        listPaths.filter((p) => commonParent([p]) === where),
         chosen,
         e.key === 'ArrowUp' ? -1 : 1
       )

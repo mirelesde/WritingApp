@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GroupNode } from '@writingapp/core'
 import {
+  commonParent,
   dropZone,
   errorMessage,
   filterTargets,
@@ -60,7 +61,8 @@ const group = (path: string, ...children: GroupNode['children']): GroupNode => (
 const sheet = (path: string): GroupNode['children'][number] => ({
   kind: 'sheet',
   keywords: [],
-  images: [], links: [],
+  images: [],
+  links: [],
   name: path.split('/').pop()!,
   path,
   title: '',
@@ -265,5 +267,16 @@ describe('listKeyTarget', () => {
     expect(listKeyTarget('Home', 2, 4)).toBe(0)
     expect(listKeyTarget('End', 0, 4)).toBe(3)
     expect(listKeyTarget('x', 0, 4)).toBeUndefined()
+  })
+})
+
+describe('commonParent', () => {
+  it('names the shared folder', () => {
+    expect(commonParent(['/L/G/a.md', '/L/G/b.md'])).toBe('/L/G')
+    expect(commonParent(['/L/a.md'])).toBe('/L')
+  })
+  it('gives nothing for sheets in different folders, or for none', () => {
+    expect(commonParent(['/L/G/a.md', '/L/b.md'])).toBeUndefined()
+    expect(commonParent([])).toBeUndefined()
   })
 })
