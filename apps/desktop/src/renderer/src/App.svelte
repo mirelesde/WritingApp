@@ -24,6 +24,8 @@
   import { sheetsKey, treeKey, windowKey } from './keyActions'
   import { DragDrop } from './dragDrop.svelte'
   import { NodeOps } from './nodeOps.svelte'
+  import { SheetRun } from './sheetRun.svelte'
+  import { DiskConflicts } from './diskConflicts.svelte'
   import { TabDrag } from './tabDrag'
   import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
@@ -86,13 +88,13 @@
   // keys move from, `anchor` the fixed end of a Shift-extended range.
   const sel = new SelectionState()
   // The sheets being edited: one, or a whole glued run. Set only once their text has loaded.
-  let open = $state<{ parts: { path: string; text: string }[] } | null>(null)
-  let error = $state('')
-  // Text typed since a run was loaded, by path; the status bar counts from it.
-  let edits = $state<Record<string, string>>({})
-  let selectedText = $state('')
+  const run = new SheetRun({
+    readSheet: (path) => window.api.readSheet(path),
+    pathsOf: runPaths,
+    trust: (path, text) => guard.trust(path, text),
+    pending: (path) => autosaver.pending(path)
+  })
   let groupWords = $state<number | null>(null)
-  let readId = 0
   let saveStatus = $state<SaveStatus>('saved')
   let notice = $state('')
   let info = $state('')
@@ -104,9 +106,6 @@
   let editors = $state<Record<string, Editor | undefined>>({})
   let picker = $state<{ heading: string; paths: string[]; targets: MoveTarget[] } | null>(null)
   let pickerReturnFocus: HTMLElement | null = null
-
-  /** A sheet that changed on disk while it had unsaved edits, waiting for the user's choice. */
-  let conflict = $state<{ path: string; mine: string; disk: string } | null>(null)
 
   const guard = createSaveGuard({
     read: (path) => window.api.readSheet(path),
@@ -126,7 +125,7 @@
         // The edit may have added or removed a picture's link.
         unused.check()
       } catch (e) {
-        if (e instanceof SaveConflict) raiseConflict(path, edits[path] ?? content, e.disk)
+        if (e instanceof SaveConflict) diskConflicts.raise(path, run.edits[path] ?? content, e.disk)
         throw e
       }
     },
@@ -143,7 +142,7 @@
     flush: () => autosaver.flush(),
     save: (path, text) => guard.save(path, text),
     showText: (path, text) => {
-      edits[path] = text
+      run.edits[path] = text
       editors[path]?.replaceText(text)
     },
     trust: (path, text) => guard.trust(path, text),
@@ -151,41 +150,20 @@
     fail: (e) => (notice = errorMessage(e))
   })
 
-  function raiseConflict(path: string, mine: string, disk: string): void {
-    if (conflict?.path !== path) conflict = { path, mine, disk }
-  }
-
-  function keepMine(): void {
-    if (!conflict) return
-    const { path, mine, disk } = conflict
-    conflict = null
-    guard.trust(path, disk)
-    autosaver.change(path, mine)
-  }
-
-  function useMerged(text: string): void {
-    if (!conflict) return
-    const { path, disk } = conflict
-    conflict = null
-    guard.trust(path, disk)
-    edits[path] = text
-    editors[path]?.replaceText(text)
-    autosaver.change(path, text)
-    showInfo('Combined the two versions')
-  }
-
-  function useDisk(): void {
-    if (!conflict) return
-    const { path, disk } = conflict
-    conflict = null
-    autosaver.discard(path)
-    guard.trust(path, disk)
-    edits[path] = disk
-    editors[path]?.replaceText(disk)
-    showInfo('Reloaded the version from disk')
-  }
-
-  const runText = $derived(open ? open.parts.map((p) => edits[p.path] ?? p.text).join('\n\n') : '')
+  /** A sheet that changed on disk while it had unsaved edits, waiting for the user's choice. */
+  const diskConflicts = new DiskConflicts({
+    trust: (path, text) => guard.trust(path, text),
+    baseline: (path) => guard.baseline(path),
+    change: (path, text) => autosaver.change(path, text),
+    discard: (path) => autosaver.discard(path),
+    showText: (path, text) => {
+      run.edits[path] = text
+      editors[path]?.replaceText(text)
+    },
+    editor: (path) => editors[path],
+    readSheet: (path) => window.api.readSheet(path),
+    info: showInfo
+  })
 
   // Remember the open sheet, so the next launch can come back to it.
   $effect(() => {
@@ -281,7 +259,7 @@
     flush: () => autosaver.flush(),
     writeText: async (path, text) => {
       await guard.save(path, text)
-      edits[path] = text
+      run.edits[path] = text
       editors[path]?.replaceText(text)
     },
     trashCopy: (path) => runOp(() => window.api.deleteNodes([path])),
@@ -291,9 +269,7 @@
 
   function clearSheets(): void {
     sel.clear()
-    open = null
-    error = ''
-    readId++
+    run.clear()
   }
 
   /** Collapsed, the sidebar slides in while the pointer is at the left edge or over it. */
@@ -301,32 +277,32 @@
 
   /** Applies bold, italic or link to the sheet being typed in (the last one focused in a run). */
   function formatActive(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path) editors[path]?.format(kind)
   }
 
   function insertTable(): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path) editors[path]?.insertTableAtCursor()
   }
 
   function insertFootnote(): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path) editors[path]?.insertFootnoteAtCursor()
   }
 
   function activeEditor(): (typeof editors)[string] | undefined {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     return path ? editors[path] : undefined
   }
 
   function insertContents(): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path) editors[path]?.insertContentsAtCursor()
   }
 
   async function insertImage(): Promise<void> {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (!path || !editors[path]) return
     const markdown = await window.api.chooseImages()
     editors[path]?.insertImagesAtCursor(markdown)
@@ -349,17 +325,17 @@
   }
 
   function foldHere(fold: boolean): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path) editors[path]?.foldSectionAtCursor(fold)
   }
 
   function foldAll(fold: boolean): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path) editors[path]?.foldSections(fold)
   }
 
   function goToFootnote(): void {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     if (path && !editors[path]?.goToFootnoteAtCursor()) showInfo('This sheet has no footnotes.')
   }
 
@@ -367,7 +343,7 @@
   let styleNow = $state<LineStyle>('body')
   function toggleStyleMenu(): void {
     if (!styleOpen) {
-      const path = sel.only ?? open?.parts[0]?.path
+      const path = sel.only ?? run.open?.parts[0]?.path
       styleNow = (path && editors[path]?.lineStyle()) || 'body'
     }
     styleOpen = !styleOpen
@@ -402,9 +378,9 @@
 
 
   const outlineEntries = $derived<Entry[]>(
-    open
-      ? open.parts.flatMap((part) =>
-          extractHeadings(edits[part.path] ?? part.text).map((h) => ({ ...h, path: part.path }))
+    run.open
+      ? run.open.parts.flatMap((part) =>
+          extractHeadings(run.edits[part.path] ?? part.text).map((h) => ({ ...h, path: part.path }))
         )
       : []
   )
@@ -449,35 +425,6 @@
   /** The sheets that read as one with `path`: its glued run, or just itself. */
   function runPaths(path: string): string[] {
     return runOf(group?.children ?? [], path)
-  }
-
-  /** True if the editor already shows `path` as part of its current run. */
-  function runIsOpen(path: string): boolean {
-    const shown = open?.parts.map((p) => p.path).join('\n')
-    return (
-      shown !== undefined && runPaths(path).join('\n') === shown && shown.split('\n').includes(path)
-    )
-  }
-
-  /** Loads the glued run that `path` belongs to into the editor. */
-  async function loadRun(path: string): Promise<void> {
-    const id = ++readId
-    const paths = runPaths(path)
-    try {
-      const texts = await Promise.all(paths.map((p) => window.api.readSheet(p)))
-      if (id !== readId) return
-      paths.forEach((p, i) => guard.trust(p, texts[i]!))
-      // Text waiting to be saved (manual mode) is shown instead of the file's.
-      const shown = paths.map((p, i) => autosaver.pending(p) ?? texts[i]!)
-      open = { parts: paths.map((p, i) => ({ path: p, text: shown[i]! })) }
-      edits = Object.fromEntries(paths.flatMap((p, i) => (shown[i] !== texts[i] ? [[p, shown[i]!]] : [])))
-      selectedText = ''
-      error = ''
-    } catch {
-      if (id !== readId) return
-      open = null
-      error = 'This sheet could not be read.'
-    }
   }
 
   /** Brings a sheet's part of the open run into view. */
@@ -629,16 +576,12 @@
     if (paths.length === 1) {
       const path = paths[0]!
       visit(path)
-      if (!runIsOpen(path)) {
+      if (!run.isOpen(path)) {
         focusEditor = focus
-        await loadRun(path)
+        await run.load(path)
       } else if (focus) editors[path]?.focus()
       void scrollToPart(path)
-    } else {
-      open = null
-      error = ''
-      readId++
-    }
+    } else run.clear()
     // Renaming is a change to the library, which saves what is open first. In manual
     // mode nothing is saved unasked, so renames wait until nothing has unsaved text.
     if (left.length > 0 && !(manual() && autosaver.unsavedPaths().length > 0)) void renameToMatchTitles(left)
@@ -664,7 +607,7 @@
 
   /** Arrow keys at the edge of a sheet carry on into its neighbour in the run. */
   function crossEdge(path: string, direction: 'back' | 'forward'): boolean {
-    const parts = open?.parts ?? []
+    const parts = run.open?.parts ?? []
     const next = parts[parts.findIndex((p) => p.path === path) + (direction === 'forward' ? 1 : -1)]
     if (!next) return false
     editors[next.path]?.focusAt(direction === 'forward' ? 'start' : 'end')
@@ -712,13 +655,10 @@
     const tree = library.tree
     sel.prune((p) => sheetExists(tree, p))
     if (sel.paths.length !== 1) {
-      if (open) {
-        open = null
-        readId++
-      }
+      if (run.open) run.clear()
       return
     }
-    if (force || !runIsOpen(sel.paths[0]!)) await loadRun(sel.paths[0]!)
+    if (force || !run.isOpen(sel.paths[0]!)) await run.load(sel.paths[0]!)
   }
 
   function showInfo(text: string): void {
@@ -739,7 +679,7 @@
       treeEl?.focus()
     },
     cursor: () => {
-      const part = open?.parts.find((p) => editors[p.path]?.cursorInfo())
+      const part = run.open?.parts.find((p) => editors[p.path]?.cursorInfo())
       const where = part && editors[part.path]?.cursorInfo()
       return part && where ? { path: part.path, text: where.text, offset: where.offset } : undefined
     },
@@ -876,7 +816,7 @@
   }
 
   async function saveAsTemplate(): Promise<void> {
-    const path = sel.only ?? open?.parts[0]?.path
+    const path = sel.only ?? run.open?.parts[0]?.path
     const text = path ? editors[path]?.getText() : undefined
     if (text === undefined) return
     await window.api.saveTemplate(text)
@@ -886,13 +826,13 @@
 
   /** A click on the empty page around the text (below the last line, beside the column) puts the cursor at the end. */
   function clickBelowText(e: MouseEvent): void {
-    if (e.button !== 0 || !open) return
+    if (e.button !== 0 || !run.open) return
     const target = e.target as HTMLElement
     if (target.closest('.cm-editor, .seam, button, a, input')) return
     const box = e.currentTarget as HTMLElement
     // The scrollbar is part of this element; leave it alone.
     if (e.clientX > box.getBoundingClientRect().left + box.clientWidth) return
-    const last = open.parts[open.parts.length - 1]
+    const last = run.open.parts[run.open.parts.length - 1]
     if (!last) return
     e.preventDefault()
     editors[last.path]?.focusAt('end')
@@ -900,7 +840,7 @@
 
   function edited(path: string, content: string): void {
     autosaver.change(path, content)
-    edits[path] = content
+    run.edits[path] = content
     // Keep the sheet list's title and preview in step with what is typed.
     const sheet = listed.find((s) => s.path === path)
     if (sheet) {
@@ -932,7 +872,7 @@
   /** Takes in a change to the library folder made by something else: a sync client, a file manager. */
   async function externalChange(info: LibraryInfo): Promise<void> {
     if (!library || info.path !== library.path) return
-    if (JSON.stringify(info.tree) === JSON.stringify(library.tree) && !open) return
+    if (JSON.stringify(info.tree) === JSON.stringify(library.tree) && !run.open) return
     if (JSON.stringify(info.tree) !== JSON.stringify(library.tree)) {
       library = info
       unused.check()
@@ -942,31 +882,8 @@
       }
       await refreshOpen(false)
     }
-    if (!open) return
-    for (const part of open.parts) {
-      const editor = editors[part.path]
-      if (!editor) continue
-      try {
-        const mine = editor.getText()
-        const disk = await window.api.readSheet(part.path)
-        if (disk === mine || editor.getText() !== mine) {
-          if (disk === mine) guard.trust(part.path, disk)
-          continue
-        }
-        if (mine === guard.baseline(part.path)) {
-          // No edits of mine in this sheet: take the disk's version.
-          editor.replaceText(disk)
-          guard.trust(part.path, disk)
-          edits[part.path] = disk
-          showInfo('A sheet changed outside the app and was reloaded')
-        } else if (disk !== guard.baseline(part.path)) {
-          // Unsaved edits here and a change on disk: never overwrite without asking.
-          raiseConflict(part.path, mine, disk)
-        }
-      } catch {
-        // The sheet vanished; the next tree update drops it.
-      }
-    }
+    if (!run.open) return
+    await diskConflicts.check(run.open.parts.map((p) => p.path))
   }
 
   // --- Quick open --------------------------------------------------------------
@@ -996,7 +913,7 @@
       ? findScopeOptions(
           library.tree,
           nav.selectedGroup,
-          sel.only && open ? { path: sel.only, title: tabTitles.get(sel.only) ?? 'this sheet' } : undefined
+          sel.only && run.open ? { path: sel.only, title: tabTitles.get(sel.only) ?? 'this sheet' } : undefined
         )
       : []
   )
@@ -1006,11 +923,11 @@
     if (finding) {
       const wanted = scope && findScopes.some((s) => s.value === scope) ? scope : undefined
       if (wanted) finding.scope = wanted
-      findBar?.focusQuery(seedQuery(selectedText), replace)
+      findBar?.focusQuery(seedQuery(run.selectedText), replace)
       return
     }
     searchReturnFocus = document.activeElement as HTMLElement | null
-    finding = { scope: startScope(scope, findScopes), replace, query: seedQuery(selectedText) ?? '', key: ++findKey }
+    finding = { scope: startScope(scope, findScopes), replace, query: seedQuery(run.selectedText) ?? '', key: ++findKey }
   }
 
   function closeFind(): void {
@@ -1244,7 +1161,7 @@
     else if (command === 'close-tab') closeTab()
     else if (command === 'next-tab') cycleTab(1)
     else if (command === 'previous-tab') cycleTab(-1)
-    else if (command === 'save') void autosaver.flush(manual() ? (open?.parts.map((p) => p.path) ?? []) : undefined)
+    else if (command === 'save') void autosaver.flush(manual() ? (run.open?.parts.map((p) => p.path) ?? []) : undefined)
     else if (command === 'save-all') void autosaver.flush()
     else if (command === 'toggle-sidebar') ui.toggleSidebar()
     else if (command === 'toggle-sheets') ui.toggleSheets()
@@ -1294,7 +1211,7 @@
 
   function toggleZen(): void {
     if (ui.toggleZen()) {
-      const only = sel.only ?? open?.parts[0]?.path
+      const only = sel.only ?? run.open?.parts[0]?.path
       if (only) editors[only]?.focus()
     }
   }
@@ -1485,11 +1402,11 @@
         {canBack}
         {canForward}
         finding={finding !== null}
-        hasSheet={open !== null}
+        hasSheet={run.open !== null}
         {styleOpen}
         {styleNow}
         styles={STYLES}
-        showSave={!!open && (prefs?.saveIndicator !== false || saveStatus === 'error')}
+        showSave={!!run.open && (prefs?.saveIndicator !== false || saveStatus === 'error')}
         {saveStatus}
         auto={prefs?.saveMode === 'auto'}
         {keyMod}
@@ -1538,12 +1455,12 @@
       </div>
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="scroller" onmousedown={clickBelowText}>
-      {#if error}
-        <p class="hint">{error}</p>
-      {:else if open}
-        {#key open.parts.map((p) => p.path).join('\n')}
+      {#if run.error}
+        <p class="hint">{run.error}</p>
+      {:else if run.open}
+        {#key run.open.parts.map((p) => p.path).join('\n')}
           <div class="run" class:focus-mode={ui.focusMode} class:typewriter={ui.typewriter}>
-            {#each open.parts as part, i (part.path)}
+            {#each run.open.parts as part, i (part.path)}
               {#if i > 0}<hr class="seam" />{/if}
               <div class="part" data-path={part.path}>
                 <Editor
@@ -1555,8 +1472,8 @@
                   }}
                   onescape={() => (ui.zen ? toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}
-                  onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
-                  onselection={(text) => (selectedText = text)}
+                  onedge={run.open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
+                  onselection={(text) => (run.selectedText = text)}
                   onsection={(heading) => (currentSection = { path: part.path, heading })}
                   onfind={(action) => (action === 'next' || action === 'previous' ? findBar?.next(action === 'next' ? 1 : -1) : openFind(undefined, action === 'replace'))}
                   focusMode={ui.focusMode}
@@ -1581,8 +1498,8 @@
         <p class="placeholder">No Sheet Selected</p>
       {/if}
       </div>
-      {#if open}
-        <StatusBar text={runText} selected={selectedText} {groupWords} />
+      {#if run.open}
+        <StatusBar text={run.text} selected={run.selectedText} {groupWords} />
       {/if}
       {#if ui.outlineOpen && !ui.zen}
         <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} {backlinks} onbacklink={(p) => void revealSheet(p)} /></div>
@@ -1615,7 +1532,7 @@
   />
 {/if}
 
-{#if recovery.current && !conflict}
+{#if recovery.current && !diskConflicts.current}
   {@const entry = recovery.current}
   <RecoveryDialog
     name={entry.path.slice(entry.path.lastIndexOf('/') + 1)}
@@ -1657,14 +1574,15 @@
   <CleanUpImages images={unused.cleaning} onclean={(names) => void unused.clean(names)} oncancel={unused.close} />
 {/if}
 
-{#if conflict}
+{#if diskConflicts.current}
+  {@const clash = diskConflicts.current}
   <ConflictDialog
-    name={conflict.path.slice(conflict.path.lastIndexOf('/') + 1)}
-    mine={conflict.mine}
-    disk={conflict.disk}
-    onkeep={keepMine}
-    onuse={useDisk}
-    onmerge={useMerged}
+    name={clash.path.slice(clash.path.lastIndexOf('/') + 1)}
+    mine={clash.mine}
+    disk={clash.disk}
+    onkeep={diskConflicts.keepMine}
+    onuse={diskConflicts.useDisk}
+    onmerge={diskConflicts.useMerged}
   />
 {/if}
 
