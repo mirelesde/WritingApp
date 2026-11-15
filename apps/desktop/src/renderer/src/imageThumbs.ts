@@ -1,4 +1,4 @@
-import { EditorState, RangeSet, StateField, type Range } from '@codemirror/state'
+import { EditorState, RangeSet, StateField, type Range, type Text } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view'
 import { assetNameFromUrl, droppedImageLink, findImages } from '@writingapp/core'
 
@@ -275,11 +275,22 @@ export const imageThumbs = [
   })
 ]
 
+/**
+ * The text to put in for `markdown` (one image per paragraph) over `from`..`to`: set off by blank
+ * lines from any text sharing its line, so a picture added at the start of a heading's line does
+ * not become part of the heading.
+ */
+export function imageInsertion(doc: Text, markdown: string[], from: number, to: number): string {
+  const before = doc.lineAt(from).text.slice(0, from - doc.lineAt(from).from)
+  const after = doc.lineAt(to).text.slice(to - doc.lineAt(to).from)
+  return (before.trim() === '' ? '' : '\n\n') + markdown.join('\n\n') + (after.trim() === '' ? '' : '\n\n')
+}
+
 /** Puts Markdown (one image per paragraph) at `at`, or at the cursor. */
 export function insertImages(view: EditorView, markdown: string[], at?: number): void {
   if (markdown.length === 0) return
   const { from, to } = at === undefined ? view.state.selection.main : { from: Math.min(at, view.state.doc.length), to: Math.min(at, view.state.doc.length) }
-  const text = markdown.join('\n\n')
+  const text = imageInsertion(view.state.doc, markdown, from, to)
   view.dispatch({
     changes: { from, to, insert: text },
     selection: { anchor: from + text.length },
