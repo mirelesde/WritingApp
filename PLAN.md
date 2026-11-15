@@ -30,7 +30,7 @@ packages/core/          @writingapp/core — library model, operations, export
   src/sheet.ts          sheetTitle(), sheetPreview(); tests sit next to sources as *.test.ts
   src/sidecar.ts        parse and reconcile .writingapp.json with the folder
   src/library.ts        loadLibrary() -> tree of group and sheet nodes
-  src/filename.ts       slugify(), sheetFileName()
+  src/filename.ts       readableName(), sheetFileName(), stemFitsTitle(), slugify() (old names)
   src/operations.ts     create, rename, delete, move, reorder
   src/path.ts           path helpers
   src/testing/          MemoryFileSystem, for tests
@@ -150,19 +150,25 @@ Library/
 - **The sidecar is advisory.** Files on disk that it doesn't list are
   appended at the end; entries whose file is gone are dropped. Editing the
   folder in Finder or another app must never break the library.
-- **Filenames** are generated from the sheet's first line when it is
-  created, with a numeric suffix on collision. The user never sees or
-  types them.
-- **A sheet's title** is its first line, as in Ulysses.
+- **Filenames** are generated from the sheet's first line, readably
+  (`Why is it so.md`: case and spaces kept, only characters disks refuse
+  dropped), with " 2", " 3" on collision. The old hyphenated lowercase form
+  still counts as fitting, so existing libraries are not renamed.
+- **A sheet's title** is its first line, as in Ulysses; it may hold any
+  characters. A **group's** typed name is stored as `title` (with `titleFor`,
+  the folder name it applies to) in the group's own sidecar and shown instead
+  of the folder name; a Finder rename makes it fall back to the folder name.
 - **Ignored:** dotfiles and anything that is not a folder or a `.md` file.
 
-Proposed sidecar shape (not yet implemented):
+Sidecar shape (as built; `color`, `keywords`, `title` and `titleFor` are optional):
 
 ```json
 {
   "version": 1,
   "order": ["opening.md", "the-station.md", "Part One"],
-  "glued": ["opening.md"]
+  "glued": ["opening.md"],
+  "title": "Part One: Why?",
+  "titleFor": "Part One"
 }
 ```
 
@@ -1396,6 +1402,17 @@ tested with the in-memory one)
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with
   its own filesystem implementation and iCloud folder access.
 - Publishing to WordPress and Ghost.
+
+- Release signing and notarization: needs your Apple Developer ID and a Windows
+  code-signing certificate (see the release notes in the CI section).
+- Maths inside tables and footnotes (rendered in the editor and exports).
+- Undo that survives a restart (see the Trash note under item 69's neighbours).
+- Verify how Ulysses really treats names (own database, no sheet file names?) before
+  leaning on it for more naming decisions.
+- Keep Markdown file names in step: a sheet's keywords and fold state are stored by
+  file name, so a rename outside the app still drops them.
+- CI housekeeping: about 1,000 prettier warnings in lint; bump `actions/*` for the Node 20
+  deprecation notice; `App.svelte` (~3,300 lines) has no component tests.
 
 ## Open questions
 
