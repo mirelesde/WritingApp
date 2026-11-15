@@ -27,6 +27,8 @@
   import { SelectionState } from './selectionState.svelte'
   import { GroupNav } from './groupNav.svelte'
   import { ExportFlow } from './exportFlow.svelte'
+  import { UnusedImages } from './unusedImages.svelte'
+  import { ConflictFlow } from './conflictFlow.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
@@ -121,7 +123,7 @@
       try {
         await guard.save(path, content)
         // The edit may have added or removed a picture's link.
-        checkUnused()
+        unused.check()
       } catch (e) {
         if (e instanceof SaveConflict) raiseConflict(path, edits[path] ?? content, e.disk)
         throw e
@@ -312,89 +314,29 @@
     nav.reset(info.tree.path)
     clearSheets()
     void checkRecovery()
-    checkUnused()
+    unused.check()
   }
 
-  // --- Unused pictures --------------------------------------------------------
+  // --- Unused pictures and sync conflict copies -------------------------------
 
-  let unused = $state<{ name: string; size: number }[]>([])
-  let cleaning = $state<{ name: string; size: number }[] | null>(null)
-  let unusedTimer: ReturnType<typeof setTimeout> | undefined
-
-  /** Looks for pictures no sheet mentions, quietly, a moment after the library changes. */
-  function checkUnused(): void {
-    clearTimeout(unusedTimer)
-    unusedTimer = setTimeout(async () => {
-      if (library) unused = await window.api.unusedImages()
-    }, 1500)
-  }
-
-  // --- Sync conflict copies ----------------------------------------------------
+  const unused = new UnusedImages(window.api, { hasLibrary: () => library !== null, info: showInfo })
 
   function allSheets(group: GroupNode): { name: string; path: string }[] {
     return group.children.flatMap((c) => (c.kind === 'group' ? allSheets(c) : [{ name: c.name, path: c.path }]))
   }
   const conflictPairs = $derived(library ? findConflictCopies(allSheets(library.tree)) : [])
-  /** The pair being resolved, with both texts read from disk. */
-  let resolving = $state<{
-    original: { name: string; path: string; text: string }
-    copy: { name: string; path: string; text: string }
-  } | null>(null)
-  let skipped = $state<string[]>([])
-
-  async function openConflicts(): Promise<void> {
-    const pair = conflictPairs.find((p) => !skipped.includes(p.copy.path))
-    if (!pair) {
-      resolving = null
-      if (conflictPairs.length === 0) showInfo('No sync conflicts in this library')
-      return
-    }
-    try {
-      await autosaver.flush()
-      const [otext, ctext] = await Promise.all([
-        window.api.readSheet(pair.original.path),
-        window.api.readSheet(pair.copy.path)
-      ])
-      resolving = { original: { ...pair.original, text: otext }, copy: { ...pair.copy, text: ctext } }
-    } catch (e) {
-      notice = errorMessage(e)
-    }
-  }
-
-  async function resolveCopy(text: string): Promise<void> {
-    if (!resolving) return
-    const { original, copy } = resolving
-    resolving = null
-    try {
-      if (text !== original.text) {
-        await guard.save(original.path, text)
-        edits[original.path] = text
-        editors[original.path]?.replaceText(text)
-      }
-      await runOp(() => window.api.deleteNodes([copy.path]))
-      showInfo(`Resolved the conflict in “${original.name}”`)
-    } catch (e) {
-      notice = errorMessage(e)
-    }
-    void openConflicts()
-  }
-
-  function skipCopy(): void {
-    if (resolving) skipped = [...skipped, resolving.copy.path]
-    void openConflicts()
-  }
-
-  async function openCleanUp(): Promise<void> {
-    unused = await window.api.unusedImages()
-    cleaning = unused
-  }
-
-  async function cleanUp(names: string[]): Promise<void> {
-    cleaning = null
-    const count = await window.api.trashUnusedImages(names)
-    unused = await window.api.unusedImages()
-    showInfo(`Moved ${count} unused ${count === 1 ? 'image' : 'images'} to the trash`)
-  }
+  const conflicts = new ConflictFlow(window.api, {
+    pairs: () => conflictPairs,
+    flush: () => autosaver.flush(),
+    writeText: async (path, text) => {
+      await guard.save(path, text)
+      edits[path] = text
+      editors[path]?.replaceText(text)
+    },
+    trashCopy: (path) => runOp(() => window.api.deleteNodes([path])),
+    info: showInfo,
+    fail: (e) => (notice = errorMessage(e))
+  })
 
   function clearSheets(): void {
     sel.clear()
@@ -1266,7 +1208,7 @@
     if (JSON.stringify(info.tree) === JSON.stringify(library.tree) && !open) return
     if (JSON.stringify(info.tree) !== JSON.stringify(library.tree)) {
       library = info
-      checkUnused()
+      unused.check()
       if (nav.keep(info.tree, info.tree.path)) {
         clearSheets()
         return
@@ -1766,11 +1708,8 @@
     else if (command === 'insert-footnote') insertFootnote()
     else if (command === 'insert-contents') insertContents()
     else if (command === 'insert-image') void insertImage()
-    else if (command === 'clean-images') void openCleanUp()
-    else if (command === 'resolve-conflicts') {
-      skipped = []
-      void openConflicts()
-    }
+    else if (command === 'clean-images') void unused.open()
+    else if (command === 'resolve-conflicts') conflicts.restart()
     else if (command === 'go-to-footnote') goToFootnote()
     else if (command === 'toggle-task') {
       if (!activeEditor()?.toggleTaskAtCursor()) showInfo('Put the cursor on a task item (- [ ]) first.')
@@ -1851,8 +1790,8 @@
       })),
       menu(
         'File',
-        unused.length > 0
-          ? `Clean Up Unused Images… (${unused.length})`
+        unused.list.length > 0
+          ? `Clean Up Unused Images… (${unused.list.length})`
           : 'Clean Up Unused Images…',
         'clean-images'
       ),
@@ -2059,7 +1998,7 @@
         />
       </ul>
       {#if conflictPairs.length > 0}
-        <button class="conflict-banner" onclick={() => { skipped = []; void openConflicts() }}>
+        <button class="conflict-banner" onclick={conflicts.restart}>
           {conflictPairs.length} sync conflict{conflictPairs.length === 1 ? '' : 's'} — compare and resolve
         </button>
       {/if}
@@ -2418,8 +2357,8 @@
   />
 {/if}
 
-{#if cleaning}
-  <CleanUpImages images={cleaning} onclean={(names) => void cleanUp(names)} oncancel={() => (cleaning = null)} />
+{#if unused.cleaning}
+  <CleanUpImages images={unused.cleaning} onclean={(names) => void unused.clean(names)} oncancel={unused.close} />
 {/if}
 
 {#if conflict}
@@ -2433,15 +2372,15 @@
   />
 {/if}
 
-{#if resolving}
+{#if conflicts.resolving}
   <ConflictCopyDialog
-    original={resolving.original}
-    copy={resolving.copy}
-    position={skipped.length + 1}
-    total={skipped.length + conflictPairs.filter((p) => !skipped.includes(p.copy.path)).length}
-    onresolve={(text) => void resolveCopy(text)}
-    onskip={skipCopy}
-    oncancel={() => (resolving = null)}
+    original={conflicts.resolving.original}
+    copy={conflicts.resolving.copy}
+    position={conflicts.skipped.length + 1}
+    total={conflicts.skipped.length + conflicts.remaining.length}
+    onresolve={(text) => void conflicts.resolve(text)}
+    onskip={conflicts.skip}
+    oncancel={conflicts.cancel}
   />
 {/if}
 
