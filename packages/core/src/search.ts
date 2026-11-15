@@ -77,6 +77,76 @@ export function hasNestedRepeat(source: string): boolean {
   return false
 }
 
+/** Splits a group body on its own top-level bars, ignoring bars in classes, escapes and nested groups. */
+function topLevelAlternatives(body: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let inClass = false
+  let from = 0
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i]
+    if (c === '\\') i++
+    else if (inClass) inClass = c !== ']'
+    else if (c === '[') inClass = true
+    else if (c === '(') depth++
+    else if (c === ')') depth--
+    else if (c === '|' && depth === 0) {
+      parts.push(body.slice(from, i))
+      from = i + 1
+    }
+  }
+  parts.push(body.slice(from))
+  return parts
+}
+
+/** The first thing an alternative must match, or undefined when it can match many different things. */
+function firstToken(alt: string): string | undefined {
+  if (alt === '') return ''
+  const c = alt[0]!
+  if (c === '.' || c === '[' || c === '(') return undefined
+  if (c === '\\') return /^\\[a-zA-Z]/.test(alt) && !/^\\[nrtfv0]/.test(alt) ? undefined : alt.slice(0, 2)
+  return c.toLowerCase()
+}
+
+/**
+ * Slow patterns the nested-repeat scan does not see: a group of alternatives
+ * that can start the same way, repeated without limit, like (a|aa)+$, and
+ * long chains of .* that blow up when the line nearly matches.
+ */
+export function hasSlowShape(source: string): boolean {
+  const starts: number[] = []
+  let inClass = false
+  let wildcards = 0
+  const unbounded = (at: number): boolean => {
+    const c = source[at]
+    return c === '*' || c === '+' || (c === '{' && /^\{\d+,\}/.test(source.slice(at)))
+  }
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i]
+    if (c === '\\') i++
+    else if (inClass) inClass = c !== ']'
+    else if (c === '[') inClass = true
+    else if (c === '(') starts.push(i)
+    else if (c === ')') {
+      const start = starts.pop()
+      if (start !== undefined && unbounded(i + 1)) {
+        const alts = topLevelAlternatives(source.slice(start + 1, i).replace(/^\?(?:[:=!]|<[=!])/, ''))
+        if (alts.length > 1) {
+          const seen = new Set<string>()
+          for (const alt of alts) {
+            const first = firstToken(alt)
+            if (first === undefined || seen.has(first)) return true
+            seen.add(first)
+          }
+        }
+      }
+    } else if (c === '.' && unbounded(i + 1)) {
+      if (++wildcards > 3) return true
+    }
+  }
+  return false
+}
+
 function mark(open: boolean[]): void {
   if (open.length > 0) open[open.length - 1] = true
 }
@@ -88,8 +158,8 @@ export function buildMatcher(query: string, options: SearchOptions = {}): RegExp
   let source = options.regex ? text : text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   if (options.wholeWord) source = `(?<!${WORD})(?:${source})(?!${WORD})`
   const flags = 'g' + (options.caseSensitive ? '' : 'i') + (options.regex ? 'm' : '')
-  if (options.regex && hasNestedRepeat(source)) {
-    throw new Error('That pattern repeats a repeat (like (a+)+), which can freeze the app. Simplify it.')
+  if (options.regex && (hasNestedRepeat(source) || hasSlowShape(source))) {
+    throw new Error('That pattern could take far too long (for example (a+)+ or (a|aa)+), which can freeze the app. Simplify it.')
   }
   let matcher: RegExp
   try {

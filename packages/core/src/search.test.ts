@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadLibrary } from './library'
-import { findMatches, hasNestedRepeat, replaceAllIn, replaceInLibrary, searchLibrary } from './search'
+import { findMatches, hasNestedRepeat, hasSlowShape, replaceAllIn, replaceInLibrary, searchLibrary } from './search'
 import { applyUndo } from './undo'
 import { MemoryFileSystem } from './testing/memoryFileSystem'
 
@@ -122,10 +122,17 @@ describe('patterns that could freeze the app', () => {
   const fine = ['(foo|bar)+', 'a+b+', '(\\d+)-(\\d+)', '[a+]+', '(?:ab)+', '\\(a+\\)+', 'x(y+)z', '(a+)?', '(a+){1,3}', '^\\s*#+ ', '[(]+']
   it.each(risky)('refuses %s', (p) => {
     expect(hasNestedRepeat(p)).toBe(true)
-    expect(() => findMatches('aaaa', p, { regex: true })).toThrow(/repeats a repeat/)
+    expect(() => findMatches('aaaa', p, { regex: true })).toThrow(/far too long/)
   })
   it.each(fine)('allows %s', (p) => {
     expect(hasNestedRepeat(p)).toBe(false)
+  })
+  it.each(['(a|aa)+$', '(a|ab)*c', '(\\w|\\d)+x', '(.|a)+', '.*a.*b.*c.*d.*e'])('refuses the slow shape %s', (p) => {
+    expect(hasSlowShape(p)).toBe(true)
+    expect(() => findMatches('aaaa', p, { regex: true })).toThrow(/far too long/)
+  })
+  it.each(['(foo|bar)+', '(a|b|c)+', '(\\n|\\t)+', '(?:cat|dog)s*', '.*a.*b', '(a|aa)', '(a|aa)?', 'x(?=a|ab)'])('allows %s', (p) => {
+    expect(hasSlowShape(p)).toBe(false)
   })
   it('returns quickly for a classic bomb', () => {
     const t = Date.now()

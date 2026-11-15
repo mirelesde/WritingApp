@@ -1319,8 +1319,9 @@ tested with the in-memory one)
 82. **Stability pass.** **Done** (five commits, each live-checked except as noted).
     *Find*: a regular expression that repeats a repeat, like `(a+)+$`, is
     refused with a message, because it could run for minutes and the app cannot
-    interrupt it (this guard is static, so some slow patterns, such as
-    `(a|aa)+$` or long chains of `.*`, are still allowed). *Recovery*: text
+    interrupt it (this guard is static: it also refuses overlapping alternatives
+    repeated without limit, like `(a|aa)+$`, and more than three `.*` in one
+    pattern, but other slow patterns can still get through). *Recovery*: text
     saved by the journal for a sheet that was since deleted, renamed or moved
     is now offered back ("Restore as a sheet", never overwriting, falling
     back to the library's top level if the folder is gone) instead of being
