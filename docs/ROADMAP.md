@@ -121,6 +121,16 @@ Numbers refer to [CHANGELOG.md](CHANGELOG.md). Roughly easiest first within each
 - **Several libraries open at once.** Today one library per app run, with several windows sharing it. Two options, neither started: (1) one library per window (each window gets its own root, watcher, undo stack and saved text, and main-process handlers look up state from the sending window; about 1–2 days, mostly the refactor), recommended; (2) several libraries in one sidebar (every path would carry its library; tree, selection, search, export and undo all change), skip unless moving sheets between libraries is needed. In both, stop the same library opening in two windows.
 - **Windows and Linux pass** (item 80): see sections 1 and 5.
 
+**Ideas raised in conversation and parked** (no item number; none started)
+
+- **Block-style control and a context-sensitive toolbar:** a paragraph / H1–H3 / quote / list picker in the formatting controls, and a toolbar whose buttons follow what is under the cursor. Offered when the formatting menu was designed; the Format menu and Aa popover were built instead.
+- **File names that never follow the title:** an alternative to the current rename-on-leave behaviour: name the file once from the first line at creation, then never rename it. Considered and set aside for readable names with a " 2" suffix (item 87); worth revisiting if renames confuse sync clients or other tools that watch the folder.
+- **Image stash and thumbnail grid:** a picker of every image in the library with "Add new…" first, and, if it grew into a media library, folders or tags. Not chosen (item 23); the unused-picture clean-up covers the leak.
+- **Automatic orphan clean-up:** trash an unused picture only after a long time unused (about 30 days), as a setting that is off by default; deletion always goes to the system trash and never silently.
+- **Markdown export that copies used pictures and rewrites links,** so other Markdown apps can read the sheets; the library format itself stays as is.
+- **Don't Save drops the crash-recovery copy** (manual save mode): a deliberate choice so the text is not offered back later; revisit if anyone loses text this way.
+- **Real-world size:** only small test libraries and a synthetic 3,000-sheet library were measured; a long real sheet (for example the owner's "La Ley Hoy") may behave differently in the editor, outline and export. The Export dialog's width cap is a fixed number, not computed from content, and nothing guards against something else growing too wide later (a long style name, a larger font).
+
 ## 5. UI and feel
 
 The target is an OS X-inspired look that is the same on every OS, with the main window (sidebar, sheet list, editor) as the reference; not native. The list of what stays with the OS and what the app draws is in [ARCHITECTURE.md](ARCHITECTURE.md), "UI consistency". Still open:
