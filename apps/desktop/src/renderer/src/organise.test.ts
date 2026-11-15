@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { GroupNode } from '@writingapp/core'
 import {
+  commonParent,
   dropZone,
   errorMessage,
   filterTargets,
+  listKeyTarget,
   moveSlot,
   moveTargets,
   pathRange,
   remapPath,
+  reorderTabs,
   runOf,
   visibleGroups
 } from './organise'
@@ -58,7 +61,8 @@ const group = (path: string, ...children: GroupNode['children']): GroupNode => (
 const sheet = (path: string): GroupNode['children'][number] => ({
   kind: 'sheet',
   keywords: [],
-  images: [], links: [],
+  images: [],
+  links: [],
   name: path.split('/').pop()!,
   path,
   title: '',
@@ -224,5 +228,55 @@ describe('runOf', () => {
   it('does not run across a group, or for unknown paths', () => {
     expect(runOf([sheet('x', true), { kind: 'group', path: 'G' }, sheet('y')], 'x')).toEqual(['x'])
     expect(runOf(children, 'nope')).toEqual(['nope'])
+  })
+})
+
+describe('reorderTabs', () => {
+  const t = ['a', 'b', 'c', 'd']
+  it('moves a tab forward, counting the gap it leaves', () => {
+    expect(reorderTabs(t, 0, 0, 3)).toEqual({ tabs: ['b', 'c', 'a', 'd'], active: 2 })
+  })
+  it('moves a tab back', () => {
+    expect(reorderTabs(t, 3, 3, 1)).toEqual({ tabs: ['a', 'd', 'b', 'c'], active: 1 })
+  })
+  it('keeps the front tab in front when another moves across it', () => {
+    expect(reorderTabs(t, 1, 0, 3).active).toBe(0)
+    expect(reorderTabs(t, 2, 3, 0)).toEqual({ tabs: ['d', 'a', 'b', 'c'], active: 3 })
+  })
+  it('leaves the order alone when dropped in place', () => {
+    expect(reorderTabs(t, 2, 1, 1).tabs).toEqual(t)
+    expect(reorderTabs(t, 2, 1, 2).tabs).toEqual(t)
+  })
+  it('ignores a missing tab', () => {
+    expect(reorderTabs(t, 0, 9, 0)).toEqual({ tabs: t, active: 0 })
+  })
+})
+
+describe('listKeyTarget', () => {
+  it('moves by one and stops at the ends', () => {
+    expect(listKeyTarget('ArrowDown', 1, 4)).toBe(2)
+    expect(listKeyTarget('ArrowDown', 3, 4)).toBe(3)
+    expect(listKeyTarget('ArrowUp', 0, 4)).toBe(0)
+    expect(listKeyTarget('ArrowUp', 2, 4)).toBe(1)
+  })
+  it('starts from the top when nothing is current', () => {
+    expect(listKeyTarget('ArrowUp', -1, 4)).toBe(0)
+    expect(listKeyTarget('ArrowDown', -1, 4)).toBe(0)
+  })
+  it('jumps to the ends and ignores other keys', () => {
+    expect(listKeyTarget('Home', 2, 4)).toBe(0)
+    expect(listKeyTarget('End', 0, 4)).toBe(3)
+    expect(listKeyTarget('x', 0, 4)).toBeUndefined()
+  })
+})
+
+describe('commonParent', () => {
+  it('names the shared folder', () => {
+    expect(commonParent(['/L/G/a.md', '/L/G/b.md'])).toBe('/L/G')
+    expect(commonParent(['/L/a.md'])).toBe('/L')
+  })
+  it('gives nothing for sheets in different folders, or for none', () => {
+    expect(commonParent(['/L/G/a.md', '/L/b.md'])).toBeUndefined()
+    expect(commonParent([])).toBeUndefined()
   })
 })
