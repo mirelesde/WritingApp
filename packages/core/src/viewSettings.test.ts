@@ -86,3 +86,14 @@ describe('writing comfort settings', () => {
     expect(parseViewSettings({ lineSpacing: Infinity })).toEqual({})
   })
 })
+
+describe('saving settings', () => {
+  it('default to saving automatically with the indicator shown', () => {
+    expect(resolveView().autosave).toBe(true)
+    expect(resolveView().saveIndicator).toBe(true)
+  })
+  it('keep booleans and drop anything else', () => {
+    expect(parseViewSettings({ autosave: false, saveIndicator: false })).toEqual({ autosave: false, saveIndicator: false })
+    expect(parseViewSettings({ autosave: 'no', saveIndicator: 0 })).toEqual({})
+  })
+})

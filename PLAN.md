@@ -1352,6 +1352,14 @@ tested with the in-memory one)
     failures (ExportPreview, the group word count), and `App.svelte` at about
     3,200 lines with no component tests.
 
+84. **Autosave and save status settings.** **Done.** Preferences ▸ Saving has Autosave
+    (on by default) and Show save status. With autosave off, text is saved on Save
+    (⌘S, now File ▸ Save), when switching sheets, before operations, and on close or
+    quit; the journal still keeps it safe against crashes, and the toolbar shows
+    "Unsaved". A failed save is always shown, whatever the indicator setting.
+    Checked live except pressing ⌘S through the real menu (the test window could not
+    take focus), where the command was sent to the window directly.
+
 ## Later, in rough order
 
 - Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).

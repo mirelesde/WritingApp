@@ -291,6 +291,28 @@
         />
       </label>
     </section>
+
+    <section>
+      <h3>Saving</h3>
+      <label class="row">
+        <span>Autosave<small>Save while you type. Off: save with ⌘S; text is also saved when you switch sheets or close</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.autosave}
+          onchange={(e) => onchange({ autosave: e.currentTarget.checked })}
+        />
+      </label>
+      <label class="row">
+        <span>Show save status<small>The Saved / Saving note in the toolbar. A failed save is always shown</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.saveIndicator}
+          onchange={(e) => onchange({ saveIndicator: e.currentTarget.checked })}
+        />
+      </label>
+    </section>
   </div>
 </div>
 

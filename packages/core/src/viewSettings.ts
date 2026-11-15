@@ -86,6 +86,10 @@ export interface ViewSettings {
   accent: string
   /** Id of a theme file from the themes folder; empty for none. */
   colorTheme: string
+  /** Save while typing. When off, text is saved on Save (⌘S), when switching sheets, and on close. */
+  autosave: boolean
+  /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
+  saveIndicator: boolean
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -115,6 +119,8 @@ export const DEFAULT_VIEW: ViewSettings = {
   paragraphIndent: false,
   accent: '',
   colorTheme: '',
+  autosave: true,
+  saveIndicator: true,
 }
 
 /** CSS font stacks, by name. */
@@ -172,6 +178,8 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof record.hangHeadings === 'boolean') out.hangHeadings = record.hangHeadings
   if (typeof record.hideMarkers === 'boolean') out.hideMarkers = record.hideMarkers
   if (typeof record.paragraphIndent === 'boolean') out.paragraphIndent = record.paragraphIndent
+  if (typeof record.autosave === 'boolean') out.autosave = record.autosave
+  if (typeof record.saveIndicator === 'boolean') out.saveIndicator = record.saveIndicator
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
     out.accent = record.accent.toLowerCase()
   }

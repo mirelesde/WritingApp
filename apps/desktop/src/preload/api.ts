@@ -25,6 +25,7 @@ export interface OpResult {
 }
 
 export type MenuCommand =
+  | 'save'
   | 'new-sheet'
   | 'new-group'
   | 'new-project'

@@ -207,6 +207,12 @@ function buildMenu(): Menu {
         },
         { type: 'separator' },
         {
+          label: 'Save',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => sendCommand('save')
+        },
+        { type: 'separator' },
+        {
           label: 'New Sheet',
           accelerator: 'CmdOrCtrl+N',
           click: () => sendCommand('new-sheet')

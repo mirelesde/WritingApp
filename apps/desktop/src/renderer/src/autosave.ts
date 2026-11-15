@@ -23,6 +23,8 @@ interface Options {
   }
   /** Quiet time after a keystroke before the text is journaled. Shorter than `delay`. */
   journalDelay?: number
+  /** Whether to save by itself after a pause. When it says no, text waits for `flush` (the journal still keeps it safe). */
+  enabled?: () => boolean
 }
 
 /**
@@ -36,7 +38,8 @@ export function createAutosaver({
   delay = 800,
   retryDelay = 5000,
   journal,
-  journalDelay = 250
+  journalDelay = 250,
+  enabled = () => true
 }: Options): Autosaver {
   const unsaved = new Map<string, string>()
   // What the journal holds for each sheet, so only new text is sent and only stored text is cleared.
@@ -79,7 +82,7 @@ export function createAutosaver({
       }
     } catch {
       failed = true
-      schedule(retryDelay)
+      if (enabled()) schedule(retryDelay)
     } finally {
       writing--
       status()
@@ -112,7 +115,7 @@ export function createAutosaver({
     change(path, text) {
       unsaved.set(path, text)
       status()
-      schedule(delay)
+      if (enabled()) schedule(delay)
       if (journal) {
         clearTimeout(journalTimer)
         journalTimer = setTimeout(writeJournal, journalDelay)

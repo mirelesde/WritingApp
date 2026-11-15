@@ -118,6 +118,7 @@
       }
     },
     onStatus: (status) => (saveStatus = status),
+    enabled: () => prefs?.autosave !== false,
     journal: {
       put: (path, text) => window.api.journalPut(path, text),
       clear: (path) => window.api.journalClear(path)
@@ -592,7 +593,10 @@
   })
 
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
+    const turnedOn = view.autosave && prefs?.autosave === false
     prefs = view
+    // Text typed while autosave was off is saved as soon as it is turned back on.
+    if (turnedOn) void autosaver.flush()
     sidebarCollapsed = view.sidebarCollapsed
     sheetsCollapsed = view.sheetsCollapsed
     outlineOpen = view.outline
@@ -1886,6 +1890,7 @@
     else if (command === 'close-tab') closeTab()
     else if (command === 'next-tab') cycleTab(1)
     else if (command === 'previous-tab') cycleTab(-1)
+    else if (command === 'save') void autosaver.flush()
     else if (command === 'toggle-sidebar') toggleSidebar()
     else if (command === 'toggle-sheets') toggleSheets()
     else if (command === 'new-sheet') void newSheet()
@@ -2374,7 +2379,7 @@
           </span>
         </span>
         <span class="tools right">
-          {#if open}<SaveIndicator status={saveStatus} />{/if}
+          {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.autosave !== false} />{/if}
           <ToolButton icon="outline" label="{outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={outlineOpen} onclick={toggleOutline} />
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
@@ -2441,7 +2446,9 @@
                   bind:this={editors[part.path]}
                   text={part.text}
                   onchange={(content) => edited(part.path, content)}
-                  onblur={() => void autosaver.flush()}
+                  onblur={() => {
+                    if (prefs?.autosave !== false) void autosaver.flush()
+                  }}
                   onescape={() => (zen ? toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}

@@ -132,6 +132,60 @@ describe('createAutosaver', () => {
   })
 })
 
+describe('createAutosaver with autosave off', () => {
+  it('waits for a flush instead of saving after a pause', async () => {
+    const writes: [string, string][] = []
+    const statuses: SaveStatus[] = []
+    const autosaver = createAutosaver({
+      save: async (p, t) => void writes.push([p, t]),
+      onStatus: (s) => statuses.push(s),
+      enabled: () => false,
+      delay: 800
+    })
+    autosaver.change('/a.md', 'typed')
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(writes).toEqual([])
+    expect(statuses.at(-1)).toBe('unsaved')
+    await autosaver.flush()
+    expect(writes).toEqual([['/a.md', 'typed']])
+    expect(statuses.at(-1)).toBe('saved')
+  })
+
+  it('still journals the text, and does not retry a failed save by itself', async () => {
+    const put = vi.fn(async () => {})
+    let attempts = 0
+    const autosaver = createAutosaver({
+      save: async () => {
+        attempts++
+        throw new Error('disk full')
+      },
+      journal: { put, clear: async () => {} },
+      enabled: () => false,
+      journalDelay: 250,
+      retryDelay: 1000
+    })
+    autosaver.change('/a.md', 'mine')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(put).toHaveBeenCalledWith('/a.md', 'mine')
+    await autosaver.flush()
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(attempts).toBe(1)
+  })
+
+  it('saves by itself again once turned back on', async () => {
+    let on = false
+    const writes: string[] = []
+    const autosaver = createAutosaver({ save: async (_p, t) => void writes.push(t), enabled: () => on, delay: 800 })
+    autosaver.change('/a.md', 'one')
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(writes).toEqual([])
+    on = true
+    autosaver.change('/a.md', 'two')
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(writes).toEqual(['two'])
+  })
+})
+
 describe('createAutosaver journal', () => {
   function withJournal() {
     const puts: [string, string][] = []
