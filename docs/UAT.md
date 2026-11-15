@@ -1,6 +1,6 @@
 # User acceptance scripts
 
-Manual checks for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
+Manual checks (section 15 lists everything still to confirm live) for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
 
 Items marked **(not yet checked live)** are ones the developer could not drive in the test harness, so look at them closely.
 
@@ -471,3 +471,22 @@ Known limits: operations that rewrite sheets on disk (merge, split, move, Replac
 6. Give a sheet the first line `# Why: is it so?`, then leave it: the file is renamed `Why is it so.md` (readable, capitals and spaces kept; the title in the list keeps its `:` and `?`). A second sheet with the same title becomes `Why is it so 2.md`.
 7. Existing sheets named the old way (`the-station.md`) are not renamed just because of this change.
 8. Quick Open, the Move picker and Find results show group names as typed.
+
+## 15. Still to confirm live (checklist)
+
+Things the developer could not drive in the test harness. Tick each one on your own machine; the full steps are in the section named at the end of each line.
+
+- [ ] **⌘S from the File menu** saves the sheet in front (the harness could only send the command directly). 13.37, 13.39
+- [ ] **Format dropdown** in the export dialog opens and picks a format without crashing. 13.27
+- [ ] **Sheet cards** update their title and preview right after typing, with no stale text after switching sheets. 13.31
+- [ ] **Autosave off / "When I switch or close"**: the toolbar says "Unsaved" while typing and "Saved" after switching sheets. 13.37
+- [ ] **Preferences tabs**: clicking, ←/→ keys, and the last tab being remembered after reopening. 13.38
+- [ ] **Choose Library… with unsaved changes** (manual mode) asks first. 13.39 step 9
+- [ ] **A failing save from the prompt** (read-only folder, then Save) keeps the tab or window open with the message. 13.39 step 10
+- [ ] **Dragging a tab**: one with a dot cannot leave its window; one without can. 13.39 step 11
+- [ ] **Windows and Linux**: launch the app itself (CI only runs the tests) and try tabs, Save, and a group name with `:` and `?`. 11, 13.39, 13.40
+- [ ] **Word**: open an exported .docx and update the contents page (right-click ▸ Update Field). 13.22
+- [ ] **EPUB**: open an exported .epub in a reader and a validator (epubcheck needs your permission to download). 13.25
+- [ ] **Inline group rename**: right-click ▸ Rename, type `Act I: Why? Because`, Return; list shows it as typed. 13.40 step 1
+- [ ] **Rename the group's folder in Finder**: the group then shows the folder name. 13.40 step 2
+- [ ] **Sheet file rename**: first line `# Why: is it so?`, leave the sheet: file becomes `Why is it so.md`. 13.40 step 6
