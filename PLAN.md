@@ -1333,7 +1333,9 @@ tested with the in-memory one)
     and opening a file over 50 MB gives an error. *PDF*: printing is stopped
     after two minutes with a message; a failed first pass now only costs the
     page numbers in the contents. Not checked live: the PDF timeout itself
-    (unit-tested only) and closing with the disk failing.
+    (unit-tested only). Closing with the disk failing was checked later: with the
+    folder read-only the window closed in about 0.3 s, the file was untouched, and
+    the next launch offered the text back.
 
 83. **Stability pass 2.** **Done.** A window whose page crashes reloads itself
     (up to three times a minute, then says so), errors nothing caught are
@@ -1344,7 +1346,9 @@ tested with the in-memory one)
     long `.*` chains. Crash reload was checked live; the rest is unit-tested.
     Also: importing skips files over 50 MB (checked live), and settings
     updates run one at a time so two windows cannot overwrite each other.
-    Still open: Windows and Linux runs, empty `catch {}` blocks that hide real
+    The flaky list-editing test is fixed (it now waits for the full parse), and
+    CI runs on Linux, Windows and macOS (first runs on the new systems may
+    show failures to fix). Still open: Windows and Linux runs by hand, empty `catch {}` blocks that hide real
     failures (ExportPreview, the group word count), and `App.svelte` at about
     3,200 lines with no component tests.
 
