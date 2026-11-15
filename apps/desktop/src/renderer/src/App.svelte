@@ -118,7 +118,7 @@
       }
     },
     onStatus: (status) => (saveStatus = status),
-    enabled: () => prefs?.autosave !== false,
+    enabled: () => prefs?.saveMode !== 'switch',
     journal: {
       put: (path, text) => window.api.journalPut(path, text),
       clear: (path) => window.api.journalClear(path)
@@ -593,7 +593,7 @@
   })
 
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
-    const turnedOn = view.autosave && prefs?.autosave === false
+    const turnedOn = view.saveMode === 'auto' && prefs?.saveMode === 'switch'
     prefs = view
     // Text typed while autosave was off is saved as soon as it is turned back on.
     if (turnedOn) void autosaver.flush()
@@ -2379,7 +2379,7 @@
           </span>
         </span>
         <span class="tools right">
-          {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.autosave !== false} />{/if}
+          {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.saveMode !== 'switch'} />{/if}
           <ToolButton icon="outline" label="{outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={outlineOpen} onclick={toggleOutline} />
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
@@ -2447,7 +2447,7 @@
                   text={part.text}
                   onchange={(content) => edited(part.path, content)}
                   onblur={() => {
-                    if (prefs?.autosave !== false) void autosaver.flush()
+                    if (prefs?.saveMode !== 'switch') void autosaver.flush()
                   }}
                   onescape={() => (zen ? toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}

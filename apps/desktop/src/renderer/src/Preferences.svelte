@@ -51,7 +51,8 @@
     focusDim: { light: 'Light', medium: 'Medium', strong: 'Strong' },
     typewriterPosition: { centre: 'Middle', upper: 'Upper third' },
     textAlign: { left: 'Left', justify: 'Justified' },
-    sheetSort: {}
+    sheetSort: {},
+    saveMode: { auto: 'While typing', switch: 'When I switch or close' }
   }
 
   const themeNames: Record<(typeof THEMES)[number], string> = {
@@ -350,15 +351,20 @@
 
     {#if tab === 'saving'}
     <div id="pref-panel-saving" role="tabpanel" aria-labelledby="pref-tab-saving">
-      <label class="row">
-        <span>Autosave<small>Save while you type. Off: save with ⌘S; text is also saved when you switch sheets or close</small></span>
-        <input
-          type="checkbox"
-          class="switch"
-          checked={view.autosave}
-          onchange={(e) => onchange({ autosave: e.currentTarget.checked })}
-        />
-      </label>
+      <div class="row">
+        <span id="pref-saveMode"
+          >Save<small>While typing, or only with ⌘S, when you switch to another sheet, and when you close</small></span
+        >
+        <div class="segments" role="radiogroup" aria-labelledby="pref-saveMode">
+          {#each CHOICES.saveMode as value (value)}
+            <button
+              role="radio"
+              aria-checked={view.saveMode === value}
+              onclick={() => onchange({ saveMode: value })}>{names.saveMode[value]}</button
+            >
+          {/each}
+        </div>
+      </div>
       <label class="row">
         <span>Show save status<small>The Saved / Saving note in the toolbar. A failed save is always shown</small></span>
         <input

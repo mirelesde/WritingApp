@@ -89,11 +89,16 @@ describe('writing comfort settings', () => {
 
 describe('saving settings', () => {
   it('default to saving automatically with the indicator shown', () => {
-    expect(resolveView().autosave).toBe(true)
+    expect(resolveView().saveMode).toBe('auto')
     expect(resolveView().saveIndicator).toBe(true)
   })
-  it('keep booleans and drop anything else', () => {
-    expect(parseViewSettings({ autosave: false, saveIndicator: false })).toEqual({ autosave: false, saveIndicator: false })
-    expect(parseViewSettings({ autosave: 'no', saveIndicator: 0 })).toEqual({})
+  it('keep a valid mode and a boolean indicator, and drop anything else', () => {
+    expect(parseViewSettings({ saveMode: 'switch', saveIndicator: false })).toEqual({ saveMode: 'switch', saveIndicator: false })
+    expect(parseViewSettings({ saveMode: 'sometimes', saveIndicator: 0 })).toEqual({})
+  })
+  it('reads the old autosave-off setting as saving on switch', () => {
+    expect(parseViewSettings({ autosave: false })).toEqual({ saveMode: 'switch' })
+    expect(parseViewSettings({ autosave: true })).toEqual({})
+    expect(parseViewSettings({ autosave: false, saveMode: 'auto' })).toEqual({ saveMode: 'auto' })
   })
 })

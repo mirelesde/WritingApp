@@ -15,7 +15,8 @@ export const CHOICES = {
   focusDim: ['light', 'medium', 'strong'],
   typewriterPosition: ['centre', 'upper'],
   textAlign: ['left', 'justify'],
-  sheetSort: ['manual', 'title', 'modified', 'created', 'words']
+  sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
+  saveMode: ['auto', 'switch']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -27,6 +28,8 @@ export type FocusDim = (typeof CHOICES.focusDim)[number]
 export type TypewriterPosition = (typeof CHOICES.typewriterPosition)[number]
 export type TextAlign = (typeof CHOICES.textAlign)[number]
 export type SheetSort = (typeof CHOICES.sheetSort)[number]
+/** When text is written to disk: while typing, or only on Save, switching sheets and closing. */
+export type SaveMode = (typeof CHOICES.saveMode)[number]
 
 export const MIN_LINE_SPACING = 1.3
 export const MAX_LINE_SPACING = 2.4
@@ -86,8 +89,8 @@ export interface ViewSettings {
   accent: string
   /** Id of a theme file from the themes folder; empty for none. */
   colorTheme: string
-  /** Save while typing. When off, text is saved on Save (⌘S), when switching sheets, and on close. */
-  autosave: boolean
+  /** When text is saved: `auto` while typing; `switch` only on Save (⌘S), when switching sheets, and on close. */
+  saveMode: SaveMode
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
   saveIndicator: boolean
 }
@@ -119,7 +122,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   paragraphIndent: false,
   accent: '',
   colorTheme: '',
-  autosave: true,
+  saveMode: 'auto',
   saveIndicator: true,
 }
 
@@ -178,7 +181,8 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof record.hangHeadings === 'boolean') out.hangHeadings = record.hangHeadings
   if (typeof record.hideMarkers === 'boolean') out.hideMarkers = record.hideMarkers
   if (typeof record.paragraphIndent === 'boolean') out.paragraphIndent = record.paragraphIndent
-  if (typeof record.autosave === 'boolean') out.autosave = record.autosave
+  // Settings saved before there were modes: autosave off meant saving on switch and close.
+  if (record.saveMode === undefined && record.autosave === false) out.saveMode = 'switch'
   if (typeof record.saveIndicator === 'boolean') out.saveIndicator = record.saveIndicator
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
     out.accent = record.accent.toLowerCase()

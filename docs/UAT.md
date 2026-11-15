@@ -428,11 +428,11 @@ Quick checks that earlier features still work with today's changes.
 
 ## 13.37 Autosave and save status settings
 
-1. Open Preferences and scroll to the end: a Saving section has Autosave and Show save status switches, both on by default.
-2. Turn Autosave off. Type in a sheet and wait several seconds: the toolbar says "Unsaved" and the file on disk does not change (check in Finder or a text editor). Click out of the editor: still unsaved.
+1. Open Preferences ▸ Saving: a Save choice (While typing, or When I switch or close) and a Show save status switch. The defaults are While typing, and on.
+2. Choose When I switch or close. Type in a sheet and wait several seconds: the toolbar says "Unsaved" and the file on disk does not change (check in Finder or a text editor). Click out of the editor: still unsaved.
 3. Press ⌘S (File ▸ Save): the toolbar says "Saved" and the file has the text. Type more, then switch to another sheet, and back: the text is kept, and the file has it (switching saves). Type, then close the window: the text is saved, with no prompt.
-4. Type with Autosave off, then turn it back on: the waiting text is saved at once.
-5. With Autosave off, force quit within a second of typing: the next launch offers the text back (the journal still keeps it).
+4. Type in the "When I switch or close" mode, then choose While typing: the waiting text is saved at once.
+5. In the "When I switch or close" mode, force quit within a second of typing: the next launch offers the text back (the journal still keeps it).
 6. Turn Show save status off: the Saved / Saving note disappears from the toolbar. Make a save fail (read-only folder): "Could not save" still appears.
 7. Both settings are kept after quitting and reopening.
 
