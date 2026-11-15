@@ -39,3 +39,21 @@ export async function applyUndo(fs: FileSystem, actions: UndoAction[]): Promise<
     } else await fs.writeText(joinPath(action.dir, SIDECAR_NAME), action.text)
   }
 }
+
+/**
+ * Runs `work`; if it fails part way, puts back what the steps in `undo` restore
+ * (so a full disk or a locked file cannot leave half a change behind), then
+ * throws the original error.
+ */
+export async function withRollback<T>(fs: FileSystem, undo: UndoAction[], work: () => Promise<T>): Promise<T> {
+  try {
+    return await work()
+  } catch (error) {
+    try {
+      await applyUndo(fs, undo)
+    } catch {
+      // Best effort: the original failure is the one to report.
+    }
+    throw error
+  }
+}

@@ -4,7 +4,7 @@ import { sheetTitle } from './sheet'
 import { cleanKeywords } from './keywords'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
 import { GROUP_COLORS, parseSidecar, reconcileFolder, SIDECAR_NAME, type Sidecar } from './sidecar'
-import { snapshotSidecar, type UndoAction } from './undo'
+import { snapshotSidecar, withRollback, type UndoAction } from './undo'
 
 /*
  * Structural operations. Each one changes the disk and then rewrites the
@@ -505,26 +505,26 @@ export async function splitSheet(
 
   const newName = sheetFileName(tail, folder.entries.map((e) => e.name))
   const created = joinPath(dir, newName)
-  await fs.writeText(created, tail)
-  await fs.writeText(from, head + '\n')
+  const undo: UndoAction[] = [
+    { kind: 'write', path: from, text },
+    { kind: 'trash', path: created },
+    sidecarBefore,
+  ]
+  await withRollback(fs, undo, async () => {
+    await fs.writeText(created, tail)
+    await fs.writeText(from, head + '\n')
 
-  // The new sheet inherits the original's link to whatever followed it.
-  const wasGlued = folder.glued.has(name)
-  folder.glued.delete(name)
-  insertName(folder, newName, at + 1)
-  if (wasGlued) folder.glued.add(newName)
-  const own = folder.keywords.get(name)
-  if (own) folder.keywords.set(newName, own)
-  await writeFolder(fs, dir, folder)
+    // The new sheet inherits the original's link to whatever followed it.
+    const wasGlued = folder.glued.has(name)
+    folder.glued.delete(name)
+    insertName(folder, newName, at + 1)
+    if (wasGlued) folder.glued.add(newName)
+    const own = folder.keywords.get(name)
+    if (own) folder.keywords.set(newName, own)
+    await writeFolder(fs, dir, folder)
+  })
 
-  return {
-    path: created,
-    undo: [
-      { kind: 'write', path: from, text },
-      { kind: 'trash', path: created },
-      sidecarBefore,
-    ],
-  }
+  return { path: created, undo }
 }
 
 /** Reads the sheets and checks that they are distinct siblings in the library. */
@@ -567,22 +567,22 @@ export async function mergeSheets(
       .map((t) => t.replace(/\s+$/, ''))
       .filter((t) => t !== '')
       .join('\n\n') + '\n'
-  await fs.writeText(files[0]!, merged)
-  for (const file of files.slice(1)) await fs.trash(file)
-  const union = cleanKeywords(names.flatMap((name) => folder.keywords.get(name) ?? []))
-  for (const name of names.slice(1)) removeName(folder, name)
-  if (union.length > 0) folder.keywords.set(names[0]!, union)
-  if (adjacent && lastGlued) folder.glued.add(names[0]!)
-  await writeFolder(fs, dir, folder)
+  const undo: UndoAction[] = [
+    ...files.slice(1).map((file, i): UndoAction => ({ kind: 'write', path: file, text: texts[i + 1]! })),
+    { kind: 'write', path: files[0]!, text: texts[0]! },
+    sidecarBefore,
+  ]
+  await withRollback(fs, undo, async () => {
+    await fs.writeText(files[0]!, merged)
+    for (const file of files.slice(1)) await fs.trash(file)
+    const union = cleanKeywords(names.flatMap((name) => folder.keywords.get(name) ?? []))
+    for (const name of names.slice(1)) removeName(folder, name)
+    if (union.length > 0) folder.keywords.set(names[0]!, union)
+    if (adjacent && lastGlued) folder.glued.add(names[0]!)
+    await writeFolder(fs, dir, folder)
+  })
 
-  return {
-    path: files[0]!,
-    undo: [
-      ...files.slice(1).map((file, i): UndoAction => ({ kind: 'write', path: file, text: texts[i + 1]! })),
-      { kind: 'write', path: files[0]!, text: texts[0]! },
-      sidecarBefore,
-    ],
-  }
+  return { path: files[0]!, undo }
 }
 
 /**
