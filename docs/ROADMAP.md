@@ -149,6 +149,7 @@ The target is an OS X-inspired look that is the same on every OS, with the main 
 ## 6. Housekeeping and maintainability
 
 - `App.svelte` was split into tested modules (item 89), from 3,366 to 1,336 lines. What remains is wiring, template and styles; there are still no component-level tests of the wiring itself, so the unchecked paths listed in item 89 are where a regression would hide.
+- CI does not run `npm run e2e` yet (item 90): macOS and Windows runners have a display, Linux needs `xvfb-run`. More end-to-end checks worth adding: export, import, the changed-outside dialog, quit with unsaved text.
 - CI: about 1,000 prettier warnings in lint; the `actions/*` bump for the Node 20 deprecation notice; CI is green on Ubuntu, Windows and macOS as of a4b89e2. Ubuntu had been failing since 74f7c27 because a test used a lowercase file name, which only a case-sensitive file system notices; macOS and Windows missed it. Any new test that names a file should use the exact case.
 - User-facing documentation: the plan has a "built, for the user guide" section in [CHANGELOG.md](CHANGELOG.md); the image behaviour in particular is not written up for users.
 

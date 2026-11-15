@@ -61,6 +61,7 @@ test, not into `App.svelte`.
 | `npm test` | Unit tests for every package (Vitest) |
 | `npm run typecheck` | Type-check both packages |
 | `npm run build` | Type-check, then production build into `apps/desktop/out` |
+| `npm run e2e -w @writingapp/desktop` | End-to-end checks of the built app (run `npm run build` first; opens real windows, so it needs a display) |
 
 Requires Node.js 24 or newer.
 
