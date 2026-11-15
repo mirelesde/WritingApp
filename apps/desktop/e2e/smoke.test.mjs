@@ -17,8 +17,10 @@ let app
 let library
 afterEach(async () => {
   await app?.quit().catch(() => undefined)
-  if (library) await rm(library, { recursive: true, force: true })
-  if (app?.dataDir) await rm(app.dataDir, { recursive: true, force: true })
+  // Windows can keep a file locked for a moment after the app exits, so retry, and never fail a test over clean-up.
+  const gone = { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }
+  if (library) await rm(library, gone).catch(() => undefined)
+  if (app?.dataDir) await rm(app.dataDir, gone).catch(() => undefined)
   app = library = undefined
 })
 
@@ -120,7 +122,8 @@ describe('the app', () => {
     await until(() => app.eval(`${app.button('Don’t Save')} !== undefined`), 'the question')
     await app.click(app.button('Don’t Save'))
     await until(() => app.eval(`document.querySelectorAll('.tab').length === 1`), 'one tab left')
-    assert.equal(await app.eval(`document.querySelector('.cm-content').innerText.includes('DISCARDME')`), false)
+    // The editor returns to the saved text a moment after the tab closes.
+    await until(() => app.eval(`!document.querySelector('.cm-content').innerText.includes('DISCARDME')`), 'the editor back to the saved text')
     assert.ok(!(await readFile(join(library, 'Novel', 'Alpha.md'), 'utf8')).includes('DISCARDME'))
   })
 

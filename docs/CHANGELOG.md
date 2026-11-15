@@ -1060,6 +1060,9 @@ the items marked done above.
       once one is available. Along the way: Windows' recycle bin is now given backslash paths (an
       unconfirmed guess at the Move to Trash failure), and the e2e script uses a glob because
       Node 24's `node --test` cannot take a directory.
+    - *Flaky check fixed:* the Don't Save two-tab check failed once on macOS (it looked at the editor
+      the instant the tab closed, before it had returned to the saved text) and once on Windows
+      (clean-up hit a file still locked). It now waits for the editor, and clean-up retries.
     - *Stress tests* (no bugs found in the code they exercise): `randomOperations.test.ts` runs random
       sequences of create, move, copy, delete, rename and undo on an in-memory library and checks that
       no sheet's text is lost, no name repeats within a group, and every undo restores the exact
