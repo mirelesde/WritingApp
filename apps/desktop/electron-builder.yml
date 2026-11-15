@@ -27,7 +27,6 @@ linux:
   executableName: writingapp
   target:
     - AppImage
-    - deb
   category: Office
 appImage:
   artifactName: ${productName}-${version}.${ext}

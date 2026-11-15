@@ -69,7 +69,6 @@ jobs:
             apps/desktop/dist/*.dmg
             apps/desktop/dist/*.exe
             apps/desktop/dist/*.AppImage
-            apps/desktop/dist/*.deb
 
   release:
     needs: build
