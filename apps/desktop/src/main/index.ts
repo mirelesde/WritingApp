@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { attachContextMenu, registerContextActions } from './contextActions'
+import { logUncaught, recoverFromCrashes } from './crash'
 import { registerThemeIpc } from './themes'
 import { registerExportStyleIpc } from './exportStyles'
 import { loadView, registerViewIpc, viewMenu } from './view'
@@ -61,6 +62,7 @@ function createWindow(sheet?: string, where?: { x: number; y: number }): void {
   })
 
   attachContextMenu(mainWindow.webContents)
+  recoverFromCrashes(mainWindow)
   const id = mainWindow.webContents.id
   if (sheet) pendingSheet.set(id, sheet)
   mainWindow.on('closed', () => {
@@ -402,6 +404,8 @@ function buildMenu(): Menu {
     }
   ])
 }
+
+logUncaught()
 
 app.whenReady().then(async () => {
   registerLibraryIpc()
