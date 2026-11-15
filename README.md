@@ -2,7 +2,7 @@
 
 Working title. A free, open-source writing app: a library of ordered
 Markdown sheets, keyboard-driven organisation, and clean export.
-See [PLAN.md](PLAN.md) for scope and build order.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design, [docs/ROADMAP.md](docs/ROADMAP.md) for what is next.
 
 ## Layout
 
