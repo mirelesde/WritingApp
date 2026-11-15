@@ -105,7 +105,11 @@
   let info = $state('')
   let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
-  const ui = new ViewState((change) => window.api.setView(change))
+  const ui = new ViewState(
+    (change) => window.api.setView(change),
+    () => void autosaver.flush(),
+    () => editing.focus()
+  )
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
   let editors = $state<Record<string, Editor | undefined>>({})
@@ -183,7 +187,7 @@
   })
 
   const group = $derived(library ? findGroup(library.tree, nav.selectedGroup) : undefined)
-  let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
+  const prefs = $derived(ui.settings)
   const sortBy = $derived(prefs?.sheetSort ?? 'manual')
   const list = new SheetList({ library: () => library, group: () => group, sortBy: () => sortBy })
 
@@ -309,14 +313,6 @@
   $effect(() => {
     if (prefs) applyView(prefs, activeTheme)
   })
-
-  function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
-    const turnedOn = view.saveMode === 'auto' && prefs !== null && prefs.saveMode !== 'auto'
-    prefs = view
-    // Text typed while autosave was off is saved as soon as it is turned back on.
-    if (turnedOn) void autosaver.flush()
-    ui.apply(view)
-  }
 
   async function chooseLibrary(): Promise<void> {
     if (!(await resolveUnsaved(autosaver.unsavedPaths(), 'library'))) return
@@ -735,7 +731,7 @@
     findReplace: () => find.open('sheet', true),
     quickOpen: () => openQuick(),
     commandPalette: () => openPalette(),
-    distractionFree: () => toggleZen(),
+    distractionFree: () => void ui.toggleZen(),
     preferences: () => (preferencesOpen = true),
     insertTable: editing.insertTable,
     insertFootnote: editing.insertFootnote,
@@ -759,13 +755,6 @@
     editKeywords: keywords.open,
     undo: () => void ops.undo(),
     newGroup: (project) => void ops.newGroup(project)
-  }
-
-  function toggleZen(): void {
-    if (ui.toggleZen()) {
-      const only = sel.only ?? run.open?.parts[0]?.path
-      if (only) editors[only]?.focus()
-    }
   }
 
   // --- Command palette ---------------------------------------------------------
@@ -809,8 +798,8 @@
 
   onMount(() => {
     void window.api.listThemes().then((found) => (themes = found))
-    void window.api.getView().then(applyViewSettings)
-    const unsubscribeView = window.api.onViewChanged(applyViewSettings)
+    void window.api.getView().then(ui.apply)
+    const unsubscribeView = window.api.onViewChanged(ui.apply)
     window.api
       .getLibrary()
       .then(async (info) => {
@@ -1019,7 +1008,7 @@
                   onblur={() => {
                     if (prefs?.saveMode === 'auto') void autosaver.flush()
                   }}
-                  onescape={() => (ui.zen ? toggleZen() : sheetsEl?.focus())}
+                  onescape={() => (ui.zen ? ui.toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}
                   onedge={run.open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (run.selectedText = text)}

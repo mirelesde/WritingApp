@@ -17,9 +17,17 @@ export class ViewState {
   focusMode = $state(false)
   typewriter = $state(false)
   lineNumbers = $state(false)
+  /** The saved view settings as last received, or null before the first arrives. */
+  settings = $state<ViewSettings | null>(null)
   private peekTimer: ReturnType<typeof setTimeout> | undefined
 
-  constructor(private readonly setView: (change: Partial<ViewSettings>) => unknown) {}
+  constructor(
+    private readonly setView: (change: Partial<ViewSettings>) => unknown,
+    /** Called when autosave has just been turned back on, so text typed while it was off gets saved. */
+    private readonly onAutosaveOn: () => void = () => {},
+    /** Called when distraction-free mode has just been turned on, to put the cursor in the text. */
+    private readonly onZenOn: () => void = () => {}
+  ) {}
 
   get sidebarHidden(): boolean {
     return this.sidebarCollapsed || this.zen
@@ -27,6 +35,9 @@ export class ViewState {
 
   /** Takes the saved settings; the peek ends if the sidebar is showing for good. */
   apply = (view: ViewSettings): void => {
+    const turnedOn = view.saveMode === 'auto' && this.settings !== null && this.settings.saveMode !== 'auto'
+    this.settings = view
+    if (turnedOn) this.onAutosaveOn()
     this.sidebarCollapsed = view.sidebarCollapsed
     this.sheetsCollapsed = view.sheetsCollapsed
     this.outlineOpen = view.outline
@@ -65,6 +76,7 @@ export class ViewState {
   toggleZen = (): boolean => {
     this.zen = !this.zen
     this.sidebarPeek = false
+    if (this.zen) this.onZenOn()
     return this.zen
   }
 }

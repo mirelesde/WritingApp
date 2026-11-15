@@ -13,7 +13,8 @@ function setup(present = true): { editor: Record<string, ReturnType<typeof vi.fn
     goToFootnoteAtCursor: vi.fn(() => true),
     toggleTaskAtCursor: vi.fn(() => true),
     jumpHeading: vi.fn(),
-    lineStyle: vi.fn()
+    lineStyle: vi.fn(),
+    focus: vi.fn()
   }
   const host = {
     editor: (): ActiveEditor | undefined => (present ? (editor as unknown as ActiveEditor) : undefined),
@@ -46,6 +47,12 @@ describe('EditorActions', () => {
     actions.toggleTask()
     expect(host.chooseImages).not.toHaveBeenCalled()
     expect(host.info).not.toHaveBeenCalled()
+  })
+
+  it('puts the cursor in the text', () => {
+    const { editor, actions } = setup()
+    actions.focus()
+    expect(editor.focus).toHaveBeenCalled()
   })
 
   it('inserts the chosen images', async () => {

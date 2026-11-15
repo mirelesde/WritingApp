@@ -15,6 +15,7 @@ export type ActiveEditor = Pick<
   | 'toggleTaskAtCursor'
   | 'jumpHeading'
   | 'lineStyle'
+  | 'focus'
 >
 
 /** What the commands need from the rest of the app. */
@@ -30,6 +31,8 @@ export interface EditorActionsHost {
 export class EditorActions {
   constructor(private readonly host: EditorActionsHost) {}
 
+  /** Puts the cursor in the text. */
+  focus = (): void => this.host.editor()?.focus()
   format = (kind: 'bold' | 'italic' | 'link' | FormatKind): void => this.host.editor()?.format(kind)
   insertTable = (): void => this.host.editor()?.insertTableAtCursor()
   insertFootnote = (): void => this.host.editor()?.insertFootnoteAtCursor()

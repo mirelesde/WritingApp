@@ -76,4 +76,32 @@ describe('ViewState', () => {
     view.apply({ ...DEFAULT_VIEW, sidebarCollapsed: false })
     expect(view.sidebarPeek).toBe(false)
   })
+
+  it('keeps the settings it was given', () => {
+    expect(view.settings).toBeNull()
+    const saved = { ...DEFAULT_VIEW, colorTheme: 'night' }
+    view.apply(saved)
+    expect(view.settings).toBe(saved)
+  })
+
+  it('saves what was typed when autosave is turned back on, and only then', () => {
+    const turnedOn = vi.fn()
+    const v = new ViewState(() => {}, turnedOn)
+    v.apply({ ...DEFAULT_VIEW, saveMode: 'auto' }) // the first settings: nothing was off
+    v.apply({ ...DEFAULT_VIEW, saveMode: 'manual' })
+    expect(turnedOn).not.toHaveBeenCalled()
+    v.apply({ ...DEFAULT_VIEW, saveMode: 'auto' })
+    expect(turnedOn).toHaveBeenCalledTimes(1)
+    v.apply({ ...DEFAULT_VIEW, saveMode: 'auto' })
+    expect(turnedOn).toHaveBeenCalledTimes(1)
+  })
+
+  it('puts the cursor in the text when distraction-free mode turns on, not off', () => {
+    const zenOn = vi.fn()
+    const v = new ViewState(() => {}, () => {}, zenOn)
+    v.toggleZen()
+    expect(zenOn).toHaveBeenCalledTimes(1)
+    v.toggleZen()
+    expect(zenOn).toHaveBeenCalledTimes(1)
+  })
 })
