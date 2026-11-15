@@ -16,6 +16,11 @@ export default defineConfig(
     }
   },
   {
+    // Rune stores: plain TypeScript that the Svelte compiler also reads.
+    files: ['**/*.svelte.ts'],
+    languageOptions: { parser: tseslint.parser }
+  },
+  {
     files: ['**/*.{tsx,svelte}'],
     rules: {
       'svelte/no-unused-svelte-ignore': 'off'

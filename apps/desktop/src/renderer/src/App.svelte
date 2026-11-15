@@ -22,6 +22,7 @@
   } from '@writingapp/core'
   import type { EditMenuInfo, EpubDialogOptions, LibraryInfo, MenuCommand, OpResult, PdfOptions, RecoveredSheet, TitlePage } from '../../preload/api'
   import { applyView } from './view'
+  import { ViewState } from './viewState.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
@@ -93,17 +94,7 @@
   let info = $state('')
   let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
-  let sidebarCollapsed = $state(false)
-  let sheetsCollapsed = $state(false)
-  /** Distraction-free: only the text, with the panes and tools out of sight until the pointer asks. */
-  let zen = $state(false)
-  const sidebarHidden = $derived(sidebarCollapsed || zen)
-  let sidebarPeek = $state(false)
-  let outlineOpen = $state(false)
-  let focusMode = $state(false)
-  let typewriter = $state(false)
-  let lineNumbers = $state(false)
-  let peekTimer: ReturnType<typeof setTimeout> | undefined
+  const ui = new ViewState((change) => window.api.setView(change))
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
   let editors = $state<Record<string, Editor | undefined>>({})
@@ -415,15 +406,7 @@
   }
 
   /** Collapsed, the sidebar slides in while the pointer is at the left edge or over it. */
-  function peekSidebar(): void {
-    clearTimeout(peekTimer)
-    if (sidebarHidden) sidebarPeek = true
-  }
 
-  function unpeekSidebar(): void {
-    clearTimeout(peekTimer)
-    peekTimer = setTimeout(() => (sidebarPeek = false), 250)
-  }
 
   /** Applies bold, italic or link to the sheet being typed in (the last one focused in a run). */
   function formatActive(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
@@ -526,9 +509,6 @@
     ]
   ]
 
-  function toggleOutline(): void {
-    void window.api.setView({ outline: !outlineOpen })
-  }
 
   const outlineEntries = $derived<Entry[]>(
     open
@@ -550,14 +530,7 @@
     editors[entry.path]?.goTo(entry.offset)
   }
 
-  function toggleSheets(): void {
-    void window.api.setView({ sheetsCollapsed: !sheetsCollapsed })
-  }
 
-  function toggleSidebar(): void {
-    sidebarPeek = false
-    void window.api.setView({ sidebarCollapsed: !sidebarCollapsed })
-  }
 
   let preferencesOpen = $state(false)
 
@@ -572,13 +545,7 @@
     prefs = view
     // Text typed while autosave was off is saved as soon as it is turned back on.
     if (turnedOn) void autosaver.flush()
-    sidebarCollapsed = view.sidebarCollapsed
-    sheetsCollapsed = view.sheetsCollapsed
-    outlineOpen = view.outline
-    focusMode = view.focusMode
-    typewriter = view.typewriter
-    lineNumbers = view.lineNumbers
-    if (!sidebarHidden) sidebarPeek = false
+    ui.apply(view)
   }
 
   async function chooseLibrary(): Promise<void> {
@@ -1890,7 +1857,7 @@
     if (e.key === '[') void step(-1)
     else if (e.key === ']') void step(1)
     else if (e.key === '1') {
-      if (sidebarHidden) sidebarPeek = true
+      if (ui.sidebarHidden) ui.sidebarPeek = true
       treeEl?.focus()
     }
     else if (e.key === '2') sheetsEl?.focus()
@@ -1920,8 +1887,8 @@
     else if (command === 'previous-tab') cycleTab(-1)
     else if (command === 'save') void autosaver.flush(manual() ? (open?.parts.map((p) => p.path) ?? []) : undefined)
     else if (command === 'save-all') void autosaver.flush()
-    else if (command === 'toggle-sidebar') toggleSidebar()
-    else if (command === 'toggle-sheets') toggleSheets()
+    else if (command === 'toggle-sidebar') ui.toggleSidebar()
+    else if (command === 'toggle-sheets') ui.toggleSheets()
     else if (command === 'new-sheet') void newSheet()
     else if (command === 'daily-note') void openDailyNote()
     else if (command === 'save-template') void saveAsTemplate()
@@ -1970,9 +1937,7 @@
   }
 
   function toggleZen(): void {
-    zen = !zen
-    sidebarPeek = false
-    if (zen) {
+    if (ui.toggleZen()) {
       const only = selection.length === 1 ? selection[0] : open?.parts[0]?.path
       if (only) editors[only]?.focus()
     }
@@ -2076,8 +2041,8 @@
       menu('Fold', 'Unfold All Sections', 'unfold-all'),
       menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
       menu('View', 'Toggle Sheet List', 'toggle-sheets'),
-      menu('View', zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
-      { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: toggleOutline },
+      menu('View', ui.zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
+      { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: ui.toggleOutline },
       { ...setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }), shortcut: `${keyMod}${keyShift}L` },
       setting('View', `${view?.typewriter ? 'Turn off' : 'Turn on'} Typewriter Scrolling`, { typewriter: !view?.typewriter }),
       setting('View', `${view?.lineNumbers ? 'Hide' : 'Show'} Line Numbers`, { lineNumbers: !view?.lineNumbers }),
@@ -2164,20 +2129,20 @@
 {:else}
   <div
     class="layout"
-    class:collapsed={zen}
-    class:no-library={sidebarHidden && !zen}
-    class:no-sheets={sheetsCollapsed && !zen}
-    class:zen
+    class:collapsed={ui.zen}
+    class:no-library={ui.sidebarHidden && !ui.zen}
+    class:no-sheets={ui.sheetsCollapsed && !ui.zen}
+    class:zen={ui.zen}
   >
-    {#if sidebarHidden}
-      <div class="edge" role="presentation" onmouseenter={peekSidebar}></div>
+    {#if ui.sidebarHidden}
+      <div class="edge" role="presentation" onmouseenter={ui.peek}></div>
     {/if}
     <div
       class="sidebar"
-      class:peek={sidebarPeek}
+      class:peek={ui.sidebarPeek}
       role="presentation"
-      onmouseenter={peekSidebar}
-      onmouseleave={unpeekSidebar}
+      onmouseenter={ui.peek}
+      onmouseleave={ui.unpeek}
     >
     <div
       class="pane library"
@@ -2187,7 +2152,7 @@
       bind:this={treeEl}
       onfocusout={(e) => {
         const box = e.currentTarget.closest('.sidebar')
-        if (sidebarHidden && !box?.contains(e.relatedTarget as Node | null)) sidebarPeek = false
+        if (ui.sidebarHidden && !box?.contains(e.relatedTarget as Node | null)) ui.sidebarPeek = false
       }}
       onkeydown={treeKeydown}
       onmousedown={keepFocus(treeEl)}
@@ -2195,7 +2160,7 @@
       <header class="library-bar">
         <span class="tools">
           <ToolButton icon="new-group" label="New group" hint="{keyMod}{keyShift}N" onclick={() => void newGroup(false)} />
-          <ToolButton icon="sidebar" label="Hide sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
+          <ToolButton icon="sidebar" label="Hide sidebar" hint={keyMod + "\\"} onclick={ui.toggleSidebar} />
         </span>
       </header>
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -2384,13 +2349,13 @@
     <section class="editor" aria-label="Editor" ondragover={tabDragOver} ondrop={(e) => void tabDrop(e)}>
       <div class="editor-bar" role="toolbar" aria-label="Editor tools">
         <span class="tools">
-          {#if sidebarCollapsed}
-            <ToolButton icon="sidebar" label="Show sidebar" hint={keyMod + "\\"} onclick={toggleSidebar} />
+          {#if ui.sidebarCollapsed}
+            <ToolButton icon="sidebar" label="Show sidebar" hint={keyMod + "\\"} onclick={ui.toggleSidebar} />
           {/if}
           <ToolButton
-            icon={sheetsCollapsed ? 'shrink' : 'expand'}
-            label={sheetsCollapsed ? 'Show sheet list' : 'Hide sheet list'}
-            onclick={toggleSheets}
+            icon={ui.sheetsCollapsed ? 'shrink' : 'expand'}
+            label={ui.sheetsCollapsed ? 'Show sheet list' : 'Hide sheet list'}
+            onclick={ui.toggleSheets}
           />
           <ToolButton icon="back" label="Back" hint="{keyMod}[" disabled={!canBack} onclick={() => void step(-1)} />
           <ToolButton icon="forward" label="Forward" hint="{keyMod}]" disabled={!canForward} onclick={() => void step(1)} />
@@ -2422,12 +2387,12 @@
         </span>
         <span class="tools right">
           {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.saveMode === 'auto'} />{/if}
-          <ToolButton icon="outline" label="{outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={outlineOpen} onclick={toggleOutline} />
+          <ToolButton icon="outline" label="{ui.outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={ui.outlineOpen} onclick={ui.toggleOutline} />
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
       </div>
       <div class="above">
-      {#if (tabs.length > 1 || (manual() && tabs.length > 0)) && !zen}
+      {#if (tabs.length > 1 || (manual() && tabs.length > 0)) && !ui.zen}
         <div class="tabs" role="tablist" aria-label="Open sheets">
           {#each tabs as path, i (i)}
             <div
@@ -2460,7 +2425,7 @@
           <button class="tab-new" aria-label="New tab" title="New tab ({keyMod}T)" onclick={newTab}>+</button>
         </div>
       {/if}
-      {#if finding && !zen}
+      {#if finding && !ui.zen}
         {#key finding.key}
           <FindBar
             bind:this={findBar}
@@ -2481,7 +2446,7 @@
         <p class="hint">{error}</p>
       {:else if open}
         {#key open.parts.map((p) => p.path).join('\n')}
-          <div class="run" class:focus-mode={focusMode} class:typewriter>
+          <div class="run" class:focus-mode={ui.focusMode} class:typewriter={ui.typewriter}>
             {#each open.parts as part, i (part.path)}
               {#if i > 0}<hr class="seam" />{/if}
               <div class="part" data-path={part.path}>
@@ -2492,15 +2457,15 @@
                   onblur={() => {
                     if (prefs?.saveMode === 'auto') void autosaver.flush()
                   }}
-                  onescape={() => (zen ? toggleZen() : sheetsEl?.focus())}
+                  onescape={() => (ui.zen ? toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}
                   onedge={open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (selectedText = text)}
                   onsection={(heading) => (currentSection = { path: part.path, heading })}
                   onfind={(action) => (action === 'next' || action === 'previous' ? findBar?.next(action === 'next' ? 1 : -1) : openFind(undefined, action === 'replace'))}
-                  {focusMode}
-                  {typewriter}
-                  {lineNumbers}
+                  focusMode={ui.focusMode}
+                  typewriter={ui.typewriter}
+                  lineNumbers={ui.lineNumbers}
                   smartTypography={prefs?.smartTypography}
                   hideMarkers={prefs?.hideMarkers}
                   focusScope={prefs?.focusScope}
@@ -2523,7 +2488,7 @@
       {#if open}
         <StatusBar text={runText} selected={selectedText} {groupWords} />
       {/if}
-      {#if outlineOpen && !zen}
+      {#if ui.outlineOpen && !ui.zen}
         <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} {backlinks} onbacklink={(p) => void revealSheet(p)} /></div>
       {/if}
     </section>
