@@ -54,6 +54,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { MoveFlow } from './moveFlow.svelte'
   import { runMenuCommand, type CommandActions } from './menuCommands'
   import { EditorActions } from './editorActions'
   import LibraryPane from './LibraryPane.svelte'
@@ -71,10 +72,8 @@
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
-    moveTargets,
     runOf,
     visibleGroups,
-    type MoveTarget
   } from './organise'
   import {
     buildSections,
@@ -109,8 +108,6 @@
   let treeEl = $state<HTMLElement>()
   let sheetsEl = $state<HTMLElement>()
   let editors = $state<Record<string, Editor | undefined>>({})
-  let picker = $state<{ heading: string; paths: string[]; targets: MoveTarget[] } | null>(null)
-  let pickerReturnFocus: HTMLElement | null = null
 
   const guard = createSaveGuard({
     read: (path) => window.api.readSheet(path),
@@ -577,7 +574,7 @@
     else if (action === 'move') {
       if (kind === 'group') treeEl?.focus()
       else await tick()
-      openMoveTo()
+      move.open()
     } else if (action === 'delete') {
       if (kind === 'group') treeEl?.focus()
       await tick()
@@ -817,51 +814,22 @@
 
   // --- Move to… ------------------------------------------------------------
 
-  /** Opens the group picker for the selected group (tree focused) or sheets. */
-  function openMoveTo(): void {
-    if (!library) return
-    const inTree = treeEl?.contains(document.activeElement) ?? false
-    const root = library.tree
-    let paths: string[]
-    let from: string
-    let moving: string[]
-    let heading: string
-    if (inTree) {
-      if (nav.selectedGroup === root.path) return
-      paths = moving = [nav.selectedGroup]
-      from = nav.selectedGroup.slice(0, nav.selectedGroup.lastIndexOf('/'))
-      heading = `Move “${labelOf(group) ?? 'group'}” to…`
-    } else {
-      paths = [...sel.paths]
-      if (paths.length === 0) return
-      moving = []
-      from = nav.selectedGroup
-      heading = paths.length === 1 ? 'Move 1 sheet to…' : `Move ${paths.length} sheets to…`
-    }
-    const targets = moveTargets(root, moving, from)
-    if (targets.length === 0) {
-      notice = 'There is nowhere else to move this.'
-      return
-    }
-    pickerReturnFocus = document.activeElement as HTMLElement | null
-    picker = { heading, paths, targets }
-  }
-
-  function closePicker(): void {
-    picker = null
-    pickerReturnFocus?.focus()
-  }
-
-  async function pickTarget(target: string): Promise<void> {
-    if (!picker) return
-    const paths = [...picker.paths] // a plain array: state proxies cannot cross the bridge
-    closePicker()
-    const movedSheets = !treeEl?.contains(pickerReturnFocus)
-    const result = await runOp(() => window.api.move(paths, target))
-    if (!result) return
-    nav.expanded[target] = true
-    if (movedSheets) clearSheets()
-  }
+  const move = new MoveFlow({
+    tree: () => library?.tree,
+    selectedGroup: () => nav.selectedGroup,
+    groupLabel: () => labelOf(group),
+    selectedSheets: () => [...sel.paths],
+    treeFocused: () => treeEl?.contains(document.activeElement) ?? false,
+    rememberFocus: () => {
+      const was = document.activeElement as HTMLElement | null
+      return () => was?.focus()
+    },
+    runOp: (op) => runOp(op),
+    move: (paths, target) => window.api.move(paths, target),
+    expand: (path) => (nav.expanded[path] = true),
+    clearSheets,
+    warn: (text) => (notice = text)
+  })
 
   // --- Drag and drop -------------------------------------------------------
 
@@ -966,7 +934,7 @@
     dailyNote: () => void creation.dailyNote(),
     saveTemplate: () => void creation.saveAsTemplate(),
     openTemplates: () => openPalette(),
-    moveTo: () => openMoveTo(),
+    moveTo: move.open,
     exportHtml: () => void openExport(),
     search: () => openFind(findScopes.some((x) => x.value === 'group') ? 'group' : undefined),
     findReplace: () => openFind('sheet', true),
@@ -1407,12 +1375,12 @@
   />
 {/if}
 
-{#if picker}
+{#if move.current}
   <MovePicker
-    heading={picker.heading}
-    targets={picker.targets}
-    onpick={pickTarget}
-    oncancel={closePicker}
+    heading={move.current.heading}
+    targets={move.current.targets}
+    onpick={move.pick}
+    oncancel={move.close}
   />
 {/if}
 
