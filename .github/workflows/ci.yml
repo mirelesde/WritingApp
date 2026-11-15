@@ -23,3 +23,9 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run lint -w @writingapp/desktop
+      # End-to-end checks of the built app. Linux has no display, so it gets a virtual one.
+      - run: npm run build -w @writingapp/desktop
+      - run: xvfb-run -a npm run e2e -w @writingapp/desktop
+        if: runner.os == 'Linux'
+      - run: npm run e2e -w @writingapp/desktop
+        if: runner.os != 'Linux'

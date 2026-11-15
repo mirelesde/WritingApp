@@ -7,10 +7,12 @@ import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const appDir = join(here, '..')
-const electronBin = join(appDir, '..', '..', 'node_modules', '.bin', process.platform === 'win32' ? 'electron.cmd' : 'electron')
+// The `electron` package's main export is the path of the binary, which works on every system.
+const electronBin = createRequire(import.meta.url)('electron')
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -49,25 +51,29 @@ export class App {
     if (!existsSync(join(appDir, 'out', 'main', 'index.js'))) throw new Error('Build the app first: npm run build')
     const data = dataDir ?? (await mkdtemp(join(tmpdir(), 'wa-e2e-data-')))
     await writeFile(join(data, 'settings.json'), JSON.stringify({ libraryPath: library }))
-    const child = spawn(electronBin, ['.', '--remote-debugging-port=0', `--user-data-dir=${data}`], {
+    // The Linux CI sandbox cannot run Chromium's own sandbox; a developer's machine can.
+    const extra = process.env.CI && process.platform === 'linux' ? ['--no-sandbox'] : []
+    const child = spawn(electronBin, ['.', '--remote-debugging-port=0', '--inspect=0', `--user-data-dir=${data}`, ...extra], {
       cwd: appDir,
       stdio: ['ignore', 'ignore', 'pipe']
     })
-    const wsUrl = await new Promise((resolve, reject) => {
+    const urls = await new Promise((resolve, reject) => {
       let text = ''
-      const timer = setTimeout(() => reject(new Error(`The app did not start:\n${text}`)), 20000)
+      const timer = setTimeout(() => reject(new Error(`The app did not start:\n${text}`)), 30000)
       child.stderr.on('data', (d) => {
         text += d
-        const m = text.match(/DevTools listening on (ws:\/\/[^\s]+)/)
-        if (m) {
+        const page = text.match(/DevTools listening on (ws:\/\/[^\s]+)/)
+        const main = text.match(/Debugger listening on (ws:\/\/[^\s]+)/)
+        if (page && main) {
           clearTimeout(timer)
-          resolve(m[1])
+          resolve({ page: page[1], main: main[1] })
         }
       })
       child.on('exit', () => reject(new Error(`The app exited early:\n${text}`)))
     })
-    const port = new URL(wsUrl).port
+    const port = new URL(urls.page).port
     const app = new App(child, data, port)
+    app.mainUrl = urls.main
     await app.connect()
     return app
   }
@@ -115,6 +121,33 @@ export class App {
     return d.result?.result?.value
   }
 
+  /** Runs JavaScript in Electron's main process, where dialogs can be given fixed answers. */
+  async mainEval(expression) {
+    const ws = new WebSocket(this.mainUrl)
+    await new Promise((r) => (ws.onopen = r))
+    const out = await new Promise((resolve) => {
+      ws.onmessage = (m) => resolve(JSON.parse(m.data))
+      ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }))
+    })
+    ws.close()
+    if (out.result?.exceptionDetails) throw new Error(out.result.exceptionDetails.exception?.description ?? 'main error')
+    return out.result?.result?.value
+  }
+
+  /** Makes the next save and open dialogs answer without showing: the paths are given when each is opened. */
+  async stubDialogs() {
+    await this.mainEval(`(()=>{const d=process.mainModule.require('electron').dialog; globalThis.__answer={save:null,open:[]}; d.showSaveDialog=async()=>({canceled:false,filePath:globalThis.__answer.save}); d.showOpenDialog=async()=>({canceled:false,filePaths:globalThis.__answer.open}); return 1})()`)
+  }
+
+  answerDialogs({ save, open }) {
+    return this.mainEval(`(globalThis.__answer.save=${JSON.stringify(save ?? null)}, globalThis.__answer.open=${JSON.stringify(open ?? [])}, 1)`)
+  }
+
+  /** Sends a menu command to the window, as choosing it from the menu would. */
+  menu(command) {
+    return this.mainEval(`process.mainModule.require('electron').BrowserWindow.getAllWindows()[0].webContents.send('menu:command', ${JSON.stringify(command)})`)
+  }
+
   /** Where the middle of the first element matching `js` (an expression giving an element) is. */
   async center(js) {
     const p = await this.eval(`(()=>{const e=(${js}); if(!e) return null; const b=e.getBoundingClientRect(); return [b.x+b.width/2,b.y+b.height/2]})()`)
@@ -143,9 +176,9 @@ export class App {
     return process.platform === 'darwin' ? 4 : 2
   }
 
-  /** Types into the editor at the cursor. */
-  async type(text) {
-    await this.eval(`(()=>{const c=document.querySelector('.cm-content'); c.focus(); document.execCommand('insertText', false, ${JSON.stringify(text)}); return true})()`)
+  /** Types into the editor at the cursor, or into the element `selector` names. */
+  async type(text, selector = '.cm-content') {
+    await this.eval(`(()=>{const c=document.querySelector(${JSON.stringify(selector)}); c.focus(); document.execCommand('insertText', false, ${JSON.stringify(text)}); return true})()`)
   }
 
   sheetCard = (text) => `[...document.querySelectorAll('.sheet')].find(s => s.innerText.includes(${JSON.stringify(text)}))`
@@ -170,7 +203,10 @@ export class App {
   async quit() {
     this.ws?.close()
     this.child.kill('SIGTERM')
+    // With unsaved text the app asks before quitting, so it may not leave by itself.
+    const force = setTimeout(() => this.child.kill('SIGKILL'), 3000)
     await this.exited()
+    clearTimeout(force)
   }
 
   /** Resolves once the process is gone, and lets go of its pipes so the test run can end. */
