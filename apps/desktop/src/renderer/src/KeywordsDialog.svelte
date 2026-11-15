@@ -21,6 +21,7 @@
 
   /** Keywords on the selection (with how many sheets have each), then those about to be added. */
   const current = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a temporary map, never read reactively
     const counts = new Map<string, { keyword: string; count: number }>()
     for (const sheet of sheets) {
       for (const keyword of sheet.keywords) {

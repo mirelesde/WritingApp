@@ -58,6 +58,7 @@
     { value: 'markdown', label: 'Markdown' }
   ]
   const FORMAT_NAMES: Record<Format, string> = { pdf: 'PDF', docx: 'Word', epub: 'EPUB', html: 'HTML', markdown: 'Markdown' }
+  const CSS_EXAMPLE = 'body { font-family: Georgia, serif; }'
   const REMEMBER_FORMAT = 'writingapp.exportFormat'
   let format = $state<Format>(
     (() => {
@@ -343,7 +344,7 @@
           oninput={typedCss}
           spellcheck="false"
           aria-label="Style CSS"
-          placeholder="body {'{'} font-family: Georgia, serif; {'}'}"
+          placeholder={CSS_EXAMPLE}
         ></textarea>
         <div class="actions">
           {#if problem}<span class="problem" role="alert">{problem}</span>{/if}

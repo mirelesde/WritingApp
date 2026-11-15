@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSaveGuard, SaveConflict } from './conflict'
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- the shape is plain from the return
 function setup(files: Record<string, string>) {
   const guard = createSaveGuard({
     read: async (p) => {

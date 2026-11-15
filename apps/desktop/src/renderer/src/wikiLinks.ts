@@ -74,7 +74,7 @@ const follow = EditorView.domEventHandlers({
 
 /** Titles to offer inside an open `[[`. */
 function complete(context: CompletionContext): CompletionResult | null {
-  const match = context.matchBefore(/\[\[[^\[\]\n|]*/)
+  const match = context.matchBefore(/\[\[[^[\]\n|]*/)
   if (!match) return null
   const from = match.from + 2
   const query = titleKey(match.text.slice(2))

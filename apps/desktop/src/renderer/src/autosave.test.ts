@@ -187,6 +187,7 @@ describe('createAutosaver with autosave off', () => {
 })
 
 describe('createAutosaver journal', () => {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- the shape is plain from the return
   function withJournal() {
     const puts: [string, string][] = []
     const clears: string[] = []
