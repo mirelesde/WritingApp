@@ -59,12 +59,12 @@ describe('hostile input', () => {
     for (const piece of ['*', '[', '`', '_', '<', '\\', '[[', '|', '> ']) {
       // Block quotes nested thousands deep overflow the Markdown library's stack; no sheet has them.
       const input = piece.repeat(piece === '> ' ? 1000 : 20000)
-      const started = performance.now()
+      const started = Date.now()
       markdownToHtml(input)
       markdownToDocx(input)
       htmlToMarkdown(input)
       findWikiLinks(input)
-      expect(performance.now() - started, JSON.stringify(piece)).toBeLessThan(5000)
+      expect(Date.now() - started, JSON.stringify(piece)).toBeLessThan(5000)
     }
   }, 60000)
 })
