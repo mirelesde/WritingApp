@@ -1378,6 +1378,17 @@ tested with the in-memory one)
     Not checked live: choosing a library, a failing save from the prompt, and dragging a
     tab (UAT 13.39). Limits: see 13.39.
 
+
+87. **Names with special characters.** **Done.** A group keeps the name you typed
+    (`Act I: Why? Because`) in its own `.writingapp.json` (`title` plus the folder it was
+    written for, so a rename in Finder falls back to the folder name), while its folder drops
+    the characters disks refuse. New sheet files are named readably from their first line
+    (`Why is it so.md`, with " 2" on a clash) instead of hyphenated lowercase; old names still
+    count as fitting, so nothing is mass-renamed. The sheet's title was already its first
+    line. Shown typed in the group list, sheet-list headings, Quick Open, Move and Find.
+    Checked live: creating a group with `:` and `?`. Not checked live: the inline rename box
+    and Finder rename (UAT 13.40).
+
 ## Later, in rough order
 
 - Preferences navigation: top tabs are right for four sections; move to a sidebar (wider dialog, icons, a search box for settings) when there are about six or more, for example Shortcuts, Export or Library.

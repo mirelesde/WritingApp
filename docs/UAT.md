@@ -460,3 +460,14 @@ Quick checks that earlier features still work with today's changes.
 13. Switch back to "While typing": the unsaved text is saved at once and the dots go.
 
 Known limits: operations that rewrite sheets on disk (merge, split, move, Replace All in the library, export) still save outstanding changes first; renaming sheets to match their titles waits until nothing has unsaved text; File ▸ Open Library chosen while changes are unsaved cannot ask afterwards (the app has already switched), so it relies on recovery at the next launch.
+
+## 13.40 Names with special characters
+
+1. Right-click a group ▸ Rename, type `Act I: Why? Because` and press Return. The list and the sheet-list heading show exactly that; in Finder the folder is `Act I Why Because` (the characters `/ \ : * ? " < > |` are left out, case and spaces stay).
+2. Quit and reopen the app: the group still shows `Act I: Why? Because`. Rename the folder in Finder: the group now shows the new folder name (the typed name no longer applies).
+3. Rename a group to a plain name such as `Act One`: the typed name is cleared and the folder name is shown. Rename it again to the same text: nothing changes and no undo step is added.
+4. Rename a group to `Notes?` when a `Notes` folder already exists: the folder becomes `Notes 2` and the group shows `Notes?`. Typing exactly `Notes` instead says it already exists.
+5. Undo (Edit ▸ Undo) after renaming: the old folder name and the old display name return.
+6. Give a sheet the first line `# Why: is it so?`, then leave it: the file is renamed `Why is it so.md` (readable, capitals and spaces kept; the title in the list keeps its `:` and `?`). A second sheet with the same title becomes `Why is it so 2.md`.
+7. Existing sheets named the old way (`the-station.md`) are not renamed just because of this change.
+8. Quick Open, the Move picker and Find results show group names as typed.
