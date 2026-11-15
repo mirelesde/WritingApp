@@ -3,18 +3,13 @@
   import {
     extractHeadings,
     backlinksTo,
-    linkTargets,
     listSheets,
     findConflictCopies,
     groupLabel,
     resolveWikiLink,
-    sheetPreview,
-    sheetTitle,
     type GroupNode,
     type ColorTheme,
     allSheets as librarySheets,
-    libraryKeywords,
-    parseFilter
   } from '@writingapp/core'
   import type { EditMenuInfo, LibraryInfo, MenuCommand } from '../../preload/api'
   import { applyView } from './view'
@@ -54,6 +49,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { SheetList } from './sheetList.svelte'
   import { GroupWords } from './groupWords.svelte'
   import { takeExternalChange, type ExternalHost } from './externalChanges'
   import { KeywordEdit } from './keywordEdit.svelte'
@@ -80,13 +76,9 @@
     visibleGroups,
   } from './organise'
   import {
-    buildSections,
-    filterSections,
     findGroup,
-    gluedFollowers,
     sheetExists,
-    SORTS,
-    whereIs as whereIsIn
+    SORTS
   } from './listing'
 
   let library = $state<LibraryInfo | null>(null)
@@ -186,28 +178,9 @@
   })
 
   const group = $derived(library ? findGroup(library.tree, nav.selectedGroup) : undefined)
-  let filter = $state('')
   let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
   const sortBy = $derived(prefs?.sheetSort ?? 'manual')
-  /** What the list shows: every sheet, or those whose title or preview contain the filter. */
-  const parsedFilter = $derived(parseFilter(filter))
-  /** True while the filter names keywords: the list then spans the whole library, not just the group. */
-  const keywordMode = $derived(parsedFilter.keywords.length > 0)
-  const knownKeywords = $derived(library ? libraryKeywords(library.tree) : [])
-  /**
-   * The sheets of the selected group, then those of each group inside it, in
-   * tree order, each under the name of its group (relative to the selected one).
-   * A keyword filter lists the whole library as one run instead.
-   */
-  const sections = $derived(buildSections(group, library?.tree, keywordMode, sortBy))
-  /** Every sheet the list can show, before filtering. */
-  const listed = $derived(sections.flatMap((x) => x.sheets))
-  const shownSections = $derived(filterSections(sections, parsedFilter.text, parsedFilter.keywords))
-  const shown = $derived(shownSections.flatMap((x) => x.sheets))
-  /** The groups a sheet is in, for a card in a library-wide list. */
-  function whereIs(path: string): string {
-    return library ? whereIsIn(library.tree, path) : ''
-  }
+  const list = new SheetList({ library: () => library, group: () => group, sortBy: () => sortBy })
 
   const keywords = new KeywordEdit({
     sheets: () => (library ? librarySheets(library.tree) : []),
@@ -216,10 +189,6 @@
     runOp: (op) => runOp(op),
     change: (paths, add, remove) => window.api.changeKeywords(paths, add, remove)
   })
-  /** The sheets in the order the list shows them, for keyboard and range selection. */
-  const listPaths = $derived(shown.map((s) => s.path))
-  // Sheets that follow a glued sheet, so a run can be drawn as one bar.
-  const gluedFrom = $derived(gluedFollowers(sections))
 
   function labelOf(node: GroupNode | undefined): string | undefined {
     return node ? groupLabel(node) : undefined
@@ -446,8 +415,8 @@
     manual,
     hasUnsaved: () => autosaver.unsavedPaths().length > 0,
     apply: (result) => runOp(() => Promise.resolve(result)),
-    listPaths: () => listPaths,
-    keywordMode: () => keywordMode
+    listPaths: () => list.paths,
+    keywordMode: () => list.keywordMode
   })
   const { setSelection, focusedPart, crossEdge, clickSheet } = selection
 
@@ -602,22 +571,16 @@
   function edited(path: string, content: string): void {
     autosaver.change(path, content)
     run.edits[path] = content
-    // Keep the sheet list's title and preview in step with what is typed.
-    const sheet = listed.find((s) => s.path === path)
-    if (sheet) {
-      sheet.title = sheetTitle(content)
-      sheet.preview = sheetPreview(content)
-      sheet.links = linkTargets(content)
-    }
+    list.edited(path, content)
   }
 
   async function selectGroup(path: string): Promise<void> {
     await settle()
     nav.selectedGroup = path
-    filter = ''
+    list.filter = ''
     clearSheets()
     // Open the first sheet, so choosing a group rarely leaves the editor empty.
-    const first = listed[0]
+    const first = list.listed[0]
     if (first) {
       sel.anchor = first.path
       await setSelection([first.path], first.path, false)
@@ -680,7 +643,7 @@
     editors: () => Object.entries(editors).filter((e): e is [string, Editor] => e[1] !== undefined),
     openSheet: async (path) => {
       if (!library) return
-      if (!listed.some((x) => x.path === path)) nav.reveal(path.slice(0, path.lastIndexOf('/')), library.tree.path)
+      if (!list.has(path)) nav.reveal(path.slice(0, path.lastIndexOf('/')), library.tree.path)
       await setSelection([path], path, false)
     },
     focusBar: (seed, replace) => findBar?.focusQuery(seed, replace),
@@ -744,7 +707,7 @@
     tree: () => library?.tree,
     selectedGroup: () => nav.selectedGroup,
     manualOrder: () => sortBy === 'manual',
-    listPaths: () => listPaths,
+    listPaths: () => list.paths,
     isSelected: (path) => sel.has(path),
     selection: () => [...sel.paths], // a plain array: state proxies cannot cross the bridge
     selectOnly: (path) => void setSelection([path], path),
@@ -773,7 +736,7 @@
     const result = sheetsKey(
       e,
       {
-        listPaths,
+        listPaths: list.paths,
         // a plain array: state proxies cannot cross the bridge
         selected: [...sel.paths],
         cursor: sel.cursor,
@@ -1030,19 +993,19 @@
     <SheetsPane
       title={labelOf(group) ?? ''}
       {sortBy}
-      {listed}
-      {shown}
-      {shownSections}
-      {knownKeywords}
-      {parsedFilter}
-      {keywordMode}
-      bind:filter
+      listed={list.listed}
+      shown={list.shown}
+      shownSections={list.shownSections}
+      knownKeywords={list.knownKeywords}
+      parsedFilter={list.parsedFilter}
+      keywordMode={list.keywordMode}
+      bind:filter={list.filter}
       bind:el={sheetsEl}
       {sel}
-      {gluedFrom}
+      gluedFrom={list.gluedFrom}
       sheetHint={dnd.sheetHint}
       {keyMod}
-      {whereIs}
+      whereIs={list.whereIs}
       onkeydown={sheetsKeydown}
       onmousedown={keepFocus(sheetsEl)}
       onpaneover={dnd.paneOver}
@@ -1228,7 +1191,7 @@
 {#if keywords.current}
   <KeywordsDialog
     sheets={keywords.current}
-    known={knownKeywords}
+    known={list.knownKeywords}
     onapply={(add, remove) => void keywords.apply(add, remove)}
     oncancel={keywords.close}
   />
