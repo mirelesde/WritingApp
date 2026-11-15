@@ -12,7 +12,6 @@
     sheetTitle,
     type GroupNode,
     type ColorTheme,
-    type SearchOptions,
     allSheets as librarySheets,
     libraryKeywords,
     parseFilter
@@ -36,7 +35,7 @@
   import { ExportFlow } from './exportFlow.svelte'
   import { UnusedImages } from './unusedImages.svelte'
   import { buildPaletteCommands } from './paletteCommands'
-  import { findScopeOptions, replacedMessage, seedQuery, startScope } from './findScopes'
+  import { findScopeOptions } from './findScopes'
   import { ConflictFlow } from './conflictFlow.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
@@ -54,13 +53,14 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { FindFlow } from './findFlow.svelte'
   import { MoveFlow } from './moveFlow.svelte'
   import { runMenuCommand, type CommandActions } from './menuCommands'
   import { EditorActions } from './editorActions'
   import LibraryPane from './LibraryPane.svelte'
   import Welcome from './Welcome.svelte'
   import MovePicker from './MovePicker.svelte'
-  import FindBar, { type FindHost, type FindScope } from './FindBar.svelte'
+  import FindBar from './FindBar.svelte'
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
   import SheetsPane from './SheetsPane.svelte'
@@ -693,10 +693,8 @@
 
   // --- Search ----------------------------------------------------------------
 
-  let finding = $state<{ scope: FindScope; replace: boolean; query: string; key: number } | null>(null)
-  let findBar = $state<FindBar>()
   let searchReturnFocus: HTMLElement | null = null
-  let findKey = 0
+  let findBar = $state<FindBar>()
 
   /** The scopes the Find bar offers: the open sheet, the selected group, its project, the library. */
   const findScopes = $derived(
@@ -709,83 +707,27 @@
       : []
   )
 
-  /** Opens the Find bar. Without a scope it starts as narrow as makes sense. */
-  function openFind(scope?: FindScope, replace = false): void {
-    if (finding) {
-      const wanted = scope && findScopes.some((s) => s.value === scope) ? scope : undefined
-      if (wanted) finding.scope = wanted
-      findBar?.focusQuery(seedQuery(run.selectedText), replace)
-      return
-    }
-    searchReturnFocus = document.activeElement as HTMLElement | null
-    finding = { scope: startScope(scope, findScopes), replace, query: seedQuery(run.selectedText) ?? '', key: ++findKey }
-  }
-
-  function closeFind(): void {
-    finding = null
-    for (const e of Object.values(editors)) e?.clearMarks()
-    const path = sel.only
-    if (path && editors[path]) editors[path]!.focus()
-    else searchReturnFocus?.focus()
-  }
-
-  /** The editor of a sheet, once it has opened. */
-  async function editorFor(path: string): Promise<Editor | undefined> {
-    for (let i = 0; i < 20 && !editors[path]; i++) await tick()
-    return editors[path]
-  }
-
-  const findHost: FindHost = {
-    sheet() {
-      const path = sel.only
-      const editor = path ? editors[path] : undefined
-      if (!path || !editor) return null
-      return { path, text: editor.getText(), cursor: editor.cursorOffset() }
-    },
-    async reveal(path, from, to) {
+  const find = new FindFlow(window.api, {
+    scopes: () => findScopes,
+    selectedText: () => run.selectedText,
+    only: () => sel.only,
+    editor: (path) => editors[path],
+    editors: () => Object.entries(editors).filter((e): e is [string, Editor] => e[1] !== undefined),
+    openSheet: async (path) => {
       if (!library) return
-      if (!(sel.paths.length === 1 && sel.paths[0] === path && editors[path])) {
-        if (listed.some((x) => x.path === path)) await setSelection([path], path, false)
-        else {
-          const parent = path.slice(0, path.lastIndexOf('/'))
-          nav.reveal(parent, library.tree.path)
-          await setSelection([path], path, false)
-        }
-      }
-      ;(await editorFor(path))?.selectRange(from, to)
+      if (!listed.some((x) => x.path === path)) nav.reveal(path.slice(0, path.lastIndexOf('/')), library.tree.path)
+      await setSelection([path], path, false)
     },
-    mark(path, query, options) {
-      for (const [p, e] of Object.entries(editors)) {
-        if (p === path) e?.markMatches(query, options)
-        else e?.clearMarks()
-      }
+    focusBar: (seed, replace) => findBar?.focusQuery(seed, replace),
+    tick,
+    rememberFocus: () => {
+      const was = document.activeElement as HTMLElement | null
+      return () => was?.focus()
     },
-    unmark() {
-      for (const e of Object.values(editors)) e?.clearMarks()
-    },
-    replaceHere(path, changes) {
-      editors[path]?.replaceRanges(changes)
-    },
-    async replaceAll(query, replacement, within, options) {
-      return replaceFound(query, replacement, undefined, { ...options, ...(within ? { within } : {}) })
-    },
-    flush: () => autosaver.flush()
-  }
-
-  /** Replaces in the library (or one sheet) for the Find bar; returns how many were changed. */
-  async function replaceFound(
-    query: string,
-    replacement: string,
-    path: string | undefined,
-    options: SearchOptions
-  ): Promise<number> {
-    const result = await runOp(
-      () => window.api.replaceAll(query, replacement, path ? [path] : undefined, options),
-      true
-    )
-    if (result?.replaced) showInfo(replacedMessage(result.replaced))
-    return result?.replaced ?? 0
-  }
+    runOp: (op, reload) => runOp(op, reload),
+    flush: () => autosaver.flush(),
+    info: showInfo
+  })
 
   /** Opens a sheet found by search: selects its group, expands the way to it, and shows it. */
   async function revealSheet(path: string, focus = true): Promise<void> {
@@ -936,8 +878,8 @@
     openTemplates: () => openPalette(),
     moveTo: move.open,
     exportHtml: () => void openExport(),
-    search: () => openFind(findScopes.some((x) => x.value === 'group') ? 'group' : undefined),
-    findReplace: () => openFind('sheet', true),
+    search: find.search,
+    findReplace: () => find.open('sheet', true),
     quickOpen: () => openQuick(),
     commandPalette: () => openPalette(),
     distractionFree: () => toggleZen(),
@@ -1158,7 +1100,7 @@
         outlineOpen={ui.outlineOpen}
         canBack={trail.canBack}
         canForward={trail.canForward}
-        finding={finding !== null}
+        finding={find.current !== null}
         hasSheet={run.open !== null}
         {styleOpen}
         {styleNow}
@@ -1171,7 +1113,7 @@
         ontogglesheets={ui.toggleSheets}
         ontoggleoutline={ui.toggleOutline}
         onstep={(d) => void trail.step(d)}
-        ontogglefind={() => (finding ? closeFind() : openFind())}
+        ontogglefind={find.toggle}
         onformat={editing.format}
         oninsertimage={() => void editing.insertImage()}
         onstylemenu={toggleStyleMenu}
@@ -1195,17 +1137,17 @@
           ondragend={tabDrag.end}
         />
       {/if}
-      {#if finding && !ui.zen}
-        {#key finding.key}
+      {#if find.current && !ui.zen}
+        {#key find.current.key}
           <FindBar
             bind:this={findBar}
             scopes={findScopes}
-            scope={finding.scope}
-            initialQuery={finding.query}
-            showReplace={finding.replace}
-            host={findHost}
-            onclose={closeFind}
-            onscope={(v) => finding && (finding.scope = v)}
+            scope={find.current.scope}
+            initialQuery={find.current.query}
+            showReplace={find.current.replace}
+            host={find.bar}
+            onclose={find.close}
+            onscope={(v) => find.current && (find.current.scope = v)}
           />
         {/key}
       {/if}
@@ -1232,7 +1174,7 @@
                   onedge={run.open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (run.selectedText = text)}
                   onsection={(heading) => (currentSection = { path: part.path, heading })}
-                  onfind={(action) => (action === 'next' || action === 'previous' ? findBar?.next(action === 'next' ? 1 : -1) : openFind(undefined, action === 'replace'))}
+                  onfind={(action) => (action === 'next' || action === 'previous' ? findBar?.next(action === 'next' ? 1 : -1) : find.open(undefined, action === 'replace'))}
                   focusMode={ui.focusMode}
                   typewriter={ui.typewriter}
                   lineNumbers={ui.lineNumbers}
