@@ -1,0 +1,12 @@
+# Keep line endings the same on every system, so a Windows checkout does not
+# turn every file into CRLF (which the formatter then reports on each line).
+* text=auto eol=lf
+
+# Never touch these.
+*.png binary
+*.ico binary
+*.icns binary
+*.woff2 binary
+*.docx binary
+*.epub binary
+*.pdf binary
