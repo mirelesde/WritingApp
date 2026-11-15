@@ -1,8 +1,6 @@
 <script lang="ts">
   import { onMount, tick, untrack } from 'svelte'
   import {
-    extractHeadings,
-    backlinksTo,
     listSheets,
     findConflictCopies,
     groupLabel,
@@ -49,6 +47,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { OutlineState } from './outlineState.svelte'
   import { Navigation } from './navigation'
   import { sheetToFocusAtEnd } from './pageClick'
   import { runInOwnGroup, tabHasChanges as tabHasChangesIn, sheetName as sheetNameIn } from './tabRuns'
@@ -71,7 +70,7 @@
   import type { FormatKind, LineStyle } from './blockStyle'
   import Preferences from './Preferences.svelte'
   import EditorBar from './EditorBar.svelte'
-  import Outline, { type Entry } from './Outline.svelte'
+  import Outline from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
@@ -277,27 +276,13 @@
   ]
 
 
-  const outlineEntries = $derived<Entry[]>(
-    run.open
-      ? run.open.parts.flatMap((part) =>
-          extractHeadings(run.edits[part.path] ?? part.text).map((h) => ({ ...h, path: part.path }))
-        )
-      : []
-  )
-
-  /** Which section the cursor is in: its part of the run and the heading index within it. */
-  let currentSection = $state<{ path: string; heading: number } | null>(null)
-  const currentEntry = $derived.by(() => {
-    if (!currentSection) return null
-    const own = outlineEntries.filter((e) => e.path === currentSection!.path)
-    return own[currentSection.heading] ?? null
+  const outline = new OutlineState({
+    parts: () => run.open?.parts,
+    edited: (path) => run.edits[path],
+    library: () => library,
+    selected: () => sel.paths,
+    goTo: (path, offset) => editors[path]?.goTo(offset)
   })
-
-  function goToHeading(entry: Entry): void {
-    editors[entry.path]?.goTo(entry.offset)
-  }
-
-
 
   let preferencesOpen = $state(false)
 
@@ -485,10 +470,6 @@
 
   /** Every sheet title, for wiki links. */
   const sheetTitles = $derived(library ? listSheets(library.tree).map((s) => s.title) : [])
-  /** The sheets that link to the open one. */
-  const backlinks = $derived(
-    library && sel.paths.length === 1 ? backlinksTo(library.tree, sel.paths[0]!) : []
-  )
 
   /** Opens the sheet a [[link]] names; a link to nothing creates that sheet beside the current one. */
   const creation = new SheetCreation(window.api, sel, {
@@ -998,7 +979,7 @@
                   onfocus={() => focusedPart(part.path)}
                   onedge={run.open.parts.length > 1 ? (d) => crossEdge(part.path, d) : undefined}
                   onselection={(text) => (run.selectedText = text)}
-                  onsection={(heading) => (currentSection = { path: part.path, heading })}
+                  onsection={(heading) => outline.moved(part.path, heading)}
                   onfind={(action) => (action === 'next' || action === 'previous' ? findBar?.next(action === 'next' ? 1 : -1) : find.open(undefined, action === 'replace'))}
                   focusMode={ui.focusMode}
                   typewriter={ui.typewriter}
@@ -1026,7 +1007,7 @@
         <StatusBar text={run.text} selected={run.selectedText} groupWords={words.total} />
       {/if}
       {#if ui.outlineOpen && !ui.zen}
-        <div class="outline-slot"><Outline entries={outlineEntries} current={currentEntry} onpick={goToHeading} {backlinks} onbacklink={(p) => void revealSheet(p)} /></div>
+        <div class="outline-slot"><Outline entries={outline.entries} current={outline.current} onpick={outline.goTo} backlinks={outline.backlinks} onbacklink={(p) => void revealSheet(p)} /></div>
       {/if}
     </section>
   </div>
