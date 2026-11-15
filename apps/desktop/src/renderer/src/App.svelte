@@ -21,6 +21,7 @@
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
   import { RecoveryFlow } from './recoveryFlow.svelte'
+  import { sheetsKey, treeKey, windowKey } from './keyActions'
   import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
@@ -58,14 +59,11 @@
   import ExportPreview from './ExportPreview.svelte'
   import {
     errorMessage,
-    moveSlot,
     moveTargets,
     pathRange,
     remapPath,
     runOf,
     visibleGroups,
-    commonParent,
-    listKeyTarget,
     type DropZone,
     type MoveTarget,
     type TreeDnd
@@ -1480,117 +1478,57 @@
 
   function treeKeydown(e: KeyboardEvent): void {
     if (!library || renaming) return
-    const mod = e.metaKey || e.ctrlKey
-    const flat = visibleGroups(library.tree, nav.expanded)
-    const i = flat.findIndex((v) => v.group.path === nav.selectedGroup)
-    const current = flat[i]
-    if (!current) return
-    const go = (v: { group: GroupNode } | undefined): void => {
-      if (v) void selectGroup(v.group.path)
-    }
-
-    if (mod && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-      e.preventDefault()
-      const parent = current.parent
-      if (!parent) return
-      const delta = e.key === 'ArrowUp' ? -1 : 1
-      const slot = moveSlot(
-        parent.children.map((c) => c.path),
-        parent.children.filter((c) => c.kind === 'group').map((c) => c.path),
-        [current.group.path],
-        delta
-      )
-      if (slot !== undefined)
-        void runOp(() => window.api.move([current.group.path], parent.path, slot))
-      return
-    }
-    if (nodeClipboardKey(e)) return
-    if (mod || e.altKey) return
-
-    const subgroups = current.group.children.some((c) => c.kind === 'group')
-    switch (e.key) {
-      case 'ArrowDown':
-        go(flat[i + 1])
-        break
-      case 'ArrowUp':
-        go(flat[i - 1])
-        break
-      case 'ArrowRight':
-        if (subgroups && !nav.expanded[current.group.path]) nav.expanded[current.group.path] = true
-        else go(flat[i + 1]?.parent === current.group ? flat[i + 1] : undefined)
-        break
-      case 'ArrowLeft':
-        if (subgroups && nav.expanded[current.group.path]) nav.expanded[current.group.path] = false
-        else go(current.parent ? { group: current.parent } : undefined)
-        break
-      case 'Enter':
-      case 'F2':
-        void startRename(current.group.path)
-        break
-      default:
-        return
-    }
-    e.preventDefault()
+    const result = treeKey(e, visibleGroups(library.tree, nav.expanded), nav.selectedGroup, nav.expanded, () =>
+      nodeClipboardKey(e)
+    )
+    if (result.handled) e.preventDefault()
+    const action = result.action
+    if (!action) return
+    if (action.kind === 'select') void selectGroup(action.path)
+    else if (action.kind === 'expand') nav.expanded[action.path] = action.open
+    else if (action.kind === 'rename') void startRename(action.path)
+    else void runOp(() => window.api.move(action.paths, action.parent, action.slot))
   }
 
   function sheetsKeydown(e: KeyboardEvent): void {
-    const mod = e.metaKey || e.ctrlKey
-    if (mod && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-      e.preventDefault()
-      // As with dragging: a sorted list has no saved order to change, and sheets from
-      // different groups can only be moved to another group, not reordered.
-      const chosen = [...sel.paths] // a plain array: state proxies cannot cross the bridge
-      const where = commonParent(chosen)
-      const parent = where !== undefined && library ? findGroup(library.tree, where) : undefined
-      if (!parent || sortBy !== 'manual') return
-      const slot = moveSlot(
-        parent.children.map((c) => c.path),
-        listPaths.filter((p) => commonParent([p]) === where),
-        chosen,
-        e.key === 'ArrowUp' ? -1 : 1
-      )
-      if (slot !== undefined) void runOp(() => window.api.move(chosen, parent.path, slot))
-      return
-    }
-    if (mod && e.key.toLowerCase() === 'a') {
-      e.preventDefault()
-      void setSelection([...listPaths], sel.cursor ?? listPaths[0] ?? null)
-      return
-    }
-    if (nodeClipboardKey(e)) return
-    if (mod || e.altKey) return
-
-    const at = sel.cursor ? listPaths.indexOf(sel.cursor) : -1
-    if (e.key === 'Enter') {
-      e.preventDefault()
+    const result = sheetsKey(
+      e,
+      {
+        listPaths,
+        // a plain array: state proxies cannot cross the bridge
+        selected: [...sel.paths],
+        cursor: sel.cursor,
+        anchor: sel.anchor,
+        manual: sortBy === 'manual',
+        siblings: (where) => {
+          const parent = library ? findGroup(library.tree, where) : undefined
+          return parent?.children.map((c) => c.path)
+        }
+      },
+      () => nodeClipboardKey(e)
+    )
+    if (result.handled) e.preventDefault()
+    const action = result.action
+    if (!action) return
+    if (action.kind === 'move') void runOp(() => window.api.move(action.paths, action.parent, action.slot))
+    else if (action.kind === 'edit') {
       if (sel.paths[0]) editors[sel.paths[0]]?.focus()
-      return
-    }
-    const target = listKeyTarget(e.key, at, listPaths.length)
-    if (target === undefined) return
-    e.preventDefault()
-    const path = listPaths[target]
-    if (path === undefined) return
-    if (e.shiftKey && sel.anchor) {
-      void setSelection(pathRange(listPaths, sel.anchor, path), path)
     } else {
-      sel.anchor = path
-      void setSelection([path], path)
+      if (action.anchor !== undefined) sel.anchor = action.anchor
+      void setSelection(action.paths, action.cursor)
     }
   }
 
   function windowKeydown(e: KeyboardEvent): void {
-    // Cmd/Ctrl+1, 2, 3 jump between the panes; Cmd/Ctrl+[ and ] go back and forward.
-    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || !library) return
-    if (e.key === '[') void step(-1)
-    else if (e.key === ']') void step(1)
-    else if (e.key === '1') {
+    const action = windowKey(e, library !== null, sel.paths[0] !== undefined)
+    if (!action) return
+    if (action === 'back') void step(-1)
+    else if (action === 'forward') void step(1)
+    else if (action === 'focus-library') {
       if (ui.sidebarHidden) ui.sidebarPeek = true
       treeEl?.focus()
-    }
-    else if (e.key === '2') sheetsEl?.focus()
-    else if (e.key === '3' && sel.paths[0]) editors[sel.paths[0]]?.focus()
-    else return
+    } else if (action === 'focus-sheets') sheetsEl?.focus()
+    else if (sel.paths[0]) editors[sel.paths[0]]?.focus()
     e.preventDefault()
   }
 
