@@ -51,6 +51,7 @@
   import { createAutosaver, type SaveStatus } from './autosave'
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
+  import { TabFlow } from './tabFlow'
   import { EditorActions } from './editorActions'
   import LibraryPane from './LibraryPane.svelte'
   import Welcome from './Welcome.svelte'
@@ -442,47 +443,22 @@
     return true
   }
 
-  async function showTab(index: number): Promise<void> {
-    const path = tabs.select(index)
-    if (path === undefined) return
-    await revealSheet(path)
-  }
-
-  /** Opens `path` in a tab after the front one, or switches to the tab that already has it. */
-  async function openInTab(path: string | undefined, reuse = true): Promise<void> {
-    if (!path) return
-    await showTab(tabs.open(path, reuse))
-  }
-
-  function newTab(): void {
-    void openInTab(sel.only ?? tabs.front, false)
-  }
-
-  async function closeTab(index = tabs.active): Promise<void> {
-    if (tabs.list.length <= 1) {
-      // The window asks about unsaved changes itself when it closes.
-      void window.api.closeWindow()
-      return
-    }
-    const closing = tabs.list[index]
-    if (closing !== undefined && !(await resolveUnsaved(runFor(closing), 'tab'))) return
-    if (tabs.list[index] !== closing) return
-    if (tabs.remove(index)) void showTab(tabs.active)
-  }
+  const tabFlow = new TabFlow(tabs, {
+    only: () => sel.only,
+    reveal: (path) => revealSheet(path),
+    runFor,
+    resolveUnsaved,
+    closeWindow: () => void window.api.closeWindow()
+  })
 
   const tabDrag = new TabDrag(tabs, {
     hasChanges: tabHasChanges,
     sheetExists: (path) => (library ? sheetExists(library.tree, path) : false),
-    show: showTab,
-    close: closeTab,
+    show: tabFlow.show,
+    close: tabFlow.close,
     newWindow: (path, at) => window.api.newWindow(path, at),
     windowSize: () => ({ width: window.innerWidth, height: window.innerHeight })
   })
-
-  function cycleTab(delta: number): void {
-    const to = tabs.cycleTarget(delta)
-    if (to !== undefined) void showTab(to)
-  }
 
   // --- Back and forward ---------------------------------------------------
 
@@ -651,7 +627,7 @@
     else if (action === 'copy-path') await window.api.copyPath(path)
     else if (action === 'new-sheet') await creation.newSheet()
     else if (action === 'new-group') await ops.newGroup(kind === 'root')
-    else if (action === 'open-tab') await openInTab(path)
+    else if (action === 'open-tab') await tabFlow.open(path)
     else if (action === 'open-window') await window.api.newWindow(path)
     else if (action === 'keywords') openKeywords()
     else if (action === 'rename') void ops.startRename(path)
@@ -1039,10 +1015,10 @@
   function handleCommand(command: MenuCommand): void {
     if (command === 'close-tab' && !library) void window.api.closeWindow()
     if (!library) return
-    if (command === 'new-tab') newTab()
-    else if (command === 'close-tab') closeTab()
-    else if (command === 'next-tab') cycleTab(1)
-    else if (command === 'previous-tab') cycleTab(-1)
+    if (command === 'new-tab') tabFlow.newTab()
+    else if (command === 'close-tab') tabFlow.close()
+    else if (command === 'next-tab') tabFlow.cycle(1)
+    else if (command === 'previous-tab') tabFlow.cycle(-1)
     else if (command === 'save') void autosaver.flush(manual() ? (run.open?.parts.map((p) => p.path) ?? []) : undefined)
     else if (command === 'save-all') void autosaver.flush()
     else if (command === 'toggle-sidebar') ui.toggleSidebar()
@@ -1311,9 +1287,9 @@
           titles={tabTitles}
           {keyMod}
           hasChanges={tabHasChanges}
-          onshow={(i) => void showTab(i)}
-          onclose={closeTab}
-          onnew={newTab}
+          onshow={(i) => void tabFlow.show(i)}
+          onclose={tabFlow.close}
+          onnew={tabFlow.newTab}
           ondragstart={tabDrag.start}
           ondragend={tabDrag.end}
         />
