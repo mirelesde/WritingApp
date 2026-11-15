@@ -7,6 +7,7 @@ import {
   moveLineUp,
   selectLine
 } from '@codemirror/commands'
+import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorSelection, type StateCommand, type Transaction } from '@codemirror/state'
 import { describe, expect, it } from 'vitest'
 import { createEditorState } from './editor'
@@ -17,6 +18,9 @@ const hooks = { onchange: () => {}, onblur: () => {} }
 function run(doc: string, command: StateCommand): string {
   let state = createEditorState(doc, hooks)
   state = state.update({ selection: EditorSelection.cursor(doc.length) }).state
+  // The Markdown parser works within a time budget; under load the tree can be
+  // unfinished, so finish it before the command reads it.
+  ensureSyntaxTree(state, doc.length, 10_000)
   command({
     state,
     dispatch: (tr: Transaction) => {
