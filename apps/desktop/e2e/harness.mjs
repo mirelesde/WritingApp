@@ -2,8 +2,8 @@
 // and talks to the page over the Chrome DevTools protocol. No extra packages: Node's own
 // fetch and WebSocket are enough. Run `npm run build` first; `npm run e2e` runs the tests.
 import { spawn } from 'node:child_process'
-import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, realpath } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { mkdtemp, mkdir, writeFile, readFile, readdir, rm } from 'node:fs/promises'
+import { existsSync, realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -35,7 +35,7 @@ export async function until(fn, what, ms = 8000) {
 /** A library on disk made from `{ 'Group/Sheet.md': 'text' }`, in a fresh temp folder. */
 export async function makeLibrary(files) {
   // Windows' temp folder can be an 8.3 short path (RUNNER~1); the app sees the long one.
-  const root = await realpath(await mkdtemp(join(tmpdir(), 'wa-e2e-lib-')))
+  const root = realpathSync.native(await mkdtemp(join(tmpdir(), 'wa-e2e-lib-')))
   for (const [rel, text] of Object.entries(files)) {
     const file = join(root, rel)
     await mkdir(dirname(file), { recursive: true })
