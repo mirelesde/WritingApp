@@ -49,6 +49,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { runInOwnGroup, tabHasChanges as tabHasChangesIn, sheetName as sheetNameIn } from './tabRuns'
   import { SheetList } from './sheetList.svelte'
   import { GroupWords } from './groupWords.svelte'
   import { takeExternalChange, type ExternalHost } from './externalChanges'
@@ -354,18 +355,9 @@
     new Map((library ? listSheets(library.tree) : []).map((s) => [s.path, s.title || 'Untitled']))
   )
 
-  /** The sheets that read as one with `path` in its own group (so a glued run is one tab). */
-  function runFor(path: string): string[] {
-    const folder = library ? findGroup(library.tree, path.slice(0, path.lastIndexOf('/'))) : undefined
-    return folder ? runOf(folder.children, path) : [path]
-  }
-
-  /** Whether the tab's sheet, or any sheet glued to it, has text that is not saved. */
-  function tabHasChanges(path: string): boolean {
-    return runFor(path).some((p) => dirty.includes(p))
-  }
-
-  const sheetName = (path: string): string => tabTitles.get(path) ?? path.slice(path.lastIndexOf('/') + 1)
+  const runFor = (path: string): string[] => runInOwnGroup(library?.tree, path)
+  const tabHasChanges = (path: string): boolean => tabHasChangesIn(library?.tree, dirty, path)
+  const sheetName = (path: string): string => sheetNameIn(tabTitles, path)
 
   const unsavedPrompt = new UnsavedPrompt()
   const unsavedResolver = new UnsavedResolver({
