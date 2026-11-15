@@ -1228,6 +1228,21 @@
     grid-template-rows: var(--topbar-height) auto minmax(0, 1fr);
     overflow: hidden;
   }
+  /* Nothing to show: a quiet message in the middle of the pane, under the tool row. */
+  .placeholder {
+    position: absolute;
+    inset: var(--topbar-height) 0 0 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0 24px 10vh;
+    color: var(--faint);
+    font-size: 30px;
+    font-weight: 300;
+    text-align: center;
+    user-select: none;
+    pointer-events: none;
+  }
   /* Distraction-free: the tool row floats over the top edge and appears on hover. */
   .layout.zen .editor {
     grid-template-rows: 0 0 minmax(0, 1fr);
