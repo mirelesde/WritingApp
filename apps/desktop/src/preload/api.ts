@@ -26,6 +26,7 @@ export interface OpResult {
 
 export type MenuCommand =
   | 'save'
+  | 'save-all'
   | 'new-sheet'
   | 'new-group'
   | 'new-project'
@@ -253,6 +254,10 @@ export interface Api {
   onFlushRequest(callback: () => void): () => void
   /** Tells the window it may close; its text has been saved. */
   flushed(): void
+  /** Tells the main process the window is asking the user before it closes, so it should not time out. */
+  holdClose(): void
+  /** Tells the main process the user chose to keep the window open. */
+  closeCancelled(): void
   /** Called when a File menu command that the UI handles is chosen. */
   onMenuCommand(callback: (command: MenuCommand) => void): () => void
   /** Called when files in the open library change outside the app, with the library as it is now. */

@@ -32,6 +32,9 @@ const pendingSheet = new Map<number, string>()
 const SAVE_ON_CLOSE_MS = 4000
 /** Windows waiting to close, by web contents id, and what finishes the close. */
 const closers = new Map<number, () => void>()
+// What to do when the window asks the user first (stop waiting), or the user keeps it open.
+const holders = new Map<number, () => void>()
+const cancellers = new Map<number, () => void>()
 let quitting = false
 
 function createWindow(sheet?: string, where?: { x: number; y: number }): void {
@@ -68,6 +71,8 @@ function createWindow(sheet?: string, where?: { x: number; y: number }): void {
   mainWindow.on('closed', () => {
     pendingSheet.delete(id)
     closers.delete(id)
+    holders.delete(id)
+    cancellers.delete(id)
     // A quit that was held back while this window saved carries on with the rest.
     if (quitting) app.quit()
   })
@@ -84,8 +89,15 @@ function createWindow(sheet?: string, where?: { x: number; y: number }): void {
     event.preventDefault()
     if (closers.has(id)) return
     closers.set(id, closeNow)
+    const timer = setTimeout(closeNow, SAVE_ON_CLOSE_MS)
+    holders.set(id, () => clearTimeout(timer))
+    cancellers.set(id, () => {
+      clearTimeout(timer)
+      closers.delete(id)
+      // A quit that was waiting on this window is off.
+      quitting = false
+    })
     contents.send('window:flush')
-    setTimeout(closeNow, SAVE_ON_CLOSE_MS)
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -210,6 +222,11 @@ function buildMenu(): Menu {
           label: 'Save',
           accelerator: 'CmdOrCtrl+S',
           click: () => sendCommand('save')
+        },
+        {
+          label: 'Save All',
+          accelerator: 'CmdOrCtrl+Alt+S',
+          click: () => sendCommand('save-all')
         },
         { type: 'separator' },
         {
@@ -435,6 +452,8 @@ app.whenReady().then(async () => {
     return sheet
   })
   ipcMain.on('window:flushed', (event) => closers.get(event.sender.id)?.())
+  ipcMain.on('window:holdClose', (event) => holders.get(event.sender.id)?.())
+  ipcMain.on('window:closeCancelled', (event) => cancellers.get(event.sender.id)?.())
   app.on('before-quit', () => (quitting = true))
   ipcMain.handle('window:close', (event) => BrowserWindow.fromWebContents(event.sender)?.close())
   const rebuild = (): void => Menu.setApplicationMenu(buildMenu())

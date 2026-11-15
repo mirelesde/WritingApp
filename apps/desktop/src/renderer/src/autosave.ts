@@ -3,8 +3,12 @@ export type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error'
 export interface Autosaver {
   /** Records the latest text for a sheet and schedules a save after a pause. */
   change(path: string, text: string): void
-  /** Saves everything outstanding now. Resolves when the writes are done. */
-  flush(): Promise<void>
+  /** Saves everything outstanding now, or only the given sheets. Resolves when the writes are done. */
+  flush(paths?: readonly string[]): Promise<void>
+  /** The text waiting to be saved for a sheet, if there is any. */
+  pending(path: string): string | undefined
+  /** The sheets that have text waiting to be saved. */
+  unsavedPaths(): string[]
   /** Forgets unsaved text for a sheet, e.g. when the disk's version replaced it. */
   discard(path: string): void
 }
@@ -23,6 +27,8 @@ interface Options {
   }
   /** Quiet time after a keystroke before the text is journaled. Shorter than `delay`. */
   journalDelay?: number
+  /** Told which sheets have unsaved text, whenever that changes. */
+  onUnsaved?: (paths: string[]) => void
   /** Whether to save by itself after a pause. When it says no, text waits for `flush` (the journal still keeps it safe). */
   enabled?: () => boolean
 }
@@ -39,6 +45,7 @@ export function createAutosaver({
   retryDelay = 5000,
   journal,
   journalDelay = 250,
+  onUnsaved = () => {},
   enabled = () => true
 }: Options): Autosaver {
   const unsaved = new Map<string, string>()
@@ -63,7 +70,14 @@ export function createAutosaver({
   let writing = 0
   let failed = false
 
+  let reported = ''
   function status(): void {
+    const paths = [...unsaved.keys()]
+    const key = paths.join('\n')
+    if (key !== reported) {
+      reported = key
+      onUnsaved(paths)
+    }
     onStatus(writing > 0 ? 'saving' : failed ? 'error' : unsaved.size > 0 ? 'unsaved' : 'saved')
   }
 
@@ -90,9 +104,10 @@ export function createAutosaver({
   }
 
   /** The save that follows a pause in typing. */
-  function flushNow(): Promise<void> {
+  function flushNow(only?: readonly string[]): Promise<void> {
     clearTimeout(timer)
     for (const [path, text] of [...unsaved]) {
+      if (only && !only.includes(path)) continue
       writing++
       // Start at once when idle (matters when the window is closing);
       // otherwise queue behind the write in progress so order is kept.
@@ -103,12 +118,12 @@ export function createAutosaver({
   }
 
   /** Saves everything outstanding now, for callers that cannot wait for a pause (closing, searching). */
-  function flush(): Promise<void> {
+  function flush(paths?: readonly string[]): Promise<void> {
     // The text goes to the journal first, without waiting: if the window closes
     // or the write fails, the journal still has it.
     clearTimeout(journalTimer)
     writeJournal()
-    return flushNow()
+    return flushNow(paths)
   }
 
   return {
@@ -122,6 +137,8 @@ export function createAutosaver({
       }
     },
     flush,
+    pending: (path) => unsaved.get(path),
+    unsavedPaths: () => [...unsaved.keys()],
     discard(path) {
       unsaved.delete(path)
       clearJournal(path)

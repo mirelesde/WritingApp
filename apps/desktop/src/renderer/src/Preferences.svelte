@@ -52,7 +52,7 @@
     typewriterPosition: { centre: 'Middle', upper: 'Upper third' },
     textAlign: { left: 'Left', justify: 'Justified' },
     sheetSort: {},
-    saveMode: { auto: 'While typing', switch: 'When I switch or close' }
+    saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' }
   }
 
   const themeNames: Record<(typeof THEMES)[number], string> = {
@@ -353,7 +353,11 @@
     <div id="pref-panel-saving" role="tabpanel" aria-labelledby="pref-tab-saving">
       <div class="row">
         <span id="pref-saveMode"
-          >Save<small>While typing, or only with ⌘S, when you switch to another sheet, and when you close</small></span
+          >Save<small>{view.saveMode === 'manual'
+            ? 'Nothing is saved until you save. Sheets open in tabs, a dot marks changes, and closing asks first'
+            : view.saveMode === 'switch'
+              ? 'With ⌘S, when you switch to another sheet, and when you close'
+              : 'Automatically, a moment after you stop typing'}</small></span
         >
         <div class="segments" role="radiogroup" aria-labelledby="pref-saveMode">
           {#each CHOICES.saveMode as value (value)}

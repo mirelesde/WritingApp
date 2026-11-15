@@ -186,6 +186,29 @@ describe('createAutosaver with autosave off', () => {
   })
 })
 
+describe('createAutosaver with several sheets', () => {
+  it('saves only the sheets asked for, and reports which are unsaved', async () => {
+    const writes: string[] = []
+    const reports: string[][] = []
+    const autosaver = createAutosaver({
+      save: async (p) => void writes.push(p),
+      onUnsaved: (paths) => reports.push(paths),
+      enabled: () => false
+    })
+    autosaver.change('/a.md', 'A')
+    autosaver.change('/b.md', 'B')
+    expect(autosaver.unsavedPaths()).toEqual(['/a.md', '/b.md'])
+    expect(autosaver.pending('/b.md')).toBe('B')
+    await autosaver.flush(['/b.md'])
+    expect(writes).toEqual(['/b.md'])
+    expect(autosaver.unsavedPaths()).toEqual(['/a.md'])
+    expect(autosaver.pending('/b.md')).toBeUndefined()
+    autosaver.discard('/a.md')
+    expect(reports.at(-1)).toEqual([])
+    expect(reports[0]).toEqual(['/a.md'])
+  })
+})
+
 describe('createAutosaver journal', () => {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- the shape is plain from the return
   function withJournal() {

@@ -34,6 +34,7 @@
   import CommandPalette from './CommandPalette.svelte'
   import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
+  import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
   import GroupTree from './GroupTree.svelte'
   import MovePicker from './MovePicker.svelte'
@@ -106,6 +107,13 @@
     read: (path) => window.api.readSheet(path),
     write: (path, content) => window.api.writeSheet(path, content)
   })
+  /** Sheets with changes that are not on disk. Only ever non-empty for long when saving is manual. */
+  let dirty = $state<string[]>([])
+  const manual = (): boolean => prefs?.saveMode === 'manual'
+  /** Saves what is outstanding, except in manual mode, where nothing is saved until asked. */
+  async function settle(): Promise<void> {
+    if (!manual()) await autosaver.flush()
+  }
   const autosaver = createAutosaver({
     save: async (path, content) => {
       try {
@@ -118,7 +126,8 @@
       }
     },
     onStatus: (status) => (saveStatus = status),
-    enabled: () => prefs?.saveMode !== 'switch',
+    onUnsaved: (paths) => (dirty = paths),
+    enabled: () => prefs?.saveMode === 'auto',
     journal: {
       put: (path, text) => window.api.journalPut(path, text),
       clear: (path) => window.api.journalClear(path)
@@ -593,7 +602,7 @@
   })
 
   function applyViewSettings(view: Parameters<typeof applyView>[0]): void {
-    const turnedOn = view.saveMode === 'auto' && prefs?.saveMode === 'switch'
+    const turnedOn = view.saveMode === 'auto' && prefs !== null && prefs.saveMode !== 'auto'
     prefs = view
     // Text typed while autosave was off is saved as soon as it is turned back on.
     if (turnedOn) void autosaver.flush()
@@ -607,6 +616,7 @@
   }
 
   async function chooseLibrary(): Promise<void> {
+    if (!(await resolveUnsaved(autosaver.unsavedPaths(), 'library'))) return
     await autosaver.flush()
     const info = await window.api.chooseLibrary()
     if (info) showLibrary(info)
@@ -633,8 +643,10 @@
       const texts = await Promise.all(paths.map((p) => window.api.readSheet(p)))
       if (id !== readId) return
       paths.forEach((p, i) => guard.trust(p, texts[i]!))
-      open = { parts: paths.map((p, i) => ({ path: p, text: texts[i]! })) }
-      edits = {}
+      // Text waiting to be saved (manual mode) is shown instead of the file's.
+      const shown = paths.map((p, i) => autosaver.pending(p) ?? texts[i]!)
+      open = { parts: paths.map((p, i) => ({ path: p, text: shown[i]! })) }
+      edits = Object.fromEntries(paths.flatMap((p, i) => (shown[i] !== texts[i] ? [[p, shown[i]!]] : [])))
       selectedText = ''
       error = ''
     } catch {
@@ -665,7 +677,16 @@
         tabs = [only]
         activeTab = 0
       } else if (tabs[activeTab] !== only) {
-        tabs = tabs.map((p, i) => (i === activeTab ? only : p))
+        const existing = tabs.indexOf(only)
+        if (manual() && existing >= 0) {
+          activeTab = existing
+        } else if (manual() && tabHasChanges(tabs[activeTab]!)) {
+          // The front tab has unsaved changes, so it stays; the sheet opens in a tab beside it.
+          activeTab += 1
+          tabs = [...tabs.slice(0, activeTab), only, ...tabs.slice(activeTab)]
+        } else {
+          tabs = tabs.map((p, i) => (i === activeTab ? only : p))
+        }
       }
     })
   })
@@ -688,6 +709,57 @@
     new Map((library ? listSheets(library.tree) : []).map((s) => [s.path, s.title || 'Untitled']))
   )
 
+  /** The sheets that read as one with `path` in its own group (so a glued run is one tab). */
+  function runFor(path: string): string[] {
+    const folder = library ? findGroup(library.tree, path.slice(0, path.lastIndexOf('/'))) : undefined
+    return folder ? runOf(folder.children, path) : [path]
+  }
+
+  /** Whether the tab's sheet, or any sheet glued to it, has text that is not saved. */
+  function tabHasChanges(path: string): boolean {
+    return runFor(path).some((p) => dirty.includes(p))
+  }
+
+  const sheetName = (path: string): string => tabTitles.get(path) ?? path.slice(path.lastIndexOf('/') + 1)
+
+  /** Asks what to do with unsaved changes; resolves at once when saving is not manual or there are none. */
+  let unsavedAsk = $state<{
+    names: string[]
+    what: 'tab' | 'window' | 'library'
+    resolve: (answer: 'save' | 'discard' | 'cancel') => void
+  } | null>(null)
+
+  function askUnsaved(paths: string[], what: 'tab' | 'window' | 'library'): Promise<'save' | 'discard' | 'cancel'> {
+    if (!manual() || paths.length === 0) return Promise.resolve('save')
+    return new Promise((resolve) => {
+      unsavedAsk = {
+        names: paths.map(sheetName),
+        what,
+        resolve: (answer) => {
+          unsavedAsk = null
+          resolve(answer)
+        }
+      }
+    })
+  }
+
+  /** Settles the unsaved text of `paths`: saves it, or drops it. False when the user cancelled or a save failed. */
+  async function resolveUnsaved(paths: string[], what: 'tab' | 'window' | 'library'): Promise<boolean> {
+    const unsaved = paths.filter((p) => dirty.includes(p))
+    const answer = await askUnsaved(unsaved, what)
+    if (answer === 'cancel') return false
+    if (answer === 'discard') {
+      for (const p of unsaved) autosaver.discard(p)
+      return true
+    }
+    await autosaver.flush(unsaved.length > 0 ? unsaved : undefined)
+    if (autosaver.unsavedPaths().some((p) => unsaved.includes(p))) {
+      notice = 'Could not save, so nothing was closed.'
+      return false
+    }
+    return true
+  }
+
   async function showTab(index: number): Promise<void> {
     const path = tabs[index]
     if (path === undefined) return
@@ -709,11 +781,15 @@
     void openInTab(selection.length === 1 ? selection[0] : tabs[activeTab], false)
   }
 
-  function closeTab(index = activeTab): void {
+  async function closeTab(index = activeTab): Promise<void> {
     if (tabs.length <= 1) {
+      // The window asks about unsaved changes itself when it closes.
       void window.api.closeWindow()
       return
     }
+    const closing = tabs[index]
+    if (closing !== undefined && !(await resolveUnsaved(runFor(closing), 'tab'))) return
+    if (tabs[index] !== closing) return
     const wasFront = index === activeTab
     tabs = tabs.filter((_, i) => i !== index)
     if (index < activeTab) activeTab--
@@ -722,6 +798,8 @@
   }
 
   const TAB_MIME = 'application/x-writingapp-tab'
+  /** Set on a drag whose tab has unsaved changes: only this window can take it, since the text lives here. */
+  const DIRTY_MIME = 'application/x-writingapp-unsaved'
   /** The tab being dragged from this window, and where a drop would put it. */
   let dragTab = $state<number | null>(null)
   let tabHint = $state<number | null>(null)
@@ -730,6 +808,7 @@
   function tabDragStart(i: number, e: DragEvent): void {
     if (!e.dataTransfer) return
     e.dataTransfer.setData(TAB_MIME, tabs[i] ?? '')
+    if (tabHasChanges(tabs[i] ?? '')) e.dataTransfer.setData(DIRTY_MIME, '1')
     e.dataTransfer.effectAllowed = 'move'
     dragTab = i
     tabDropped = false
@@ -745,6 +824,7 @@
 
   function tabDragOver(e: DragEvent): void {
     if (!e.dataTransfer?.types.includes(TAB_MIME)) return
+    if (e.dataTransfer.types.includes(DIRTY_MIME) && dragTab === null) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     tabHint = tabSlot(e)
@@ -789,7 +869,7 @@
     if (e.dataTransfer?.dropEffect === 'move') {
       // Another window took it.
       closeTab(from)
-    } else if (outside && path && tabs.length > 1) {
+    } else if (outside && path && tabs.length > 1 && !tabHasChanges(path)) {
       // Dropped on the desktop: it becomes a window of its own.
       void window.api.newWindow(path, { x: e.screenX, y: e.screenY })
       closeTab(from)
@@ -835,7 +915,7 @@
 
   /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
   async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
-    await autosaver.flush()
+    await settle()
     const left = selection.filter((p) => !paths.includes(p))
     selection = paths
     cursor = to
@@ -852,7 +932,9 @@
       error = ''
       readId++
     }
-    if (left.length > 0) void renameToMatchTitles(left)
+    // Renaming is a change to the library, which saves what is open first. In manual
+    // mode nothing is saved unasked, so renames wait until nothing has unsaved text.
+    if (left.length > 0 && !(manual() && autosaver.unsavedPaths().length > 0)) void renameToMatchTitles(left)
   }
 
   /** Sheets just left are renamed to follow their titles; the UI follows the new paths. */
@@ -1168,6 +1250,7 @@
       await revealSheet(path)
       return
     }
+    await settle()
     const parent = group
     if (!parent) return
     await autosaver.flush()
@@ -1285,7 +1368,7 @@
   }
 
   async function selectGroup(path: string): Promise<void> {
-    await autosaver.flush()
+    await settle()
     selectedGroup = path
     filter = ''
     clearSheets()
@@ -1474,7 +1557,7 @@
   async function revealSheet(path: string, focus = true): Promise<void> {
     if (!library) return
     quickOpening = false
-    await autosaver.flush()
+    await settle()
     const parent = path.slice(0, path.lastIndexOf('/'))
     for (let p = parent; p.length >= library.tree.path.length; p = p.slice(0, p.lastIndexOf('/'))) {
       expanded[p] = true
@@ -1890,7 +1973,8 @@
     else if (command === 'close-tab') closeTab()
     else if (command === 'next-tab') cycleTab(1)
     else if (command === 'previous-tab') cycleTab(-1)
-    else if (command === 'save') void autosaver.flush()
+    else if (command === 'save') void autosaver.flush(manual() ? (open?.parts.map((p) => p.path) ?? []) : undefined)
+    else if (command === 'save-all') void autosaver.flush()
     else if (command === 'toggle-sidebar') toggleSidebar()
     else if (command === 'toggle-sheets') toggleSheets()
     else if (command === 'new-sheet') void newSheet()
@@ -2085,11 +2169,24 @@
     const unsubscribeMenu = window.api.onMenuCommand(handleCommand)
     const unsubscribeText = window.api.onEditMenu(textMenu)
     // Last chance to save when the window closes.
-    const saveOnClose = (): void => void autosaver.flush()
+    const saveOnClose = (): void => {
+      if (!manual()) void autosaver.flush()
+    }
     window.addEventListener('beforeunload', saveOnClose)
     // The main process holds the window open until this finishes.
     const unsubscribeFlush = window.api.onFlushRequest(() => {
-      void autosaver.flush().finally(() => window.api.flushed())
+      void (async () => {
+        const waiting = autosaver.unsavedPaths()
+        if (manual() && waiting.length > 0) {
+          // Asking the user can take longer than the main process is willing to wait.
+          window.api.holdClose()
+          if (!(await resolveUnsaved(waiting, 'window'))) {
+            window.api.closeCancelled()
+            return
+          }
+        } else await autosaver.flush()
+        window.api.flushed()
+      })()
     })
     return () => {
       unsubscribeFlush()
@@ -2379,13 +2476,13 @@
           </span>
         </span>
         <span class="tools right">
-          {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.saveMode !== 'switch'} />{/if}
+          {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.saveMode === 'auto'} />{/if}
           <ToolButton icon="outline" label="{outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={outlineOpen} onclick={toggleOutline} />
           <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
         </span>
       </div>
       <div class="above">
-      {#if tabs.length > 1 && !zen}
+      {#if (tabs.length > 1 || (manual() && tabs.length > 0)) && !zen}
         <div class="tabs" role="tablist" aria-label="Open sheets">
           {#each tabs as path, i (i)}
             <div
@@ -2409,6 +2506,7 @@
                   if (e.button === 1) closeTab(i)
                 }}
               >
+                {#if tabHasChanges(path)}<span class="tab-dot" role="img" aria-label="Unsaved changes"></span>{/if}
                 {tabTitles.get(path) ?? 'Untitled'}
               </button>
               <button class="tab-close" aria-label="Close tab" onclick={() => closeTab(i)}>×</button>
@@ -2447,7 +2545,7 @@
                   text={part.text}
                   onchange={(content) => edited(part.path, content)}
                   onblur={() => {
-                    if (prefs?.saveMode !== 'switch') void autosaver.flush()
+                    if (prefs?.saveMode === 'auto') void autosaver.flush()
                   }}
                   onescape={() => (zen ? toggleZen() : sheetsEl?.focus())}
                   onfocus={() => focusedPart(part.path)}
@@ -2499,6 +2597,16 @@
 
 {#if palette}
   <CommandPalette commands={paletteCommands} onrun={runPaletteCommand} oncancel={closePalette} />
+{/if}
+
+{#if unsavedAsk}
+  <UnsavedDialog
+    names={unsavedAsk.names}
+    what={unsavedAsk.what}
+    onsave={() => unsavedAsk?.resolve('save')}
+    ondiscard={() => unsavedAsk?.resolve('discard')}
+    oncancel={() => unsavedAsk?.resolve('cancel')}
+  />
 {/if}
 
 {#if recovery[0] && !conflict}
@@ -3158,6 +3266,15 @@
   }
   .tab.after::after {
     right: -2px;
+  }
+  .tab-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: 1px;
   }
   .tab:hover {
     background: var(--hover);

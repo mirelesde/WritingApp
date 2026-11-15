@@ -1364,9 +1364,21 @@ tested with the in-memory one)
     fixed dialog height, arrow-key navigation, and the last tab is remembered.
     Checked live.
 
+86. **Manual save mode with tabs.** **Done.** Preferences ▸ Saving ▸ Save has three
+    choices: While typing, When I switch or close, Only when I save. In the last,
+    nothing is written unasked; text waiting to be saved is kept in memory per sheet
+    and shown again when you return to its tab; a dot marks tabs with changes; a
+    click opens a sheet in a new tab when the front tab has changes (otherwise it
+    replaces the front tab, like a preview tab); closing a tab, the window, quitting or
+    choosing another library asks Save / Don't Save / Cancel (the window waits for the
+    answer, and Cancel also cancels a quit); ⌘S saves the front sheet and ⌘⌥S saves all;
+    tabs with changes cannot be dragged out of their window; the journal still guards
+    against crashes. Checked live: dots, new tabs, restoring typed text, the tab and
+    window prompts including the hold. Not checked live: quit (⌘Q), choosing a library,
+    a failing save from the prompt, and dragging a tab (UAT 13.39). Limits: see 13.39.
+
 ## Later, in rough order
 
-- Save mode "Manual, with tabs" (VS Code style), a third choice in Preferences ▸ Saving beside Autosave and "Save when I choose". Nothing saves by itself; clicking a sheet opens or switches to a tab; a tab with changes shows a dot; closing a tab, a window or quitting with changes asks Save / Don't Save / Cancel ("Don't Save" also drops the journal entry). Needs care with export, search and merge (save or ask first), the sheet list preview (show unsaved text), and the same sheet open in two windows.
 - Preferences navigation: top tabs are right for four sections; move to a sidebar (wider dialog, icons, a search box for settings) when there are about six or more, for example Shortcuts, Export or Library.
 - Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).
 - iPad and iPhone apps: a Capacitor shell over the same core and UI, with

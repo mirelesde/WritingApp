@@ -87,6 +87,8 @@ const api: Api = {
     }
   },
   flushed: () => ipcRenderer.send('window:flushed'),
+  holdClose: () => ipcRenderer.send('window:holdClose'),
+  closeCancelled: () => ipcRenderer.send('window:closeCancelled'),
   onMenuCommand(callback) {
     const listener = (_event: unknown, command: MenuCommand): void => callback(command)
     ipcRenderer.on('menu:command', listener)

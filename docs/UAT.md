@@ -442,3 +442,21 @@ Quick checks that earlier features still work with today's changes.
 2. Click each tab: its settings appear and every switch, picker and stepper still works.
 3. With a tab focused, the Left and Right arrow keys move to the previous or next tab. Escape closes the dialog.
 4. Choose Page, close Preferences, reopen it: it opens on Page. Quit and reopen the app: still Page.
+
+## 13.39 Saving only when I ask (manual mode)
+
+1. Preferences ▸ Saving ▸ Save: choose "Only when I save". The tab bar shows, even with one sheet open.
+2. Type in a sheet and wait: the file does not change, the toolbar says "Unsaved", and the sheet's tab has a dot.
+3. Click another sheet in the list: it opens in a new tab beside the first, and the first tab keeps its dot. Click the first tab again: your typing is still there, and the file on disk still has the old text.
+4. Click a sheet while the front tab has no changes: it replaces the front tab, as usual (no pile of tabs). Click a sheet that already has a tab: that tab comes to the front.
+5. ⌘S (File ▸ Save) saves the sheet in front (and the sheets glued to it); other tabs keep their dots. File ▸ Save All (⌘⌥S) saves every tab.
+6. Close a tab with a dot (the ×, ⌘W or a middle-click): "Do you want to save the changes to…?" with Don't Save, Cancel and Save. Cancel keeps the tab. Save saves it, then closes. Don't Save closes it and the typing is gone (the file is unchanged, and it is not offered back at the next launch).
+7. With changes in two tabs, close the window (red button or ⌘W on the last tab): the question lists both sheets, with Save All. The dialog stays up as long as you like. Cancel keeps the window open; Save All saves and closes; Don't Save closes and drops the changes.
+8. ⌘Q with unsaved changes in manual mode asks the same question; Cancel cancels the quit.
+9. Choose Library… with unsaved changes asks first.
+10. Make a save fail (read-only folder) and choose Save: the window or tab stays open, with the message "Could not save, so nothing was closed."
+11. Drag a tab with a dot onto another window, or off the window: it does not move (its text lives in this window). A tab without a dot still moves.
+12. Force quit with unsaved changes: the next launch offers the text back (recovery) as usual.
+13. Switch back to "While typing": the unsaved text is saved at once and the dots go.
+
+Known limits: operations that rewrite sheets on disk (merge, split, move, Replace All in the library, export) still save outstanding changes first; renaming sheets to match their titles waits until nothing has unsaved text; File ▸ Open Library chosen while changes are unsaved cannot ask afterwards (the app has already switched), so it relies on recovery at the next launch.

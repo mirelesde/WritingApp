@@ -16,7 +16,7 @@ export const CHOICES = {
   typewriterPosition: ['centre', 'upper'],
   textAlign: ['left', 'justify'],
   sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
-  saveMode: ['auto', 'switch']
+  saveMode: ['auto', 'switch', 'manual']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -28,7 +28,7 @@ export type FocusDim = (typeof CHOICES.focusDim)[number]
 export type TypewriterPosition = (typeof CHOICES.typewriterPosition)[number]
 export type TextAlign = (typeof CHOICES.textAlign)[number]
 export type SheetSort = (typeof CHOICES.sheetSort)[number]
-/** When text is written to disk: while typing, or only on Save, switching sheets and closing. */
+/** When text is written to disk: while typing; on Save, switching sheets and closing; or only when asked (manual, with tabs). */
 export type SaveMode = (typeof CHOICES.saveMode)[number]
 
 export const MIN_LINE_SPACING = 1.3
@@ -89,7 +89,7 @@ export interface ViewSettings {
   accent: string
   /** Id of a theme file from the themes folder; empty for none. */
   colorTheme: string
-  /** When text is saved: `auto` while typing; `switch` only on Save (⌘S), when switching sheets, and on close. */
+  /** When text is saved: `auto` while typing; `switch` only on Save (⌘S), when switching sheets, and on close; `manual` only when asked, with a prompt before changes are dropped. */
   saveMode: SaveMode
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
   saveIndicator: boolean
