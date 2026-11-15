@@ -41,7 +41,7 @@
   import { createAutosaver, type SaveStatus } from './autosave'
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
-  import GroupTree from './GroupTree.svelte'
+  import LibraryPane from './LibraryPane.svelte'
   import MovePicker from './MovePicker.svelte'
   import FindBar, { type FindHost, type FindScope } from './FindBar.svelte'
   import QuickOpen from './QuickOpen.svelte'
@@ -1832,69 +1832,35 @@
       onmouseenter={ui.peek}
       onmouseleave={ui.unpeek}
     >
-    <div
-      class="pane library"
-      role="tree"
-      aria-label="Library"
-      tabindex="0"
-      bind:this={treeEl}
+    <LibraryPane
+      {library}
+      selectedGroup={nav.selectedGroup}
+      expanded={nav.expanded}
+      {renaming}
+      {notice}
+      {info}
+      conflictCount={conflictPairs.length}
+      {keyMod}
+      {keyShift}
+      bind:el={treeEl}
+      dnd={treeDnd}
+      onkeydown={treeKeydown}
+      onmousedown={keepFocus(treeEl)}
       onfocusout={(e) => {
         const box = e.currentTarget.closest('.sidebar')
         if (ui.sidebarHidden && !box?.contains(e.relatedTarget as Node | null)) ui.sidebarPeek = false
       }}
-      onkeydown={treeKeydown}
-      onmousedown={keepFocus(treeEl)}
-    >
-      <header class="library-bar">
-        <span class="tools">
-          <ToolButton icon="new-group" label="New group" hint="{keyMod}{keyShift}N" onclick={() => void newGroup(false)} />
-          <ToolButton icon="sidebar" label="Hide sidebar" hint={keyMod + "\\"} onclick={ui.toggleSidebar} />
-        </span>
-      </header>
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="project"
-        class:selected={nav.selectedGroup === library.tree.path}
-        oncontextmenu={(e) => {
-          e.preventDefault()
-          if (library) void nodeMenu('root', library.tree.path, { x: e.clientX, y: e.clientY })
-        }}
-      >
-        <button
-          class="project-title"
-          tabindex="-1"
-          title={library.path}
-          onclick={() => library && void selectGroup(library.tree.path)}>{library.tree.name}</button
-        >
-      </div>
-      <ul role="none">
-        <GroupTree
-          hideRoot
-          group={library.tree}
-          selected={nav.selectedGroup}
-          expanded={nav.expanded}
-          {renaming}
-          onselect={selectGroup}
-          ontoggle={toggle}
-          onstartrename={startRename}
-          oncommitrename={commitRename}
-          oncancelrename={finishRename}
-          oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
-          oncontext={(path, at) => void nodeMenu(path === library?.tree.path ? 'root' : 'group', path, at)}
-          dnd={treeDnd}
-        />
-      </ul>
-      {#if conflictPairs.length > 0}
-        <button class="conflict-banner" onclick={conflicts.restart}>
-          {conflictPairs.length} sync conflict{conflictPairs.length === 1 ? '' : 's'} — compare and resolve
-        </button>
-      {/if}
-      {#if notice}
-        <p class="notice" role="alert">{notice}</p>
-      {:else if info}
-        <p class="info" role="status">{info}</p>
-      {/if}
-    </div>
+      onnewgroup={() => void newGroup(false)}
+      onhide={ui.toggleSidebar}
+      onselect={(path) => void selectGroup(path)}
+      ontoggle={toggle}
+      onstartrename={startRename}
+      oncommitrename={commitRename}
+      oncancelrename={finishRename}
+      oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
+      onnodemenu={(kind, path, at) => void nodeMenu(kind, path, at)}
+      onconflicts={conflicts.restart}
+    />
 
     <SheetsPane
       title={labelOf(group) ?? ''}
@@ -2250,7 +2216,7 @@
     grid-template-columns: 0;
   }
   /* Only the library hidden: it floats over the editor until it is peeked at. */
-  .layout.no-library .library {
+  .layout.no-library :global(.library) {
     position: fixed;
     inset: 0 auto 0 0;
     width: 240px;
@@ -2258,7 +2224,7 @@
     transform: translateX(-101%);
     transition: transform 140ms ease-out;
   }
-  .layout.no-library .sidebar.peek .library {
+  .layout.no-library .sidebar.peek :global(.library) {
     transform: none;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
@@ -2283,7 +2249,7 @@
     box-shadow: none;
   }
   .layout.collapsed .sidebar.peek,
-  .layout.collapsed .sidebar:has(:focus-visible) {
+  .layout.collapsed .sidebar:has(:global(:focus-visible)) {
     transform: none;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
@@ -2292,85 +2258,6 @@
     inset: 0 auto 0 0;
     width: 6px;
     z-index: 29;
-  }
-  .pane:focus {
-    outline: none;
-  }
-  .pane {
-    overflow-y: auto;
-    min-width: 0;
-  }
-  .library {
-    background: var(--sidebar);
-  }
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 0 10px 0 14px;
-    min-height: var(--topbar-height);
-    position: sticky;
-    top: 0;
-    background: inherit;
-  }
-  header.library-bar {
-    justify-content: flex-end;
-  }
-  /* The library's name, big and bold above its projects. */
-  .project {
-    padding: 4px 14px 10px 34px;
-  }
-  .project-title {
-    display: block;
-    max-width: 100%;
-    background: none;
-    border: none;
-    padding: 2px 6px;
-    margin-left: -6px;
-    border-radius: 8px;
-    cursor: default;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .project.selected .project-title {
-    background: var(--selected);
-  }
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .library ul {
-    padding-bottom: 12px;
-  }
-  .info {
-    margin: 0;
-    padding: 8px 14px;
-    color: var(--muted);
-    font-size: 12px;
-  }
-  .conflict-banner {
-    margin: 6px 10px;
-    padding: 6px 10px;
-    font: inherit;
-    font-size: 12px;
-    text-align: left;
-    border: 1px solid var(--accent);
-    border-radius: 7px;
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    color: var(--text);
-  }
-  .notice {
-    margin: 0;
-    padding: 8px 14px;
-    color: var(--danger);
-    font-size: 12px;
   }
   .hint {
     color: var(--muted);
