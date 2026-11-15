@@ -20,7 +20,7 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
-    "e2e": "node --test --test-concurrency=1 e2e/"
+    "e2e": "node --test --test-concurrency=1 \"e2e/*.test.mjs\""
   },
   "dependencies": {
     "@codemirror/search": "^6.7.2",
