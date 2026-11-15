@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { attachContextMenu, registerContextActions } from './contextActions'
-import { logUncaught, recoverFromCrashes } from './crash'
+import { logError, logUncaught, recoverFromCrashes, showErrorLog } from './crash'
 import { registerThemeIpc } from './themes'
 import { registerExportStyleIpc } from './exportStyles'
 import { loadView, registerViewIpc, viewMenu } from './view'
@@ -424,6 +424,11 @@ function buildMenu(): Menu {
         },
         ...(isMac ? [{ type: 'separator' as const }, { role: 'front' as const }] : [])
       ]
+    },
+    {
+      label: 'Help',
+      role: 'help',
+      submenu: [{ label: 'Show Error Log', click: () => void showErrorLog() }]
     }
   ])
 }
@@ -435,6 +440,9 @@ app.whenReady().then(async () => {
   registerAssetProtocol()
   registerViewIpc()
   registerContextActions()
+  ipcMain.handle('log:error', (_event, what: unknown, detail: unknown) => {
+    if (typeof what === 'string') void logError(`renderer: ${what.slice(0, 200)}`, typeof detail === 'string' ? detail.slice(0, 2000) : '')
+  })
   registerThemeIpc()
   registerExportStyleIpc()
   ipcMain.handle('window:new', (_event, sheet: unknown, where: unknown) => {

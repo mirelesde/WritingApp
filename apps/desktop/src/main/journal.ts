@@ -29,7 +29,10 @@ interface Entry {
  * written, so whatever is still here at the next launch was lost to a crash,
  * a power cut or a write that kept failing.
  */
-export function createJournal(dir: string): {
+export function createJournal(
+  dir: string,
+  log?: (what: string, error: unknown) => void
+): {
   put(root: string, path: string, text: string): Promise<void>
   clear(path: string): Promise<void>
   /** Entries for `root` whose text differs from the file. The rest are deleted. */
@@ -94,7 +97,8 @@ export function createJournal(dir: string): {
             savedAt: entry.savedAt ?? 0,
             ...(disk === undefined ? { missing: true } : {})
           })
-        } catch {
+        } catch (e) {
+          log?.(`discarding an unreadable recovery file ${name}`, e)
           await nodeFs.rm(file, { force: true })
         }
       }

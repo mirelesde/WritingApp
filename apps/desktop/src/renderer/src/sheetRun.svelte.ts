@@ -1,3 +1,5 @@
+import { report } from './report'
+
 /** The sheets being edited: one, or a whole glued run, with the text each had when loaded. */
 export interface OpenRun {
   parts: { path: string; text: string }[]
@@ -59,7 +61,8 @@ export class SheetRun {
       this.edits = Object.fromEntries(paths.flatMap((p, i) => (shown[i] !== texts[i] ? [[p, shown[i]!]] : [])))
       this.selectedText = ''
       this.error = ''
-    } catch {
+    } catch (e) {
+      report('reading a sheet', e)
       if (id !== this.readId) return
       this.open = null
       this.error = 'This sheet could not be read.'

@@ -1,3 +1,5 @@
+import { report } from './report'
+
 /** The part of an editor this module drives. */
 export interface TextEditor {
   getText(): string
@@ -86,8 +88,9 @@ export class DiskConflicts {
           // Unsaved edits here and a change on disk: never overwrite without asking.
           this.raise(path, mine, disk)
         }
-      } catch {
+      } catch (e) {
         // The sheet vanished; the next tree update drops it.
+        report('checking a sheet against the disk', e)
       }
     }
   }

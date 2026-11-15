@@ -1,5 +1,5 @@
-import { app, dialog, type BrowserWindow } from 'electron'
-import { appendFile } from 'node:fs/promises'
+import { app, dialog, shell, type BrowserWindow } from 'electron'
+import { appendFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /** Reloads allowed within the window before giving up, so a crash on start-up cannot loop. */
@@ -13,12 +13,24 @@ export function shouldReload(history: number[], now: number): boolean {
   return history.length <= MAX_RELOADS
 }
 
+/** Where errors.log lives. */
+export function errorLogPath(): string {
+  return join(app.getPath('userData'), 'errors.log')
+}
+
+/** Shows errors.log in the system file manager, making it first if nothing has been logged yet, so a bug report can attach it. */
+export async function showErrorLog(): Promise<void> {
+  const file = errorLogPath()
+  await appendFile(file, '', 'utf8').catch(() => writeFile(file, '', 'utf8').catch(() => undefined))
+  shell.showItemInFolder(file)
+}
+
 /** Appends a line to errors.log in the app's data folder; never throws. */
 export async function logError(what: string, error: unknown): Promise<void> {
   const detail = error instanceof Error ? (error.stack ?? error.message) : String(error)
   console.error(what, detail)
   try {
-    await appendFile(join(app.getPath('userData'), 'errors.log'), `${new Date().toISOString()} ${what}: ${detail}\n`, 'utf8')
+    await appendFile(errorLogPath(), `${new Date().toISOString()} ${what}: ${detail}\n`, 'utf8')
   } catch {
     // Logging must never be the thing that fails.
   }

@@ -1,3 +1,5 @@
+import { report } from './report'
+
 export type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error'
 
 export interface Autosaver {
@@ -94,7 +96,8 @@ export function createAutosaver({
         unsaved.delete(path)
         clearJournal(path)
       }
-    } catch {
+    } catch (e) {
+      report('saving a sheet', e)
       failed = true
       if (enabled()) schedule(retryDelay)
     } finally {

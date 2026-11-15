@@ -73,4 +73,14 @@ describe('journal', () => {
     expect(await journal.pending(lib)).toEqual([])
     expect(await readFile(sheet, 'utf8')).toBe('old')
   })
+  it('says so when it has to discard a damaged file', async () => {
+    const calls: string[] = []
+    const journal = createJournal(join(dir, 'j'), (what) => calls.push(what))
+    await journal.put(lib, join(lib, 'a.md'), 'text')
+    const [file] = await readdir(join(dir, 'j'))
+    await writeFile(join(dir, 'j', file!), '{ not json')
+    expect(await journal.pending(lib)).toEqual([])
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toContain('unreadable recovery file')
+  })
 })

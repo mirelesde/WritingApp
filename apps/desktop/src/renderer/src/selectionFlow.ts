@@ -2,6 +2,7 @@ import type { Api, OpResult } from '../../preload/api'
 import { pathRange } from './organise'
 import type { SelectionState } from './selectionState.svelte'
 import type { SheetRun } from './sheetRun.svelte'
+import { report } from './report'
 
 /** What choosing sheets needs from the rest of the app. */
 export interface SelectionHost {
@@ -64,8 +65,9 @@ export class SelectionFlow {
       const result = await this.api.syncSheetNames(paths)
       if (result.moved.length === 0) return
       await this.host.apply(result)
-    } catch {
-      // A name that cannot change is not worth interrupting anyone for.
+    } catch (e) {
+      // A name that cannot change is not worth interrupting anyone for, but it is logged.
+      report('renaming a sheet to match its title', e)
     }
   }
 

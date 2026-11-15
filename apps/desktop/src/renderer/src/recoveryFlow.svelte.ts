@@ -1,4 +1,5 @@
 import type { Api, RecoveredSheet } from '../../preload/api'
+import { report } from './report'
 
 type RecoveryApi = Pick<Api, 'journalPending' | 'journalClear' | 'recreateSheet'>
 
@@ -37,7 +38,8 @@ export class RecoveryFlow {
     try {
       this.pending = await this.api.journalPending()
       this.total = this.pending.length
-    } catch {
+    } catch (e) {
+      report('looking for unsaved text from a crash', e)
       this.pending = []
     }
   }

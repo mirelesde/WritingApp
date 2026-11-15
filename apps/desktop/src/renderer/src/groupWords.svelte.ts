@@ -1,3 +1,4 @@
+import { report } from './report'
 import type { Api } from '../../preload/api'
 
 const DELAY = 300
@@ -19,7 +20,7 @@ export class GroupWords {
         .then((total) => {
           if (id === this.latest) this.total = total
         })
-        .catch(() => {})
+        .catch((e) => report('counting the words in a group', e))
     }, DELAY)
     return () => clearTimeout(timer)
   }

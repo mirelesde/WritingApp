@@ -15,7 +15,7 @@ export function watchFolder(
   root: string,
   onChange: () => void,
   quietMs = 400,
-  options: { watch?: typeof watch; retryMs?: number; maxRetryMs?: number } = {}
+  options: { watch?: typeof watch; retryMs?: number; maxRetryMs?: number; log?: (what: string, error: unknown) => void } = {}
 ): () => void {
   const watchIt = options.watch ?? watch
   const maxRetryMs = options.maxRetryMs ?? 30_000
@@ -52,8 +52,9 @@ export function watchFolder(
       })
       watcher.on('error', fail)
       return true
-    } catch {
-      // Watching is a convenience: without it the library still works.
+    } catch (e) {
+      // Watching is a convenience: without it the library still works, but the reason is logged.
+      options.log?.('watching the library folder', e)
       fail()
       return false
     }

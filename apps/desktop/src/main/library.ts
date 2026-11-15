@@ -62,6 +62,7 @@ import { watchFolder } from './watcher'
 import { createSettingsStore, withRecent } from './settings'
 import { parseSheetCache, serializeSheetCache } from './sheetCache'
 import { createJournal } from './journal'
+import { logError } from './crash'
 
 /** Hashes picture bytes, for spotting a picture the library already holds. */
 const hashImage = (data: Uint8Array): string => createHash('sha256').update(data).digest('hex')
@@ -134,7 +135,7 @@ async function open(path: string): Promise<LibraryInfo | null> {
     if (tree.path !== currentRoot) {
       undoStack.length = 0
       stopWatching?.()
-      stopWatching = watchFolder(tree.path, () => void announceChange(tree.path))
+      stopWatching = watchFolder(tree.path, () => void announceChange(tree.path), undefined, { log: (what, e) => void logError(what, e) })
     }
     currentRoot = tree.path
     return { path: tree.path, tree }
@@ -289,7 +290,7 @@ export function registerLibraryIpc(): void {
   })
 
   // Unsaved text, kept apart from the library so a crash cannot lose what was typed since the last save.
-  const journal = createJournal(join(app.getPath('userData'), 'journal'))
+  const journal = createJournal(join(app.getPath('userData'), 'journal'), (what, e) => void logError(what, e))
   const journalPath = (path: unknown): string => {
     if (typeof path !== 'string' || !currentRoot || !isSheetInside(currentRoot, path)) {
       throw new Error('Not a sheet in the open library')

@@ -1020,3 +1020,28 @@ the items marked done above.
       backlink. Two oddities seen and not traced: Duplicate from the right-click menu did nothing
       under a scripted click (the older build behaved the same; never tried with a real mouse), and
       after Don't Save on a duplicated tab the other tab still showed the discarded text.
+
+
+90. **Stability pass after the refactor.** **Done.** Checked the paths item 89 left to unit tests
+    by driving the real app (native file dialogs replaced with fixed answers; menus and keys
+    with real mouse and key events), and fixed what that found. Each fix is its own commit.
+    - *Right-click menu items did nothing.* Choosing Duplicate, Move to Trash, Reveal and the rest
+      closed the menu and then read the action from a value that had just become empty, so the
+      action threw. The action is now read before the menu closes. Verified live: Duplicate, Cut,
+      Copy and Paste between groups, Move to Trash, and undo of each.
+    - *Don't Save left discarded text in an open editor.* With the same sheet in two tabs, closing
+      one with Don't Save left the other showing the discarded text, and the next keystroke would
+      have saved it. The editor and the sheet's card now return to the saved text.
+    - *Errors that were swallowed are logged.* A failed save, a sheet that could not be read, the
+      crash-recovery check, the group word count, the file watcher failing, a damaged recovery
+      file being discarded, and a rename that could not follow a title now write to `errors.log`
+      (`report()` in the renderer, `log:error` to the main process). **Help ▸ Show Error Log** shows
+      the file so it can be attached to a bug report.
+    - *Checked live and fine:* Export to HTML, PDF, Word, EPUB and Markdown through the real
+      dialog; import of text and RTF; Save as Template and New from Template; Daily Note; Insert
+      Image; a hard kill during typing (the text came back through recovery); quit with unsaved
+      text (Cancel keeps the app open, Save saves and exits); both choices in the changed-outside
+      dialog.
+    - *Seen, not changed:* a name clash on a move makes `Beta-2.md`, while Duplicate makes
+      `Beta 2.md`. Inserting a picture at the very start of a line puts it on the heading's line, so
+      the file is renamed from that line. Exported HTML and Word leave `[[wiki links]]` as written.

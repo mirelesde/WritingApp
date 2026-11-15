@@ -4,7 +4,7 @@ This is the register of everything that is not finished: things only the owner c
 
 ## Status
 
-- **Done:** milestones 1–9 and numbered items 1–89 (see [CHANGELOG.md](CHANGELOG.md)). Licensed AGPL-3.0. App version is `0.0.0`; no tags or releases exist.
+- **Done:** milestones 1–9 and numbered items 1–90 (see [CHANGELOG.md](CHANGELOG.md)). Licensed AGPL-3.0. App version is `0.0.0`; no tags or releases exist.
 - **Next:** confirm the items in `UAT.md` section 15 live, then pick from the lists below, one commit per feature, each verified live first.
 
 If you are picking this up in a new session, read [ARCHITECTURE.md](ARCHITECTURE.md) ("Working in this repo") first.
@@ -14,6 +14,7 @@ If you are picking this up in a new session, read [ARCHITECTURE.md](ARCHITECTURE
 - **Run the live checks** in `UAT.md` section 15 (⌘S from the menu, Format dropdown, sheet cards, save modes, Preferences tabs, tab dragging, the Word contents page, EPUB in a reader, the group rename box, a Finder rename, a sheet rename with `:` or `?`). Also open **Export** once to confirm the dialog layout fix (the toolbar used to overflow and shift the preview left; fixed by widening to 1160 px and wrapping the toolbar) and that the stray `<!-->` and `**` no longer show on sheet cards in a real library.
 - **Native-menu and OS-dialog click-through.** The test harness cannot click native menus or dialogs, so these were checked only underneath (the command or code behind them): the whole Format and Insert menus (including Format ▸ Table and the shortcut hints), File menu entries (Import, Save, New from Template, Open Library), the sheet, group and library right-click actions (Rename, Move, Trash, Reveal, Copy Path), the text right-click menu and spelling suggestions, ⌘, opening Preferences, ⌘⇧V (paste as plain text), ⌘-click on a link opening the browser, every save dialog (HTML, PDF, Word, EPUB, Markdown: writing the file was reviewed in code only), the import file dialog and Insert Picture's file picker. The macOS title bar (traffic lights, sidebar vibrancy) was never seen in screenshots.
 - **Behaviour never tried by hand:** a hard quit (force quit, power loss) and quit with unsaved changes (Cancel keeps the app open); restoring recovered text while that sheet is open in the editor; moving and copying sheets between groups in the running app; shift-click ranges across sections in the sheet list; first-sheet selection on nested groups and an empty group (only the root project was tried); the sheet-list collapse button, distraction-free mode, and the hover edge while the sheet list is also hidden; very small windows (about 800 px) in the Export dialog; an undone regular-expression replace in the app (core tests cover it); the "Use my choices" button in the changed-outside-the-app dialog; pasting rich text from a real browser or Word; opening an exported Markdown or HTML file in another viewer; arrowing across hidden marks, clicking among marks with the mouse, and levels 2 to 3 of hanging headings; whether the dark theme looks right on every feature added after the UI sweep, and whether exported HTML and PDF colours match the editor.
+- **Name clash suffix:** moving a sheet onto a name that exists makes `Beta-2.md` while Duplicate makes `Beta 2.md`; make them agree (item 87's readable names).
 - **Windows and Linux:** launch the app itself (CI runs only the tests) and try file watching, tabs, Save, export, PDF, group names with `:` and `?`, and the UI (see section 5).
 - **Signing:** an Apple Developer ID (US$99 a year; notarization) and a Windows code-signing certificate. Linux needs none. An unsigned first release is possible if the notes say so.
 - **epubcheck:** the validator needs a download, which the project does not do without explicit permission. Alternative: open an exported EPUB in a real reader.
@@ -89,7 +90,7 @@ If you are picking this up in a new session, read [ARCHITECTURE.md](ARCHITECTURE
 
 - Sync conflicts (item 31): two-way diff only (no common ancestor); iCloud's numbered copies ("note 2.md") are not recognised; the crash-recovery dialog shows plain text, not the diff view.
 - Undo that survives a restart (item 25 shares the storage question with Trash and version history).
-- Several empty `catch {}` blocks hide real failures (export preview, the group word count); there is an `errors.log` in the app's data folder (crash.ts) but no "Show Log" menu item to find it for a bug report.
+- Failures that were caught and not shown now go to `errors.log` (item 90), with Help ▸ Show Error Log. The `catch {}` blocks left are deliberate (storage that may be unavailable, files that may not exist yet).
 - The PDF timeout is unit-tested only; the Word contents page in Word and EPUB in a validator are unchecked.
 - Settings and the sheet cache are written atomically; there are no known data-loss paths open, but Windows file locking, sync-client locks and the watcher on Windows and Linux are untested.
 
@@ -149,7 +150,6 @@ The target is an OS X-inspired look that is the same on every OS, with the main 
 
 - `App.svelte` was split into tested modules (item 89), from 3,366 to 1,336 lines. What remains is wiring, template and styles; there are still no component-level tests of the wiring itself, so the unchecked paths listed in item 89 are where a regression would hide.
 - CI: about 1,000 prettier warnings in lint; the `actions/*` bump for the Node 20 deprecation notice; CI is green on Ubuntu, Windows and macOS as of a4b89e2. Ubuntu had been failing since 74f7c27 because a test used a lowercase file name, which only a case-sensitive file system notices; macOS and Windows missed it. Any new test that names a file should use the exact case.
-- Add a "Show Log" menu item for `errors.log` (see section 3).
 - User-facing documentation: the plan has a "built, for the user guide" section in [CHANGELOG.md](CHANGELOG.md); the image behaviour in particular is not written up for users.
 
 ## Open questions

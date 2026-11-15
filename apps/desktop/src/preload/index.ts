@@ -74,6 +74,7 @@ const api: Api = {
   editCommand: (command) => ipcRenderer.invoke('context:editCommand', command),
   replaceMisspelling: (word) => ipcRenderer.invoke('context:replaceMisspelling', word),
   addToDictionary: (word) => ipcRenderer.invoke('context:addToDictionary', word),
+  logError: (what, detail) => ipcRenderer.invoke('log:error', what, detail).catch(() => undefined),
   revealPath: (path) => ipcRenderer.invoke('context:reveal', path),
   copyPath: (path) => ipcRenderer.invoke('context:copyPath', path),
   newWindow: (sheet, at) => ipcRenderer.invoke('window:new', sheet, at),

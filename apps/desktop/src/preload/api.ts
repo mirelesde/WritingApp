@@ -240,6 +240,8 @@ export interface Api {
   editCommand(command: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll'): Promise<void>
   replaceMisspelling(word: string): Promise<void>
   addToDictionary(word: string): Promise<void>
+  /** Writes a failure that was caught and not shown to errors.log, for bug reports. Never rejects. */
+  logError(what: string, detail: string): Promise<void>
   /** Shows a library file or folder in the system file manager. */
   revealPath(path: string): Promise<void>
   /** Puts a library path on the clipboard. */
