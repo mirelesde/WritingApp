@@ -46,12 +46,11 @@
   import FindBar, { type FindHost, type FindScope } from './FindBar.svelte'
   import QuickOpen from './QuickOpen.svelte'
   import StatusBar from './StatusBar.svelte'
-  import ToolButton from './ToolButton.svelte'
   import SheetsPane from './SheetsPane.svelte'
   import TabBar from './TabBar.svelte'
   import type { FormatKind, LineStyle } from './blockStyle'
   import Preferences from './Preferences.svelte'
-  import SaveIndicator from './SaveIndicator.svelte'
+  import EditorBar from './EditorBar.svelte'
   import Outline, { type Entry } from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
   import {
@@ -1895,50 +1894,33 @@
     </div>
 
     <section class="editor" aria-label="Editor" ondragover={tabDragOver} ondrop={(e) => void tabDrop(e)}>
-      <div class="editor-bar" role="toolbar" aria-label="Editor tools">
-        <span class="tools">
-          {#if ui.sidebarCollapsed}
-            <ToolButton icon="sidebar" label="Show sidebar" hint={keyMod + "\\"} onclick={ui.toggleSidebar} />
-          {/if}
-          <ToolButton
-            icon={ui.sheetsCollapsed ? 'shrink' : 'expand'}
-            label={ui.sheetsCollapsed ? 'Show sheet list' : 'Hide sheet list'}
-            onclick={ui.toggleSheets}
-          />
-          <ToolButton icon="back" label="Back" hint="{keyMod}[" disabled={!canBack} onclick={() => void step(-1)} />
-          <ToolButton icon="forward" label="Forward" hint="{keyMod}]" disabled={!canForward} onclick={() => void step(1)} />
-          <ToolButton icon="search" label="Find" hint="{keyMod}F" pressed={finding !== null} onclick={() => (finding ? closeFind() : openFind())} />
-        </span>
-        <span class="tools">
-          <ToolButton icon="bold" label="Bold" hint="{keyMod}B" disabled={open === null} onclick={() => formatActive('bold')} />
-          <ToolButton icon="italic" label="Italic" hint="{keyMod}I" disabled={open === null} onclick={() => formatActive('italic')} />
-          <ToolButton icon="link" label="Link" hint="{keyMod}K" disabled={open === null} onclick={() => formatActive('link')} />
-          <ToolButton icon="image" label="Insert image" hint="{keyMod}⌥I" disabled={open === null} onclick={() => void insertImage()} />
-          <span class="style-wrap">
-            <ToolButton icon="style" label="Styles" pressed={styleOpen} disabled={open === null} onclick={toggleStyleMenu} />
-            {#if styleOpen}
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div class="scrim" onmousedown={() => (styleOpen = false)}></div>
-              <div class="style-menu" role="menu" tabindex="-1" aria-label="Styles" onmousedown={(e) => e.preventDefault()}>
-                {#each STYLES as group, i (i)}
-                  {#if i > 0}<hr />{/if}
-                  {#each group as item (item.kind)}
-                    <button role="menuitem" class:current={item.kind === styleNow} onclick={() => applyStyle(item.kind)}>
-                      <span>{item.label}</span>
-                      {#if item.hint}<kbd>{keyMod}⌥{item.hint}</kbd>{:else if item.keys}<kbd>{keyMod}{item.keys}</kbd>{/if}
-                    </button>
-                  {/each}
-                {/each}
-              </div>
-            {/if}
-          </span>
-        </span>
-        <span class="tools right">
-          {#if open && (prefs?.saveIndicator !== false || saveStatus === 'error')}<SaveIndicator status={saveStatus} auto={prefs?.saveMode === 'auto'} />{/if}
-          <ToolButton icon="outline" label="{ui.outlineOpen ? 'Hide' : 'Show'} outline" hint="{keyMod}⌥O" pressed={ui.outlineOpen} onclick={ui.toggleOutline} />
-          <ToolButton icon="export" label="Export" hint="{keyMod}E" onclick={() => void openExport()} />
-        </span>
-      </div>
+      <EditorBar
+        sidebarCollapsed={ui.sidebarCollapsed}
+        sheetsCollapsed={ui.sheetsCollapsed}
+        outlineOpen={ui.outlineOpen}
+        {canBack}
+        {canForward}
+        finding={finding !== null}
+        hasSheet={open !== null}
+        {styleOpen}
+        {styleNow}
+        styles={STYLES}
+        showSave={!!open && (prefs?.saveIndicator !== false || saveStatus === 'error')}
+        {saveStatus}
+        auto={prefs?.saveMode === 'auto'}
+        {keyMod}
+        ontogglesidebar={ui.toggleSidebar}
+        ontogglesheets={ui.toggleSheets}
+        ontoggleoutline={ui.toggleOutline}
+        onstep={(d) => void step(d)}
+        ontogglefind={() => (finding ? closeFind() : openFind())}
+        onformat={formatActive}
+        oninsertimage={() => void insertImage()}
+        onstylemenu={toggleStyleMenu}
+        onstyleclose={() => (styleOpen = false)}
+        onstyle={applyStyle}
+        onexport={() => void openExport()}
+      />
       <div class="above">
       {#if (tabs.list.length > 1 || (manual() && tabs.list.length > 0)) && !ui.zen}
         <TabBar
@@ -2262,7 +2244,7 @@
   .layout.zen .scroller {
     padding-top: 2.5rem;
   }
-  .layout.zen .editor-bar {
+  .layout.zen :global(.editor-bar) {
     position: absolute;
     inset: 0 0 auto 0;
     height: var(--topbar-height);
@@ -2271,8 +2253,8 @@
     opacity: 0;
     transition: opacity 160ms;
   }
-  .layout.zen .editor-bar:hover,
-  .layout.zen .editor-bar:focus-within {
+  .layout.zen :global(.editor-bar):hover,
+  .layout.zen :global(.editor-bar):focus-within {
     opacity: 1;
   }
   .layout.zen :global(.pill) {
@@ -2281,23 +2263,6 @@
   }
   .layout.zen :global(.pill:hover) {
     opacity: 1;
-  }
-  .editor-bar {
-    grid-column: 1;
-    grid-row: 1;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 0 10px;
-    user-select: none;
-  }
-  .tools {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .style-wrap {
-    position: relative;
   }
   :global(.scrim) {
     position: fixed;
@@ -2349,9 +2314,6 @@
     font: inherit;
     font-size: 12px;
     color: var(--muted);
-  }
-  .tools.right {
-    justify-content: flex-end;
   }
   .above {
     grid-column: 1;
