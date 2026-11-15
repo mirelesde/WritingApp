@@ -128,13 +128,13 @@ describe('the core running on the real disk', () => {
     await createSheet(fs, part, '# The Station')
     await createSheet(fs, novel, '# Notes')
     await moveNode(fs, opening, novel, 0)
-    await deleteNode(fs, `${novel}/notes.md`)
+    await deleteNode(fs, `${novel}/Notes.md`)
 
     const lib = await loadLibrary(fs, dir)
     const n = lib.children[0] as GroupNode
     expect(children(n)).toEqual(['Opening.md', 'Part One'])
     expect(children(n.children[1] as GroupNode)).toEqual(['The Station.md'])
-    expect(trashed).toEqual([`${novel}/notes.md`])
+    expect(trashed).toEqual([`${novel}/Notes.md`])
     expect(await readFile(join(dir, 'Novel', 'Opening.md'), 'utf8')).toContain('It was raining.')
   })
 
