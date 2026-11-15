@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GROUP_COLORS, type GroupNode } from '@writingapp/core'
+  import { GROUP_COLORS, groupLabel, type GroupNode } from '@writingapp/core'
   import GroupTree from './GroupTree.svelte'
   import { dropZone, type TreeDnd } from './organise'
 
@@ -111,7 +111,7 @@
       <button
         class="chevron"
         tabindex="-1"
-        aria-label={isOpen ? `Collapse ${group.name}` : `Expand ${group.name}`}
+        aria-label={isOpen ? `Collapse ${groupLabel(group)}` : `Expand ${groupLabel(group)}`}
         aria-expanded={isOpen}
         onclick={() => ontoggle(group.path)}
       >
@@ -125,7 +125,7 @@
     {#if renaming === group.path}
       <input
         class="rename"
-        value={group.name}
+        value={groupLabel(group)}
         use:focusSelect
         aria-label="Group name"
         onkeydown={(e) => {
@@ -140,7 +140,7 @@
         class="kind"
         tabindex="-1"
         title="Colour"
-        aria-label="Choose a colour for {group.name}"
+        aria-label="Choose a colour for {groupLabel(group)}"
         aria-expanded={picking}
         onclick={() => (picking = !picking)}
       >
@@ -157,7 +157,7 @@
         class="name"
         tabindex="-1"
         onclick={() => onselect(group.path)}
-        ondblclick={() => depth > 0 && onstartrename(group.path)}>{group.name}</button
+        ondblclick={() => depth > 0 && onstartrename(group.path)}>{groupLabel(group)}</button
       >
       {#if sheetCount > 0}<span class="count">{sheetCount}</span>{/if}
     {/if}

@@ -6,6 +6,7 @@
     linkTargets,
     listSheets,
     findConflictCopies,
+    groupLabel,
     resolveWikiLink,
     sheetPreview,
     sheetTitle,
@@ -271,7 +272,7 @@
     const visit = (node: GroupNode, names: string[]): void => {
       const own = node.children.filter((c) => c.kind === 'sheet') as SheetNode[]
       if (own.length > 0 || names.length === 0) out.push({ node, label: names.join(' › '), sheets: sortSheets(own, sortBy) })
-      for (const child of node.children) if (child.kind === 'group') visit(child, [...names, child.name])
+      for (const child of node.children) if (child.kind === 'group') visit(child, [...names, groupLabel(child)])
     }
     visit(group, [])
     return out
@@ -335,6 +336,9 @@
     )
   )
 
+  function labelOf(node: GroupNode | undefined): string | undefined {
+    return node ? groupLabel(node) : undefined
+  }
   function findGroup(node: GroupNode, path: string): GroupNode | undefined {
     if (node.path === path) return node
     for (const child of node.children) {
@@ -1337,7 +1341,8 @@
     if (renaming !== path) return
     const trimmed = name.trim()
     await finishRename()
-    if (trimmed === '' || trimmed === path.slice(path.lastIndexOf('/') + 1)) return
+    const current = library ? labelOf(findGroup(library.tree, path)) : undefined
+    if (trimmed === '' || trimmed === (current ?? path.slice(path.lastIndexOf('/') + 1))) return
     await runOp(() => window.api.renameGroup(path, trimmed))
   }
 
@@ -1460,10 +1465,10 @@
     const inGroup = selectedGroup !== root ? selectedGroup : undefined
     const projectPath = inGroup ? inGroup.slice(0, root.length + 1 + inGroup.slice(root.length + 1).split('/')[0]!.length) : undefined
     if (inGroup && inGroup !== projectPath) {
-      list.push({ value: 'group', label: 'Look in group', name: findGroup(library.tree, inGroup)?.name ?? 'group', path: inGroup })
+      list.push({ value: 'group', label: 'Look in group', name: labelOf(findGroup(library.tree, inGroup)) ?? 'group', path: inGroup })
     }
     if (projectPath) {
-      list.push({ value: 'project', label: 'Look in project', name: findGroup(library.tree, projectPath)?.name ?? 'project', path: projectPath })
+      list.push({ value: 'project', label: 'Look in project', name: labelOf(findGroup(library.tree, projectPath)) ?? 'project', path: projectPath })
     }
     list.push({ value: 'library', label: 'Look in library', name: 'library', path: undefined })
     return list
@@ -1680,7 +1685,7 @@
       if (selectedGroup === root.path) return
       paths = moving = [selectedGroup]
       from = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
-      heading = `Move “${group?.name ?? 'group'}” to…`
+      heading = `Move “${labelOf(group) ?? 'group'}” to…`
     } else {
       paths = [...selection]
       if (paths.length === 0) return
@@ -2311,7 +2316,7 @@
       ondrop={dropSheets}
     >
       <header>
-        <span class="title">{group?.name ?? ''}</span>
+        <span class="title">{labelOf(group) ?? ''}</span>
         <span class="tools">
           <span class="sort-wrap">
             <ToolButton icon="sort" label="Sort sheets" pressed={sortOpen || sortBy !== 'manual'} onclick={() => (sortOpen = !sortOpen)} />

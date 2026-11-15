@@ -111,6 +111,11 @@ export interface GroupNode {
 
 export type LibraryNode = SheetNode | GroupNode
 
+/** What to show for a group: the name it was given, or its folder name. */
+export function groupLabel(group: GroupNode): string {
+  return group.title ?? group.name
+}
+
 /**
  * Reads a library folder into a tree. The returned group is the library
  * root; its group children are the projects. Order and glue come from each

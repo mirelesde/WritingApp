@@ -1,4 +1,4 @@
-import type { GroupNode } from '@writingapp/core'
+import { groupLabel, type GroupNode } from '@writingapp/core'
 
 /**
  * Where a path ends up after a rename or move. `moved` lists [from, to]
@@ -87,10 +87,10 @@ export function moveTargets(root: GroupNode, moving: string[], current: string):
     if (group.path !== current) result.push({ path: group.path, label })
     for (const child of group.children) {
       if (child.kind === 'group')
-        walk(child, group === root ? child.name : `${label} › ${child.name}`)
+        walk(child, group === root ? groupLabel(child) : `${label} › ${groupLabel(child)}`)
     }
   }
-  walk(root, root.name)
+  walk(root, groupLabel(root))
   return result
 }
 

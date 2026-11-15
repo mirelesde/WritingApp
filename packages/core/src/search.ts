@@ -1,5 +1,5 @@
 import type { FileSystem } from './filesystem'
-import { MAX_READ_BYTES, type GroupNode, type SheetNode } from './library'
+import { MAX_READ_BYTES, groupLabel, type GroupNode, type SheetNode } from './library'
 
 export interface SearchHit {
   path: string
@@ -226,7 +226,7 @@ export async function searchLibrary(
   const visit = async (group: GroupNode, trail: string[]): Promise<void> => {
     for (const child of group.children) {
       if (hits.length >= limit) return
-      if (child.kind === 'group') await visit(child, [...trail, child.name])
+      if (child.kind === 'group') await visit(child, [...trail, groupLabel(child)])
       else if (inScope(child.path, options.within)) {
         const hit = await searchSheet(fs, child, matcher, trail.join(' / '))
         if (hit) hits.push(hit)
