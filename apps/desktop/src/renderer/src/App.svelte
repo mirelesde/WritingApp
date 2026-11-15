@@ -17,9 +17,11 @@
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
-  import type { EditMenuInfo, LibraryInfo, MenuCommand, OpResult, RecoveredSheet } from '../../preload/api'
+  import type { EditMenuInfo, LibraryInfo, MenuCommand, OpResult } from '../../preload/api'
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
+  import { RecoveryFlow } from './recoveryFlow.svelte'
+  import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
   import { GroupNav } from './groupNav.svelte'
@@ -139,46 +141,17 @@
     }
   })
 
-  // Unsaved text left by a crash, offered back one sheet at a time.
-  let recovery = $state<RecoveredSheet[]>([])
-  let recoveryTotal = $state(0)
-
-  async function checkRecovery(): Promise<void> {
-    try {
-      recovery = await window.api.journalPending()
-      recoveryTotal = recovery.length
-    } catch {
-      recovery = []
-    }
-  }
-
-  async function finishRecovery(restore: boolean): Promise<void> {
-    const entry = recovery[0]
-    if (!entry) return
-    if (restore && entry.missing) {
-      try {
-        const made = await window.api.recreateSheet(entry.path, entry.text)
-        guard.trust(made, entry.text)
-        showInfo(`Restored the text as “${made.slice(made.lastIndexOf('/') + 1)}”`)
-      } catch (e) {
-        notice = errorMessage(e)
-        return
-      }
-    } else if (restore) {
-      try {
-        await autosaver.flush()
-        await guard.save(entry.path, entry.text)
-      } catch (e) {
-        notice = errorMessage(e)
-        return
-      }
-      edits[entry.path] = entry.text
-      editors[entry.path]?.replaceText(entry.text)
-      showInfo('Restored the recovered text')
-    }
-    void window.api.journalClear(entry.path)
-    recovery = recovery.slice(1)
-  }
+  const recovery = new RecoveryFlow(window.api, {
+    flush: () => autosaver.flush(),
+    save: (path, text) => guard.save(path, text),
+    showText: (path, text) => {
+      edits[path] = text
+      editors[path]?.replaceText(text)
+    },
+    trust: (path, text) => guard.trust(path, text),
+    info: showInfo,
+    fail: (e) => (notice = errorMessage(e))
+  })
 
   function raiseConflict(path: string, mine: string, disk: string): void {
     if (conflict?.path !== path) conflict = { path, mine, disk }
@@ -293,7 +266,7 @@
     library = info
     nav.reset(info.tree.path)
     clearSheets()
-    void checkRecovery()
+    void recovery.check()
     unused.check()
   }
 
@@ -552,28 +525,14 @@
   const sheetName = (path: string): string => tabTitles.get(path) ?? path.slice(path.lastIndexOf('/') + 1)
 
   /** Asks what to do with unsaved changes; resolves at once when saving is not manual or there are none. */
-  let unsavedAsk = $state<{
-    names: string[]
-    what: 'tab' | 'window' | 'library'
-    resolve: (answer: 'save' | 'discard' | 'cancel') => void
-  } | null>(null)
-
-  function askUnsaved(paths: string[], what: 'tab' | 'window' | 'library'): Promise<'save' | 'discard' | 'cancel'> {
+  const unsavedPrompt = new UnsavedPrompt()
+  function askUnsaved(paths: string[], what: UnsavedWhat): Promise<UnsavedAnswer> {
     if (!manual() || paths.length === 0) return Promise.resolve('save')
-    return new Promise((resolve) => {
-      unsavedAsk = {
-        names: paths.map(sheetName),
-        what,
-        resolve: (answer) => {
-          unsavedAsk = null
-          resolve(answer)
-        }
-      }
-    })
+    return unsavedPrompt.ask(paths.map(sheetName), what)
   }
 
   /** Settles the unsaved text of `paths`: saves it, or drops it. False when the user cancelled or a save failed. */
-  async function resolveUnsaved(paths: string[], what: 'tab' | 'window' | 'library'): Promise<boolean> {
+  async function resolveUnsaved(paths: string[], what: UnsavedWhat): Promise<boolean> {
     const unsaved = paths.filter((p) => dirty.includes(p))
     const answer = await askUnsaved(unsaved, what)
     if (answer === 'cancel') return false
@@ -2015,27 +1974,28 @@
   <CommandPalette commands={paletteCommands} onrun={runPaletteCommand} oncancel={closePalette} />
 {/if}
 
-{#if unsavedAsk}
+{#if unsavedPrompt.current}
   <UnsavedDialog
-    names={unsavedAsk.names}
-    what={unsavedAsk.what}
-    onsave={() => unsavedAsk?.resolve('save')}
-    ondiscard={() => unsavedAsk?.resolve('discard')}
-    oncancel={() => unsavedAsk?.resolve('cancel')}
+    names={unsavedPrompt.current.names}
+    what={unsavedPrompt.current.what}
+    onsave={() => unsavedPrompt.answer('save')}
+    ondiscard={() => unsavedPrompt.answer('discard')}
+    oncancel={() => unsavedPrompt.answer('cancel')}
   />
 {/if}
 
-{#if recovery[0] && !conflict}
+{#if recovery.current && !conflict}
+  {@const entry = recovery.current}
   <RecoveryDialog
-    name={recovery[0].path.slice(recovery[0].path.lastIndexOf('/') + 1)}
-    recovered={recovery[0].text}
-    disk={recovery[0].disk}
-    savedAt={recovery[0].savedAt}
-    missing={recovery[0].missing === true}
-    position={recoveryTotal - recovery.length + 1}
-    total={recoveryTotal}
-    onrestore={() => void finishRecovery(true)}
-    ondiscard={() => void finishRecovery(false)}
+    name={entry.path.slice(entry.path.lastIndexOf('/') + 1)}
+    recovered={entry.text}
+    disk={entry.disk}
+    savedAt={entry.savedAt}
+    missing={entry.missing === true}
+    position={recovery.total - recovery.pending.length + 1}
+    total={recovery.total}
+    onrestore={() => void recovery.finish(true)}
+    ondiscard={() => void recovery.finish(false)}
   />
 {/if}
 
