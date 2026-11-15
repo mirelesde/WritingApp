@@ -15,7 +15,6 @@
     type SearchOptions,
     type SheetNode,
     type SheetSort,
-    type ViewSettings,
     allSheets as librarySheets,
     libraryKeywords,
     parseFilter
@@ -28,6 +27,7 @@
   import { GroupNav } from './groupNav.svelte'
   import { ExportFlow } from './exportFlow.svelte'
   import { UnusedImages } from './unusedImages.svelte'
+  import { buildPaletteCommands } from './paletteCommands'
   import { findScopeOptions, replacedMessage, seedQuery, startScope } from './findScopes'
   import { ConflictFlow } from './conflictFlow.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
@@ -1751,100 +1751,23 @@
     command.run()
   }
 
-  const paletteCommands = $derived.by((): PaletteCommand[] => {
-    const menu = (section: string, label: string, command: MenuCommand, shortcut?: string): PaletteCommand => ({
-      id: `${section}:${label}`,
-      section,
-      label,
-      shortcut,
-      run: () => handleCommand(command)
+  const paletteCommands = $derived.by(() =>
+    buildPaletteCommands({
+      keyMod,
+      keyShift,
+      styles: STYLES,
+      sorts: SORTS,
+      templates,
+      unusedCount: unused.list.length,
+      conflictCount: conflictPairs.length,
+      zen: ui.zen,
+      view: prefs,
+      command: handleCommand,
+      setView: (patch) => void window.api.setView(patch),
+      newFromTemplate: (path) => void newFromTemplate(path),
+      toggleOutline: ui.toggleOutline
     })
-    const setting = (section: string, label: string, patch: Partial<ViewSettings>): PaletteCommand => ({
-      id: `${section}:${label}`,
-      section,
-      label,
-      run: () => void window.api.setView(patch)
-    })
-    const view = prefs
-    const list: PaletteCommand[] = [
-      menu('File', 'New Sheet', 'new-sheet', `${keyMod}N`),
-      ...templates.map((t) => ({
-        id: `File:template:${t.path}`,
-        section: 'File',
-        label: `New Sheet from Template: ${t.name}`,
-        run: () => void newFromTemplate(t.path)
-      })),
-      menu(
-        'File',
-        unused.list.length > 0
-          ? `Clean Up Unused Images… (${unused.list.length})`
-          : 'Clean Up Unused Images…',
-        'clean-images'
-      ),
-      menu(
-        'File',
-        conflictPairs.length > 0
-          ? `Resolve Sync Conflicts… (${conflictPairs.length})`
-          : 'Resolve Sync Conflicts…',
-        'resolve-conflicts'
-      ),
-      menu('File', 'Import…', 'import'),
-      menu('File', 'Daily Note', 'daily-note', `${keyMod}⌥D`),
-      menu('File', 'Save Sheet as Template', 'save-template'),
-      menu('File', 'New Group', 'new-group', `${keyMod}${keyShift}N`),
-      menu('File', 'New Project', 'new-project', `${keyMod}⌥${keyShift}N`),
-      menu('File', 'Duplicate', 'duplicate', `${keyMod}D`),
-      menu('File', 'Find and Replace…', 'find-replace', `${keyMod}⌥F`),
-      menu('Sheet', 'Copy Sheets', 'copy-sheets', `${keyMod}C`),
-      menu('Sheet', 'Cut Sheets', 'cut-sheets', `${keyMod}X`),
-      menu('Sheet', 'Paste Sheets', 'paste-sheets', `${keyMod}V`),
-      menu('Format', 'Toggle Task', 'toggle-task', `${keyMod}↩`),
-      menu('Fold', 'Go to Previous Heading', 'previous-heading', `${keyMod}⌥↑`),
-      menu('Fold', 'Go to Next Heading', 'next-heading', `${keyMod}⌥↓`),
-      menu('File', 'Move to…', 'move-to', `${keyMod}${keyShift}M`),
-      menu('File', 'Move to Trash', 'delete', `${keyMod}⌥⌫`),
-      menu('File', 'Quick Open…', 'quick-open', `${keyMod}P`),
-      menu('File', 'Find in Library…', 'search', `${keyMod}${keyShift}F`),
-      menu('File', 'Export…', 'export-html', `${keyMod}E`),
-      menu('File', 'Preferences…', 'preferences', `${keyMod},`),
-      menu('Sheet', 'Split at Cursor', 'split', `${keyMod}${keyShift}↩`),
-      menu('Sheet', 'Merge Sheets', 'merge', `${keyMod}${keyShift}J`),
-      menu('Sheet', 'Keywords…', 'edit-keywords', `${keyMod}⌥K`),
-      menu('Sheet', 'Glue Sheets', 'glue', `${keyMod}${keyShift}G`),
-      menu('Sheet', 'Unglue Sheets', 'unglue', `${keyMod}⌥G`),
-      menu('Sheet', 'Undo Library Change', 'undo-sheet-change', `${keyMod}⌥Z`),
-      ...STYLES.flat().map((s) =>
-        menu('Format', s.label, `format-${s.kind}`, s.hint ? `${keyMod}⌥${s.hint}` : s.keys ? `${keyMod}${s.keys}` : undefined)
-      ),
-      menu('Format', 'Bold', 'format-bold', `${keyMod}B`),
-      menu('Format', 'Italic', 'format-italic', `${keyMod}I`),
-      menu('Format', 'Link', 'format-link', `${keyMod}K`),
-      menu('Insert', 'Table', 'insert-table'),
-      menu('Insert', 'Image…', 'insert-image', `${keyMod}⌥I`),
-      menu('Insert', 'Footnote', 'insert-footnote'),
-      menu('Insert', 'Table of Contents', 'insert-contents'),
-      menu('Insert', 'Go to Footnote', 'go-to-footnote', `${keyMod}⌥J`),
-      menu('Fold', 'Fold All Sections', 'fold-all'),
-      menu('Fold', 'Unfold All Sections', 'unfold-all'),
-      menu('View', 'Toggle Sidebar', 'toggle-sidebar', `${keyMod}\\`),
-      menu('View', 'Toggle Sheet List', 'toggle-sheets'),
-      menu('View', ui.zen ? 'Leave Distraction-Free Mode' : 'Distraction-Free Mode', 'distraction-free', `${keyMod}${keyShift}D`),
-      { id: 'View:outline', section: 'View', label: 'Toggle Outline', shortcut: `${keyMod}⌥O`, run: ui.toggleOutline },
-      { ...setting('View', `${view?.focusMode ? 'Turn off' : 'Turn on'} Focus Mode`, { focusMode: !view?.focusMode }), shortcut: `${keyMod}${keyShift}L` },
-      setting('View', `${view?.typewriter ? 'Turn off' : 'Turn on'} Typewriter Scrolling`, { typewriter: !view?.typewriter }),
-      setting('View', `${view?.lineNumbers ? 'Hide' : 'Show'} Line Numbers`, { lineNumbers: !view?.lineNumbers }),
-      setting('View', 'Light Theme', { theme: 'light' }),
-      setting('View', 'Dark Theme', { theme: 'dark' }),
-      setting('View', 'Match System Theme', { theme: 'system' }),
-      setting('View', 'Serif Font', { font: 'serif' }),
-      setting('View', 'Sans-serif Font', { font: 'sans' }),
-      setting('View', 'Monospace Font', { font: 'mono' }),
-      { ...setting('View', 'Larger Text', { fontSize: (view?.fontSize ?? 18) + 1 }), shortcut: `${keyMod}+` },
-      { ...setting('View', 'Smaller Text', { fontSize: (view?.fontSize ?? 18) - 1 }), shortcut: `${keyMod}-` },
-      ...SORTS.map(([value, label]) => setting('Sort', `Sheets by ${label}`, { sheetSort: value }))
-    ]
-    return list
-  })
+  )
 
   onMount(() => {
     void window.api.listThemes().then((found) => (themes = found))
