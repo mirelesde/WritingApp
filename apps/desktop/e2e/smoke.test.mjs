@@ -69,6 +69,29 @@ describe('the app', () => {
     assert.deepEqual(await names('Novel'), ['Alpha.md', 'Beta.md'])
   })
 
+  it('exports HTML with a wiki link shown as its text and nothing left of the brackets', async () => {
+    await start({ ...LIB, 'Novel/Links.md': '# Links\n\nSee [[Alpha]] and [[Beta|the second]].\n' })
+    await app.stubDialogs()
+    const out = join(tmpdir(), `wa-e2e-export-${process.pid}.html`)
+    await app.answerDialogs({ save: out })
+    await app.menu('export-html')
+    await until(() => app.eval(`document.querySelector('[aria-label=Format]') !== null`), 'the export dialog')
+    await app.click(`document.querySelector('[aria-label=Format]')`)
+    await until(() => app.eval(`document.querySelector('[role=option]') !== null`), 'the format list')
+    await app.click(`[...document.querySelectorAll('[role=option]')].find(o => o.textContent.trim().startsWith('HTML'))`)
+    await until(() => app.eval(`document.querySelector('.primary')?.textContent.includes('HTML')`), 'the HTML button')
+    await app.click(`document.querySelector('[aria-label="Export preview"] .name')`)
+    await app.click(`document.querySelector('.primary')`)
+    try {
+      await until(async () => (await readFile(out, 'utf8')).includes('the second'), 'the exported file')
+      const text = await readFile(out, 'utf8')
+      assert.ok(text.includes('See Alpha and the second.'))
+      assert.ok(!text.includes('[['))
+    } finally {
+      await rm(out, { force: true })
+    }
+  })
+
   it('brings back text that was typed when the app was killed', async () => {
     await start()
     await app.open('Alpha')

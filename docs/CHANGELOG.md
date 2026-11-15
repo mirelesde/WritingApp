@@ -1049,9 +1049,9 @@ the items marked done above.
       show the title or the shown text; Markdown export keeps them).
     - *End-to-end checks* (`apps/desktop/e2e/`, `npm run e2e`): start the built app on a throwaway
       library and drive it over the DevTools protocol with real mouse and key events, using only
-      Node's own `fetch` and `WebSocket` (no new packages). Twelve checks: open a library, type and
+      Node's own `fetch` and `WebSocket` (no new packages). Thirteen checks: open a library, type and
       save, right-click Duplicate and Move to Trash, copy and paste between groups, recovery after
-      the app is killed, Don't Save with the sheet in two tabs, export to Markdown, import, the
+      the app is killed, Don't Save with the sheet in two tabs, export to Markdown, export to HTML (wiki links shown as text), import, the
       empty-group placeholder, the keyword button, the changed-outside dialog, and quit with unsaved
       text. Confirmed the menu check fails when the right-click bug is put back. **CI runs them** on
       Ubuntu (under `xvfb-run`, with `--no-sandbox`), macOS and Windows. Two checks (Duplicate and
@@ -1060,6 +1060,19 @@ the items marked done above.
       once one is available. Along the way: Windows' recycle bin is now given backslash paths (an
       unconfirmed guess at the Move to Trash failure), and the e2e script uses a glob because
       Node 24's `node --test` cannot take a directory.
+    - *Stress tests* (no bugs found in the code they exercise): `randomOperations.test.ts` runs random
+      sequences of create, move, copy, delete, rename and undo on an in-memory library and checks that
+      no sheet's text is lost, no name repeats within a group, and every undo restores the exact
+      earlier state (5,000 seeded runs passed; 150 stay in the suite; breaking the name-clash code
+      makes it fail). `hostileInput.test.ts` feeds random troublesome text (unbalanced marks, raw
+      HTML, control and right-to-left characters, lone surrogates, Windows-reserved names, RTF
+      fragments) and random bytes to the Markdown, Word, RTF, HTML and search code: nothing throws,
+      no script reaches exported HTML, and long runs of one mark finish in well under 5 s. One limit
+      found: block quotes nested several thousand deep (`> > > ...`) overflow the stack inside the
+      Markdown library; real sheets never do this. Scale, measured on the built app with 1,200
+      sheets plus a 560 KB sheet: launch 1.8 s, the sheet opens in 0.25 s; typing takes about 60 ms
+      a key on a small sheet (test harness floor), 80 ms at 110 KB and 120 ms at 560 KB. In core, 2,000
+      sheets load in 0.6 s and export to HTML in 1.4 s; a 560 KB sheet exports to Word in 1.2 s.
     - *Styling lost in the pane split, found by comparing the old stylesheet rule by rule with the new
       ones:* the editor's "No Sheet Selected" placeholder (large, light, centred) and the accent
       colour of the `#` keyword-filter button while a keyword filter is on. Both restored. The same
