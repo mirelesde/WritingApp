@@ -492,3 +492,5 @@ Things the developer could not drive in the test harness. Tick each one on your 
 - [ ] **Sheet file rename**: first line `# Why: is it so?`, leave the sheet: file becomes `Why is it so.md`. 13.40 step 6
 - [ ] **Export dialog layout**: open Export; the preview sits centred, the toolbar fits on one row (or wraps, never overflows), and the Format list opens and closes. 13.27
 - [ ] **Stray marks on sheet cards**: in your own library, no `<!-->` or `**` shows in card previews. 13.31
+- [ ] **Native menus and dialogs**: click through Format, Insert and File menu items, the right-click menus, each save dialog and the Import and Insert Picture pickers; ⌘, opens Preferences; ⌘⇧V pastes plain; ⌘-click opens a link. Full list: ROADMAP section 1.
+- [ ] **Hard quit and quit with unsaved changes**: force-quit while typing, relaunch and get the text back; quit with unsaved changes and press Cancel. 13.28
