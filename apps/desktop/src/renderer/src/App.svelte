@@ -49,6 +49,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { Navigation } from './navigation'
   import { sheetToFocusAtEnd } from './pageClick'
   import { runInOwnGroup, tabHasChanges as tabHasChangesIn, sheetName as sheetNameIn } from './tabRuns'
   import { SheetList } from './sheetList.svelte'
@@ -202,14 +203,6 @@
   function labelOf(node: GroupNode | undefined): string | undefined {
     return node ? groupLabel(node) : undefined
   }
-  function showLibrary(info: LibraryInfo): void {
-    library = info
-    nav.reset(info.tree.path)
-    clearSheets()
-    void recovery.check()
-    unused.check()
-  }
-
   // --- Unused pictures and sync conflict copies -------------------------------
 
   const unused = new UnusedImages(window.api, { hasLibrary: () => library !== null, info: showInfo })
@@ -431,6 +424,22 @@
     infoTimer = setTimeout(() => (info = ''), 3000)
   }
 
+  const navigation = new Navigation(nav, sel, {
+    settle,
+    setLibrary: (info) => (library = info),
+    library: () => library,
+    clearSheets,
+    setSelection,
+    clearFilter: () => (list.filter = ''),
+    firstListed: () => list.listed[0]?.path,
+    closeQuick: () => (quickOpening = false),
+    onOpened: () => {
+      void recovery.check()
+      unused.check()
+    }
+  })
+  const { showLibrary, selectGroup, revealSheet } = navigation
+
   const ops = new NodeOps(window.api, sel, nav, {
     library: () => library,
     runOp,
@@ -522,19 +531,6 @@
     list.edited(path, content)
   }
 
-  async function selectGroup(path: string): Promise<void> {
-    await settle()
-    nav.selectedGroup = path
-    list.filter = ''
-    clearSheets()
-    // Open the first sheet, so choosing a group rarely leaves the editor empty.
-    const first = list.listed[0]
-    if (first) {
-      sel.anchor = first.path
-      await setSelection([first.path], first.path, false)
-    }
-  }
-
   function toggle(path: string): void {
     nav.toggle(path)
   }
@@ -604,16 +600,6 @@
     flush: () => autosaver.flush(),
     info: showInfo
   })
-
-  /** Opens a sheet found by search: selects its group, expands the way to it, and shows it. */
-  async function revealSheet(path: string, focus = true): Promise<void> {
-    if (!library) return
-    quickOpening = false
-    await settle()
-    const parent = path.slice(0, path.lastIndexOf('/'))
-    nav.reveal(parent, library.tree.path)
-    await setSelection([path], path, focus)
-  }
 
   // --- Export ----------------------------------------------------------------
 
