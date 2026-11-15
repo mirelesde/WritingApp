@@ -617,6 +617,7 @@ export function registerLibraryIpc(): void {
       let at = typeof index === 'number' ? index : undefined
       for (const file of picked.filePaths) {
         try {
+          if ((await nodeFs.stat(file)).size > MAX_READ_BYTES) throw new Error('That file is too large to import')
           const bytes = await nodeFs.readFile(file)
           const root = currentRoot
           const markdown =
