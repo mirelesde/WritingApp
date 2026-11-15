@@ -132,10 +132,10 @@ describe('the core running on the real disk', () => {
 
     const lib = await loadLibrary(fs, dir)
     const n = lib.children[0] as GroupNode
-    expect(children(n)).toEqual(['opening.md', 'Part One'])
-    expect(children(n.children[1] as GroupNode)).toEqual(['the-station.md'])
+    expect(children(n)).toEqual(['Opening.md', 'Part One'])
+    expect(children(n.children[1] as GroupNode)).toEqual(['The Station.md'])
     expect(trashed).toEqual([`${novel}/notes.md`])
-    expect(await readFile(join(dir, 'Novel', 'opening.md'), 'utf8')).toContain('It was raining.')
+    expect(await readFile(join(dir, 'Novel', 'Opening.md'), 'utf8')).toContain('It was raining.')
   })
 
   it('survives a folder edited by hand between loads', async () => {
@@ -144,20 +144,20 @@ describe('the core running on the real disk', () => {
     await createSheet(fs, project, '# B')
     await createSheet(fs, project, '# C')
     expect(children((await loadLibrary(fs, dir)).children[0] as GroupNode)).toEqual([
-      'a.md',
-      'b.md',
-      'c.md'
+      'A.md',
+      'B.md',
+      'C.md'
     ])
 
     // The user, in Finder: deletes b, adds d and a stray image, renames c.
-    await rm(join(project, 'b.md'))
+    await rm(join(project, 'B.md'))
     await writeFile(join(project, 'd.md'), 'D')
     await writeFile(join(project, 'cover.png'), 'binary')
     await writeFile(join(project, '.DS_Store'), '')
-    await rename(join(project, 'c.md'), join(project, 'chapter-three.md'))
+    await rename(join(project, 'C.md'), join(project, 'chapter-three.md'))
 
     const reloaded = (await loadLibrary(fs, dir)).children[0] as GroupNode
-    expect(children(reloaded)).toEqual(['a.md', 'chapter-three.md', 'd.md'])
+    expect(children(reloaded)).toEqual(['A.md', 'chapter-three.md', 'd.md'])
   })
 
   it('opens a library whose sidecar was corrupted by hand', async () => {
@@ -165,6 +165,6 @@ describe('the core running on the real disk', () => {
     await createSheet(fs, project, '# A')
     await writeFile(join(project, '.writingapp.json'), '{"order": [')
     const reloaded = (await loadLibrary(fs, dir)).children[0] as GroupNode
-    expect(children(reloaded)).toEqual(['a.md'])
+    expect(children(reloaded)).toEqual(['A.md'])
   })
 })

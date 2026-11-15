@@ -38,10 +38,10 @@ describe('splitSheet', () => {
   it('writes the head back and creates the tail as the next sheet', async () => {
     const fs = new MemoryFileSystem({ '/Lib/a.md': text, '/Lib/z.md': 'Z' })
     const { path } = await splitSheet(fs, '/Lib/a.md', text, offset)
-    expect(path).toBe('/Lib/next.md')
+    expect(path).toBe('/Lib/Next.md')
     expect(await fs.readText('/Lib/a.md')).toBe('# Chapter\n\nFirst part.\n')
     expect(await fs.readText(path)).toBe('## Next\n\nSecond part.\n')
-    expect(await state(fs)).toEqual(['a.md', 'next.md', 'z.md'])
+    expect(await state(fs)).toEqual(['a.md', 'Next.md', 'z.md'])
   })
 
   it('splits the text it is given, not what is on disk', async () => {

@@ -33,9 +33,9 @@ describe('createSheet', () => {
   it('writes the file, named from its first line, and lists it last', async () => {
     const fs = new MemoryFileSystem({ '/Lib/a.md': 'A' })
     const path = await createSheet(fs, '/Lib', '# The Station\n\nText')
-    expect(path).toBe('/Lib/the-station.md')
+    expect(path).toBe('/Lib/The Station.md')
     expect(await fs.readText(path)).toBe('# The Station\n\nText')
-    expect(await sidecarOf(fs, '/Lib')).toEqual({ order: ['a.md', 'the-station.md'], glued: [] })
+    expect(await sidecarOf(fs, '/Lib')).toEqual({ order: ['a.md', 'The Station.md'], glued: [] })
   })
 
   it('inserts at an index and clamps out-of-range ones', async () => {
@@ -43,7 +43,7 @@ describe('createSheet', () => {
     await createSheet(fs, '/Lib', 'X', 1)
     await createSheet(fs, '/Lib', 'Y', 99)
     await createSheet(fs, '/Lib', 'Z', -5)
-    expect(await names(fs, '/Lib')).toEqual(['z.md', 'a.md', 'x.md', 'b.md', 'y.md'])
+    expect(await names(fs, '/Lib')).toEqual(['Z.md', 'a.md', 'X.md', 'b.md', 'Y.md'])
   })
 
   it('creates untitled sheets with numeric suffixes', async () => {
@@ -51,13 +51,13 @@ describe('createSheet', () => {
     await fs.makeDir('/Lib')
     await createSheet(fs, '/Lib')
     await createSheet(fs, '/Lib')
-    expect(await names(fs, '/Lib')).toEqual(['untitled.md', 'untitled-2.md'])
+    expect(await names(fs, '/Lib')).toEqual(['Untitled.md', 'Untitled 2.md'])
   })
 
   it('does not overwrite a file added outside the app', async () => {
     const fs = new MemoryFileSystem({ '/Lib/notes.md': 'mine' })
     const path = await createSheet(fs, '/Lib', 'Notes')
-    expect(path).toBe('/Lib/notes-2.md')
+    expect(path).toBe('/Lib/Notes 2.md')
     expect(await fs.readText('/Lib/notes.md')).toBe('mine')
   })
 
@@ -68,7 +68,7 @@ describe('createSheet', () => {
       '/Lib/b.md': 'B',
     })
     await createSheet(fs, '/Lib', 'X', 1)
-    expect(await sidecarOf(fs, '/Lib')).toEqual({ order: ['a.md', 'x.md', 'b.md'], glued: [] })
+    expect(await sidecarOf(fs, '/Lib')).toEqual({ order: ['a.md', 'X.md', 'b.md'], glued: [] })
   })
 
   it('keeps glue elsewhere in the folder', async () => {
@@ -325,9 +325,9 @@ describe('a full session', () => {
     await renameGroup(fs, part, 'Act I')
     const lib = await loadLibrary(fs, '/Lib')
     const n = lib.children[0] as GroupNode
-    expect(n.children.map((c) => c.name)).toEqual(['opening.md', 'Act I', 'notes.md'])
+    expect(n.children.map((c) => c.name)).toEqual(['Opening.md', 'Act I', 'Notes.md'])
     const act = n.children[1] as GroupNode
-    expect(act.children.map((c) => c.name)).toEqual(['the-station.md'])
+    expect(act.children.map((c) => c.name)).toEqual(['The Station.md'])
   })
 })
 
@@ -420,10 +420,10 @@ describe('syncSheetName', () => {
       '/Lib/untitled.md': '# The Station\n\ntext',
       '/Lib/c.md': 'C'
     })
-    expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/the-station.md')
+    expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/The Station.md')
     expect(await sidecarOf(fs, '/Lib')).toEqual({
-      order: ['a.md', 'the-station.md', 'c.md'],
-      glued: ['the-station.md']
+      order: ['a.md', 'The Station.md', 'c.md'],
+      glued: ['The Station.md']
     })
     expect(await fs.exists('/Lib/untitled.md')).toBe(false)
   })
@@ -440,9 +440,9 @@ describe('syncSheetName', () => {
 
   it('numbers the name when another sheet already has it', async () => {
     const fs = new MemoryFileSystem({
-      '/Lib/the-station.md': 'The Station',
+      '/Lib/The Station.md': 'The Station',
       '/Lib/untitled.md': 'The Station'
     })
-    expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/the-station-2.md')
+    expect(await syncSheetName(fs, '/Lib/untitled.md')).toBe('/Lib/The Station 2.md')
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sheetFileName, slugify } from './filename'
+import { readableName, sheetFileName, slugify, stemFitsTitle } from './filename'
 
 describe('slugify', () => {
   it('lowercases and hyphenates', () => {
@@ -44,32 +44,69 @@ describe('slugify', () => {
 
 describe('sheetFileName', () => {
   it('uses the sheet title, ignoring a heading marker', () => {
-    expect(sheetFileName('# The Station\n\nText', [])).toBe('the-station.md')
+    expect(sheetFileName('# The Station\n\nText', [])).toBe('The Station.md')
   })
 
   it('uses untitled for empty content', () => {
-    expect(sheetFileName('', [])).toBe('untitled.md')
-    expect(sheetFileName('\n  \n', [])).toBe('untitled.md')
+    expect(sheetFileName('', [])).toBe('Untitled.md')
+    expect(sheetFileName('\n  \n', [])).toBe('Untitled.md')
   })
 
   it('adds a numeric suffix on collision', () => {
-    expect(sheetFileName('Notes', ['notes.md'])).toBe('notes-2.md')
-    expect(sheetFileName('Notes', ['notes.md', 'notes-2.md'])).toBe('notes-3.md')
+    expect(sheetFileName('Notes', ['Notes.md'])).toBe('Notes 2.md')
+    expect(sheetFileName('Notes', ['Notes.md', 'Notes 2.md'])).toBe('Notes 3.md')
   })
 
   it('fills the first free number', () => {
-    expect(sheetFileName('Notes', ['notes.md', 'notes-3.md'])).toBe('notes-2.md')
+    expect(sheetFileName('Notes', ['Notes.md', 'Notes 3.md'])).toBe('Notes 2.md')
   })
 
   it('treats collisions case-insensitively', () => {
-    expect(sheetFileName('Notes', ['NOTES.md'])).toBe('notes-2.md')
+    expect(sheetFileName('Notes', ['NOTES.md'])).toBe('Notes 2.md')
   })
 
   it('is not confused by unrelated names or a same-named group', () => {
-    expect(sheetFileName('Notes', ['notes', 'other.md'])).toBe('notes.md')
+    expect(sheetFileName('Notes', ['notes', 'other.md'])).toBe('Notes.md')
   })
 
   it('accepts any iterable', () => {
-    expect(sheetFileName('A', new Set(['a.md']))).toBe('a-2.md')
+    expect(sheetFileName('A', new Set(['a.md']))).toBe('A 2.md')
+  })
+})
+
+describe('readableName', () => {
+  it('keeps case, spaces and punctuation that files allow', () => {
+    expect(readableName("Chapter 1: Why? It's 'odd'")).toBe("Chapter 1 Why It's 'odd'")
+    expect(readableName('Año nuevo — 日本語')).toBe('Año nuevo — 日本語')
+  })
+  it('drops what file systems refuse', () => {
+    expect(readableName('a/b\\c*d"e<f>g|h')).toBe('abcdefgh')
+    expect(readableName('tab\there\nnow')).toBe('tab here now')
+  })
+  it('trims trailing dots and spaces, and leading dots', () => {
+    expect(readableName('Wait...  ')).toBe('Wait')
+    expect(readableName('.hidden')).toBe('hidden')
+  })
+  it('avoids reserved names and falls back when empty', () => {
+    expect(readableName('CON')).toBe('CON 1')
+    expect(readableName('???')).toBe('Untitled')
+    expect(readableName('')).toBe('Untitled')
+  })
+  it('cuts long names at a word', () => {
+    const name = readableName('word '.repeat(40))
+    expect(name.length).toBeLessThanOrEqual(80)
+    expect(name.endsWith(' ')).toBe(false)
+  })
+})
+
+describe('stemFitsTitle', () => {
+  it('accepts the readable and the old form, numbered or not', () => {
+    expect(stemFitsTitle('The Station', 'The Station')).toBe(true)
+    expect(stemFitsTitle('the station', 'The Station')).toBe(true)
+    expect(stemFitsTitle('The Station 3', 'The Station')).toBe(true)
+    expect(stemFitsTitle('the-station', 'The Station')).toBe(true)
+    expect(stemFitsTitle('the-station-2', 'The Station')).toBe(true)
+    expect(stemFitsTitle('untitled', 'The Station')).toBe(false)
+    expect(stemFitsTitle('The Station Two', 'The Station')).toBe(false)
   })
 })

@@ -1,5 +1,5 @@
 import type { DirEntry, FileSystem } from './filesystem'
-import { sheetFileName, slugify } from './filename'
+import { sheetFileName, stemFitsTitle } from './filename'
 import { sheetTitle } from './sheet'
 import { cleanKeywords } from './keywords'
 import { baseName, joinPath, parentPath, trimSlashes } from './path'
@@ -220,10 +220,8 @@ export async function syncSheetName(fs: FileSystem, path: string): Promise<strin
   const dir = parentPath(from)
   const oldName = baseName(from)
   if (!oldName.endsWith('.md') || !(await fs.exists(from))) return from
-  const slug = slugify(sheetTitle(await fs.readText(from)))
   const stem = oldName.slice(0, -'.md'.length)
-  const suffix = stem.startsWith(slug + '-') ? stem.slice(slug.length + 1) : ''
-  if (stem === slug || /^\d+$/.test(suffix)) return from
+  if (stemFitsTitle(stem, sheetTitle(await fs.readText(from)))) return from
   const folder = await readFolder(fs, dir)
   const others = folder.entries.map((e) => e.name).filter((n) => n !== oldName)
   const name = sheetFileName(await fs.readText(from), others)

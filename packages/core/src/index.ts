@@ -8,7 +8,7 @@ export { sortSheets } from './sheetSort'
 export { parseColorTheme, THEME_COLORS } from './theme'
 export type { ColorTheme, ThemeColor } from './theme'
 export type { GroupNode, LibraryNode, LoadOptions, SheetCache, SheetCacheEntry, SheetNode } from './library'
-export { sheetFileName, slugify } from './filename'
+export { readableName, sheetFileName, slugify, stemFitsTitle } from './filename'
 export {
   createGroup,
   createGroupUndoable,

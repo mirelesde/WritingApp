@@ -21,7 +21,7 @@ describe('templates', () => {
     const fs = new MemoryFileSystem({ '/lib/Notes/.keep': '' })
     expect(await listTemplates(fs, '/lib')).toEqual([])
     const saved = await saveAsTemplate(fs, '/lib', '# Chapter\n\nOn {{date}}.')
-    expect(saved).toBe('/lib/.templates/chapter.md')
+    expect(saved).toBe('/lib/.templates/Chapter.md')
     expect((await listTemplates(fs, '/lib')).map((t) => t.name)).toEqual(['Chapter'])
     const path = await createFromTemplate(fs, '/lib/Notes', saved, day)
     expect(await fs.readText(path)).toBe('# Chapter\n\nOn 2026-11-13.')
