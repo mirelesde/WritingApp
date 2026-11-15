@@ -28,6 +28,8 @@ export function createSettingsStore(file: string): {
   /** Loads, lays `patch` over what is there (view fields merge), and saves. */
   update(patch: Settings): Promise<Settings>
 } {
+  // Updates run one at a time, so two overlapping ones cannot overwrite each other.
+  let queue: Promise<unknown> = Promise.resolve()
   return {
     async load() {
       try {
@@ -60,12 +62,17 @@ export function createSettingsStore(file: string): {
       await writeFileAtomic(file, JSON.stringify(settings, null, 2) + '\n')
     },
 
-    async update(patch) {
-      const current = await this.load()
-      const next: Settings = { ...current, ...patch }
-      if (current.view || patch.view) next.view = { ...current.view, ...patch.view }
-      await this.save(next)
-      return next
+    update(patch) {
+      const run = async (): Promise<Settings> => {
+        const current = await this.load()
+        const next: Settings = { ...current, ...patch }
+        if (current.view || patch.view) next.view = { ...current.view, ...patch.view }
+        await this.save(next)
+        return next
+      }
+      const result = queue.then(run, run)
+      queue = result.catch(() => undefined)
+      return result
     }
   }
 }

@@ -1342,6 +1342,8 @@ tested with the in-memory one)
     the folder watcher restarts after an error with a growing pause. The slow
     regular-expression guard also covers overlapping repeated alternatives and
     long `.*` chains. Crash reload was checked live; the rest is unit-tested.
+    Also: importing skips files over 50 MB (checked live), and settings
+    updates run one at a time so two windows cannot overwrite each other.
     Still open: Windows and Linux runs, empty `catch {}` blocks that hide real
     failures (ExportPreview, the group word count), and `App.svelte` at about
     3,200 lines with no component tests.

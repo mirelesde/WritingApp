@@ -420,3 +420,8 @@ Quick checks that earlier features still work with today's changes.
 
 1. Settings and export styles are written through a temporary file (automated tests). Change the sidebar width, force quit at once, reopen: the setting is either old or new, never lost, and recent libraries are intact.
 2. After changing a file in the library from another app, the library updates by itself. This keeps working after a long session or after the disk was briefly unavailable (automated tests simulate the watcher failing and restarting).
+
+## 13.36 Import skips enormous files; settings updates do not collide
+
+1. Make a very large text file (`head -c 60000000 /dev/zero | tr '\0' a > ~/Desktop/big.txt`) and a small one. Import both (File → Import). The small one appears as a sheet; the message lists `big.txt` as skipped. The app stays responsive.
+2. With two windows open, change the font size in one and the theme in the other in quick succession, then quit and reopen: both changes are kept.

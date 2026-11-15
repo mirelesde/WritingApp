@@ -54,6 +54,17 @@ describe('createSettingsStore', () => {
     await store.update({ libraryPath: '/M' })
     expect(await store.load()).toEqual({ libraryPath: '/M', view: { theme: 'dark', fontSize: 20 } })
   })
+
+  it('overlapping updates all land', async () => {
+    const store = createSettingsStore(join(dir, 'settings.json'))
+    await Promise.all([
+      store.update({ view: { fontSize: 20 } }),
+      store.update({ view: { theme: 'dark' } }),
+      store.update({ libraryPath: '/L' }),
+      store.update({ lastSheet: '/L/a.md' })
+    ])
+    expect(await store.load()).toEqual({ libraryPath: '/L', lastSheet: '/L/a.md', view: { fontSize: 20, theme: 'dark' } })
+  })
 })
 
 describe('recent libraries and the last sheet', () => {
