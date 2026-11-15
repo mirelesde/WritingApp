@@ -1360,6 +1360,10 @@ tested with the in-memory one)
     Checked live except pressing ⌘S through the real menu (the test window could not
     take focus), where the command was sent to the window directly.
 
+85. **Tabbed Preferences.** **Done.** Appearance, Page, Writing and Saving tabs at a
+    fixed dialog height, arrow-key navigation, and the last tab is remembered.
+    Checked live.
+
 ## Later, in rough order
 
 - Export styles: running headers and footers beyond the title and page number, chapter numbering in Word, a title page in Word and EPUB, page setup stored per style as a setting (see item 81 for what exists).

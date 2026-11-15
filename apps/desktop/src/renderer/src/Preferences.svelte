@@ -65,11 +65,51 @@
     mono: 'Mono'
   }
 
+  const TABS = [
+    ['appearance', 'Appearance'],
+    ['page', 'Page'],
+    ['writing', 'Writing'],
+    ['saving', 'Saving']
+  ] as const
+  type Tab = (typeof TABS)[number][0]
+  const REMEMBER_TAB = 'writingapp.preferencesTab'
+
+  let tab = $state<Tab>(
+    (() => {
+      try {
+        const saved = localStorage.getItem(REMEMBER_TAB)
+        return TABS.find(([id]) => id === saved)?.[0] ?? 'appearance'
+      } catch {
+        return 'appearance'
+      }
+    })()
+  )
+
+  function chooseTab(id: Tab): void {
+    tab = id
+    try {
+      localStorage.setItem(REMEMBER_TAB, id)
+    } catch {
+      // Not remembered; harmless.
+    }
+  }
+
   function keydown(e: KeyboardEvent): void {
     if (e.key === 'Escape') {
       e.preventDefault()
       onclose()
     }
+  }
+
+  /** Arrow keys move between tabs, as in any tab list. */
+  function tabKeydown(e: KeyboardEvent): void {
+    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+    if (step === 0) return
+    e.preventDefault()
+    const at = TABS.findIndex(([id]) => id === tab)
+    const next = TABS[(at + step + TABS.length) % TABS.length]![0]
+    chooseTab(next)
+    document.getElementById(`pref-tab-${next}`)?.focus()
   }
 
   function focusDialog(node: HTMLElement): void {
@@ -106,9 +146,22 @@
     <header>
       <h2>Preferences</h2>
     </header>
+    <div class="tabs" role="tablist" aria-label="Preferences sections" tabindex="-1" onkeydown={tabKeydown}>
+      {#each TABS as [id, label] (id)}
+        <button
+          role="tab"
+          id="pref-tab-{id}"
+          aria-selected={tab === id}
+          aria-controls="pref-panel-{id}"
+          tabindex={tab === id ? 0 : -1}
+          onclick={() => chooseTab(id)}>{label}</button
+        >
+      {/each}
+    </div>
+    <div class="panel">
 
-    <section>
-      <h3>Appearance</h3>
+    {#if tab === 'appearance'}
+    <div id="pref-panel-appearance" role="tabpanel" aria-labelledby="pref-tab-appearance">
       <div class="row">
         <span id="pref-theme">Theme</span>
         <div class="segments" role="radiogroup" aria-labelledby="pref-theme">
@@ -184,10 +237,11 @@
           >
         </div>
       </div>
-    </section>
+    </div>
+    {/if}
 
-    <section>
-      <h3>Page</h3>
+    {#if tab === 'page'}
+    <div id="pref-panel-page" role="tabpanel" aria-labelledby="pref-tab-page">
       {@render choice('Text column', 'columnWidth')}
       <div class="row">
         <span id="pref-spacing">Line spacing</span>
@@ -238,10 +292,11 @@
       {@render choice('Alignment', 'textAlign')}
       {@render choice('Cursor width', 'caretWidth')}
       {@render choice('Highlight current line', 'currentLine')}
-    </section>
+    </div>
+    {/if}
 
-    <section>
-      <h3>Writing</h3>
+    {#if tab === 'writing'}
+    <div id="pref-panel-writing" role="tabpanel" aria-labelledby="pref-tab-writing">
       <label class="row">
         <span>Focus mode<small>Dim everything but the paragraph being written</small></span>
         <input
@@ -290,10 +345,11 @@
           onchange={(e) => onchange({ lineNumbers: e.currentTarget.checked })}
         />
       </label>
-    </section>
+    </div>
+    {/if}
 
-    <section>
-      <h3>Saving</h3>
+    {#if tab === 'saving'}
+    <div id="pref-panel-saving" role="tabpanel" aria-labelledby="pref-tab-saving">
       <label class="row">
         <span>Autosave<small>Save while you type. Off: save with ⌘S; text is also saved when you switch sheets or close</small></span>
         <input
@@ -312,7 +368,9 @@
           onchange={(e) => onchange({ saveIndicator: e.currentTarget.checked })}
         />
       </label>
-    </section>
+    </div>
+    {/if}
+    </div>
   </div>
 </div>
 
@@ -354,8 +412,36 @@
   .dialog {
     width: min(580px, calc(100vw - 32px));
     max-height: 84vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     padding: 6px 20px 14px;
+  }
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin: 4px 0 6px;
+    padding: 2px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+  .tabs button {
+    flex: 1;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: none;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+  }
+  .tabs button[aria-selected='true'] {
+    background: var(--bg);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  }
+  /* A fixed height, so the dialog does not jump between tabs of different length. */
+  .panel {
+    height: min(440px, 60vh);
+    overflow-y: auto;
   }
   header {
     display: flex;
@@ -365,12 +451,6 @@
   h2 {
     margin: 0;
     font-size: 15px;
-  }
-  h3 {
-    margin: 14px 0 4px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
   }
   .row {
     display: flex;

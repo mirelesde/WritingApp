@@ -435,3 +435,10 @@ Quick checks that earlier features still work with today's changes.
 5. With Autosave off, force quit within a second of typing: the next launch offers the text back (the journal still keeps it).
 6. Turn Show save status off: the Saved / Saving note disappears from the toolbar. Make a save fail (read-only folder): "Could not save" still appears.
 7. Both settings are kept after quitting and reopening.
+
+## 13.38 Tabbed Preferences
+
+1. Open Preferences: four tabs, Appearance, Page, Writing and Saving, with Appearance first on a fresh install. The dialog stays the same size as you change tabs; a tab with many settings scrolls inside it.
+2. Click each tab: its settings appear and every switch, picker and stepper still works.
+3. With a tab focused, the Left and Right arrow keys move to the previous or next tab. Escape closes the dialog.
+4. Choose Page, close Preferences, reopen it: it opens on Page. Quit and reopen the app: still Page.
