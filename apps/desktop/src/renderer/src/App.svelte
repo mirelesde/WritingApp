@@ -25,6 +25,7 @@
   import { ViewState } from './viewState.svelte'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
+  import { GroupNav } from './groupNav.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
   import ConflictCopyDialog from './ConflictCopyDialog.svelte'
@@ -75,8 +76,7 @@
 
   let library = $state<LibraryInfo | null>(null)
   let loading = $state(true)
-  let selectedGroup = $state('')
-  let expanded = $state<Record<string, boolean>>({})
+  const nav = new GroupNav()
   // Sheet selection: any number of sheets; `cursor` is the one that arrow
   // keys move from, `anchor` the fixed end of a Shift-extended range.
   const sel = new SelectionState()
@@ -221,7 +221,7 @@
   // Total for the selected group, recounted shortly after the tree or a save changes.
   let wordsRequest = 0
   $effect(() => {
-    const path = selectedGroup
+    const path = nav.selectedGroup
     void library
     if (!library || saveStatus !== 'saved') return
     const id = ++wordsRequest
@@ -236,7 +236,7 @@
     return () => clearTimeout(timer)
   })
 
-  const group = $derived(library ? findGroup(library.tree, selectedGroup) : undefined)
+  const group = $derived(library ? findGroup(library.tree, nav.selectedGroup) : undefined)
   let filter = $state('')
   let prefs = $state<Parameters<typeof applyView>[0] | null>(null)
   const sortBy = $derived(prefs?.sheetSort ?? 'manual')
@@ -308,8 +308,7 @@
   }
   function showLibrary(info: LibraryInfo): void {
     library = info
-    expanded = { [info.tree.path]: true }
-    selectedGroup = info.tree.path
+    nav.reset(info.tree.path)
     clearSheets()
     void checkRecovery()
     checkUnused()
@@ -866,11 +865,9 @@
       const result = await op()
       const remap = (path: string): string => remapPath(path, result.moved)
       library = result.library
-      selectedGroup = remap(selectedGroup)
-      if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = result.library.tree.path
       sel.remap(remap)
       tabs.remap(remap)
-      expanded = Object.fromEntries(Object.entries(expanded).map(([p, o]) => [remap(p), o]))
+      nav.follow(result.library.tree, remap)
       await refreshOpen(reload)
       notice = ''
       return result
@@ -943,18 +940,18 @@
     if (!library) return
     const inTree = treeEl?.contains(document.activeElement) ?? false
     let paths: string[]
-    let fallback = selectedGroup
+    let fallback = nav.selectedGroup
     if (inTree || sel.paths.length === 0) {
-      if (selectedGroup === library.tree.path) {
+      if (nav.selectedGroup === library.tree.path) {
         notice = 'Select a sheet or group to delete first.'
         return
       }
-      paths = [selectedGroup]
-      fallback = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
+      paths = [nav.selectedGroup]
+      fallback = nav.selectedGroup.slice(0, nav.selectedGroup.lastIndexOf('/'))
     } else paths = [...sel.paths] // a plain array: state proxies cannot cross the bridge
     const result = await runOp(() => window.api.deleteNodes(paths))
     if (!result) return
-    if (!findGroup(result.library.tree, selectedGroup)) selectedGroup = fallback
+    nav.keep(result.library.tree, fallback)
     showInfo('Moved to the trash. Undo with Cmd/Ctrl+Alt+Z.')
   }
 
@@ -968,7 +965,7 @@
     if (!library) return []
     const inTree = treeEl?.contains(document.activeElement) ?? false
     if (inTree || sel.paths.length === 0) {
-      return selectedGroup === library.tree.path ? [] : [selectedGroup]
+      return nav.selectedGroup === library.tree.path ? [] : [nav.selectedGroup]
     }
     return [...sel.paths] // a plain array: state proxies cannot cross the bridge
   }
@@ -1072,7 +1069,7 @@
     if (!library) return
     if (kind === 'sheet') {
       if (!sel.has(path)) await setSelection([path], path)
-    } else if (selectedGroup !== path) {
+    } else if (nav.selectedGroup !== path) {
       selectGroup(path)
       await tick()
     }
@@ -1187,13 +1184,13 @@
 
   async function newGroup(inRoot: boolean): Promise<void> {
     if (!library) return
-    const parent = inRoot ? library.tree.path : selectedGroup
+    const parent = inRoot ? library.tree.path : nav.selectedGroup
     const result = await runOp(() =>
       window.api.createGroup(parent, inRoot ? 'Untitled Project' : undefined)
     )
     if (!result?.created) return
-    expanded[parent] = true
-    selectedGroup = result.created
+    nav.expand(parent)
+    nav.selectedGroup = result.created
     clearSheets()
     renaming = result.created
   }
@@ -1245,7 +1242,7 @@
 
   async function selectGroup(path: string): Promise<void> {
     await settle()
-    selectedGroup = path
+    nav.selectedGroup = path
     filter = ''
     clearSheets()
     // Open the first sheet, so choosing a group rarely leaves the editor empty.
@@ -1257,7 +1254,7 @@
   }
 
   function toggle(path: string): void {
-    expanded[path] = !expanded[path]
+    nav.toggle(path)
   }
 
   // --- Changes made outside the app -----------------------------------------
@@ -1269,8 +1266,7 @@
     if (JSON.stringify(info.tree) !== JSON.stringify(library.tree)) {
       library = info
       checkUnused()
-      if (!findGroup(info.tree, selectedGroup)) {
-        selectedGroup = info.tree.path
+      if (nav.keep(info.tree, info.tree.path)) {
         clearSheets()
         return
       }
@@ -1333,7 +1329,7 @@
     if (sheetPath && open) {
       list.push({ value: 'sheet', label: 'Look in sheet', name: tabTitles.get(sheetPath) ?? 'this sheet', path: sheetPath })
     }
-    const inGroup = selectedGroup !== root ? selectedGroup : undefined
+    const inGroup = nav.selectedGroup !== root ? nav.selectedGroup : undefined
     const projectPath = inGroup ? inGroup.slice(0, root.length + 1 + inGroup.slice(root.length + 1).split('/')[0]!.length) : undefined
     if (inGroup && inGroup !== projectPath) {
       list.push({ value: 'group', label: 'Look in group', name: labelOf(findGroup(library.tree, inGroup)) ?? 'group', path: inGroup })
@@ -1389,8 +1385,7 @@
         if (listed.some((x) => x.path === path)) await setSelection([path], path, false)
         else {
           const parent = path.slice(0, path.lastIndexOf('/'))
-          for (let p = parent; p.length >= library.tree.path.length; p = p.slice(0, p.lastIndexOf('/'))) expanded[p] = true
-          selectedGroup = parent
+          nav.reveal(parent, library.tree.path)
           await setSelection([path], path, false)
         }
       }
@@ -1435,10 +1430,7 @@
     quickOpening = false
     await settle()
     const parent = path.slice(0, path.lastIndexOf('/'))
-    for (let p = parent; p.length >= library.tree.path.length; p = p.slice(0, p.lastIndexOf('/'))) {
-      expanded[p] = true
-    }
-    selectedGroup = parent
+    nav.reveal(parent, library.tree.path)
     await setSelection([path], path, focus)
   }
 
@@ -1452,7 +1444,7 @@
   async function openExport(): Promise<void> {
     if (!library) return
     const inTree = treeEl?.contains(document.activeElement) ?? false
-    exportPaths = !inTree && sel.paths.length > 0 ? [...sel.paths] : [selectedGroup]
+    exportPaths = !inTree && sel.paths.length > 0 ? [...sel.paths] : [nav.selectedGroup]
     try {
       exportPreview = await window.api.previewExport(exportPaths)
       notice = ''
@@ -1553,15 +1545,15 @@
     let moving: string[]
     let heading: string
     if (inTree) {
-      if (selectedGroup === root.path) return
-      paths = moving = [selectedGroup]
-      from = selectedGroup.slice(0, selectedGroup.lastIndexOf('/'))
+      if (nav.selectedGroup === root.path) return
+      paths = moving = [nav.selectedGroup]
+      from = nav.selectedGroup.slice(0, nav.selectedGroup.lastIndexOf('/'))
       heading = `Move “${labelOf(group) ?? 'group'}” to…`
     } else {
       paths = [...sel.paths]
       if (paths.length === 0) return
       moving = []
-      from = selectedGroup
+      from = nav.selectedGroup
       heading = paths.length === 1 ? 'Move 1 sheet to…' : `Move ${paths.length} sheets to…`
     }
     const targets = moveTargets(root, moving, from)
@@ -1585,7 +1577,7 @@
     const movedSheets = !treeEl?.contains(pickerReturnFocus)
     const result = await runOp(() => window.api.move(paths, target))
     if (!result) return
-    expanded[target] = true
+    nav.expanded[target] = true
     if (movedSheets) clearSheets()
   }
 
@@ -1630,7 +1622,7 @@
   function sheetsPaneDragOver(e: DragEvent): void {
     // A sorted list has no saved order to rearrange; sheets can still be dragged to a group.
     if (sortBy !== 'manual') return
-    if (drag?.kind !== 'sheets' || drag.parent !== selectedGroup) return
+    if (drag?.kind !== 'sheets' || drag.parent !== nav.selectedGroup) return
     e.preventDefault()
     sheetHint = 'end'
   }
@@ -1687,7 +1679,7 @@
       if (zone === 'inside') {
         void runOp(() => window.api.move(dragged.paths, path)).then((result) => {
           if (!result) return
-          expanded[path] = true
+          nav.expanded[path] = true
           if (dragged.kind === 'sheets') clearSheets()
         })
         return
@@ -1706,8 +1698,8 @@
   function treeKeydown(e: KeyboardEvent): void {
     if (!library || renaming) return
     const mod = e.metaKey || e.ctrlKey
-    const flat = visibleGroups(library.tree, expanded)
-    const i = flat.findIndex((v) => v.group.path === selectedGroup)
+    const flat = visibleGroups(library.tree, nav.expanded)
+    const i = flat.findIndex((v) => v.group.path === nav.selectedGroup)
     const current = flat[i]
     if (!current) return
     const go = (v: { group: GroupNode } | undefined): void => {
@@ -1741,11 +1733,11 @@
         go(flat[i - 1])
         break
       case 'ArrowRight':
-        if (subgroups && !expanded[current.group.path]) expanded[current.group.path] = true
+        if (subgroups && !nav.expanded[current.group.path]) nav.expanded[current.group.path] = true
         else go(flat[i + 1]?.parent === current.group ? flat[i + 1] : undefined)
         break
       case 'ArrowLeft':
-        if (subgroups && expanded[current.group.path]) expanded[current.group.path] = false
+        if (subgroups && nav.expanded[current.group.path]) nav.expanded[current.group.path] = false
         else go(current.parent ? { group: current.parent } : undefined)
         break
       case 'Enter':
@@ -2119,7 +2111,7 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="project"
-        class:selected={selectedGroup === library.tree.path}
+        class:selected={nav.selectedGroup === library.tree.path}
         oncontextmenu={(e) => {
           e.preventDefault()
           if (library) void nodeMenu('root', library.tree.path, { x: e.clientX, y: e.clientY })
@@ -2136,8 +2128,8 @@
         <GroupTree
           hideRoot
           group={library.tree}
-          selected={selectedGroup}
-          {expanded}
+          selected={nav.selectedGroup}
+          expanded={nav.expanded}
           {renaming}
           onselect={selectGroup}
           ontoggle={toggle}
