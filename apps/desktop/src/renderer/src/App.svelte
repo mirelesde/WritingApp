@@ -11,7 +11,7 @@
     type ColorTheme,
     allSheets as librarySheets,
   } from '@writingapp/core'
-  import type { EditMenuInfo, LibraryInfo, MenuCommand } from '../../preload/api'
+  import type { LibraryInfo, MenuCommand } from '../../preload/api'
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
   import { RecoveryFlow } from './recoveryFlow.svelte'
@@ -40,7 +40,7 @@
   import CleanUpImages from './CleanUpImages.svelte'
   import KeywordsDialog from './KeywordsDialog.svelte'
   import ContextMenu from './ContextMenu.svelte'
-  import { editMenuItems, nodeMenuItems, type MenuItem } from './contextMenu'
+  import { ContextMenus } from './contextMenus.svelte'
   import CommandPalette from './CommandPalette.svelte'
   import type { PaletteCommand } from './palette'
   import { createAutosaver, type SaveStatus } from './autosave'
@@ -82,6 +82,10 @@
     sheetExists,
     SORTS
   } from './listing'
+
+  const isMac = navigator.platform.startsWith('Mac')
+  const keyMod = isMac ? '⌘' : 'Ctrl+'
+  const keyShift = isMac ? '⇧' : 'Shift+'
 
   let library = $state<LibraryInfo | null>(null)
   let loading = $state(true)
@@ -453,66 +457,27 @@
   })
 
 
-  /** The right-click menu being shown, if any. */
-  let contextMenu = $state<{ x: number; y: number; items: MenuItem[]; onpick: (item: MenuItem) => void } | null>(null)
-  /** The menu for right-clicked text; spelling help arrives from the main process. */
-  function textMenu(info: EditMenuInfo): void {
-    contextMenu = {
-      x: info.x,
-      y: info.y,
-      items: editMenuItems(info, isMac),
-      onpick: (item) => {
-        const value = item.value ?? ''
-        if (item.action === 'replace-misspelling') void window.api.replaceMisspelling(value)
-        else if (item.action === 'add-to-dictionary') void window.api.addToDictionary(value)
-        else if (item.action === 'select-all') void window.api.editCommand('selectAll')
-        else if (item.action) void window.api.editCommand(item.action as 'undo' | 'redo' | 'cut' | 'copy' | 'paste')
-      }
-    }
-  }
-
-  /** Right-click menu: act on what was clicked, selecting it first if it is not already. */
-  async function nodeMenu(kind: 'sheet' | 'group' | 'root', path: string, at: { x: number; y: number }): Promise<void> {
-    if (!library) return
-    if (kind === 'sheet') {
-      if (!sel.has(path)) await setSelection([path], path)
-    } else if (nav.selectedGroup !== path) {
-      selectGroup(path)
-      await tick()
-    }
-    contextMenu = {
-      ...at,
-      items: nodeMenuItems(kind, ops.clip !== null, isMac),
-      onpick: (item) => void nodeAction(kind, path, item.action)
-    }
-  }
-
-  async function nodeAction(kind: 'sheet' | 'group' | 'root', path: string, action: string | undefined): Promise<void> {
-    if (action === 'reveal') await window.api.revealPath(path)
-    else if (action === 'copy-path') await window.api.copyPath(path)
-    else if (action === 'new-sheet') await creation.newSheet()
-    else if (action === 'new-group') await ops.newGroup(kind === 'root')
-    else if (action === 'open-tab') await tabFlow.open(path)
-    else if (action === 'open-window') await window.api.newWindow(path)
-    else if (action === 'keywords') keywords.open()
-    else if (action === 'rename') void ops.startRename(path)
-    else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
-      if (kind === 'group') treeEl?.focus()
-      await tick()
-      if (action === 'duplicate') await ops.duplicate()
-      else if (action === 'paste') await ops.paste()
-      else ops.copy(action === 'cut')
-    }
-    else if (action === 'move') {
-      if (kind === 'group') treeEl?.focus()
-      else await tick()
-      move.open()
-    } else if (action === 'delete') {
-      if (kind === 'group') treeEl?.focus()
-      await tick()
-      await ops.remove()
-    }
-  }
+  const menus = new ContextMenus(window.api, {
+    hasLibrary: () => library !== null,
+    isMac,
+    isSelected: (path) => sel.has(path),
+    selectSheet: (path) => setSelection([path], path),
+    selectedGroup: () => nav.selectedGroup,
+    selectGroup: (path) => void selectGroup(path),
+    canPaste: () => ops.clip !== null,
+    tick,
+    focusTree: () => treeEl?.focus(),
+    newSheet: () => creation.newSheet(),
+    newGroup: (atRoot) => ops.newGroup(atRoot),
+    openTab: (path) => tabFlow.open(path),
+    openKeywords: () => keywords.open(),
+    startRename: (path) => void ops.startRename(path),
+    duplicate: () => ops.duplicate(),
+    paste: () => ops.paste(),
+    copy: (cut) => ops.copy(cut),
+    remove: () => ops.remove(),
+    moveTo: () => move.open()
+  })
 
   /** Every sheet title, for wiki links. */
   const sheetTitles = $derived(library ? listSheets(library.tree).map((s) => s.title) : [])
@@ -888,7 +853,7 @@
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
     const unsubscribeChanged = window.api.onLibraryChanged((info) => void externalChange(info))
     const unsubscribeMenu = window.api.onMenuCommand(handleCommand)
-    const unsubscribeText = window.api.onEditMenu(textMenu)
+    const unsubscribeText = window.api.onEditMenu(menus.showText)
     // Last chance to save when the window closes.
     const saveOnClose = (): void => {
       if (!manual()) void autosaver.flush()
@@ -919,9 +884,6 @@
       window.removeEventListener('beforeunload', saveOnClose)
     }
   })
-  const isMac = navigator.platform.startsWith('Mac')
-  const keyMod = isMac ? '⌘' : 'Ctrl+'
-  const keyShift = isMac ? '⇧' : 'Shift+'
 </script>
 
 <svelte:window onkeydown={windowKeydown} />
@@ -974,7 +936,7 @@
       oncommitrename={ops.commitRename}
       oncancelrename={ops.finishRename}
       oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
-      onnodemenu={(kind, path, at) => void nodeMenu(kind, path, at)}
+      onnodemenu={(kind, path, at) => void menus.showNode(kind, path, at)}
       onconflicts={conflicts.restart}
     />
 
@@ -1002,7 +964,7 @@
       onsheetdragend={dnd.end}
       onsheetdragover={dnd.sheetOver}
       onsheetclick={clickSheet}
-      onsheetmenu={(path, at) => void nodeMenu('sheet', path, at)}
+      onsheetmenu={(path, at) => void menus.showNode('sheet', path, at)}
       onnew={() => void creation.newSheet()}
       onsort={(value) => void window.api.setView({ sheetSort: value })}
     />
@@ -1162,17 +1124,17 @@
   />
 {/if}
 
-{#if contextMenu}
-  {@const menu = contextMenu}
+{#if menus.current}
+  {@const menu = menus.current}
   <ContextMenu
     x={menu.x}
     y={menu.y}
     items={menu.items}
     onchoose={(item) => {
-      contextMenu = null
+      menus.close()
       menu.onpick(item)
     }}
-    onclose={() => (contextMenu = null)}
+    onclose={menus.close}
   />
 {/if}
 
