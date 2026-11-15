@@ -1051,3 +1051,9 @@ the items marked done above.
       right-click Duplicate and Move to Trash, copy and paste between groups, recovery after the app
       is killed, and Don't Save with the sheet in two tabs. Confirmed the menu check fails when the
       right-click bug is put back. Not run in CI yet (Linux would need `xvfb-run`).
+    - *Styling lost in the pane split, found by comparing the old stylesheet rule by rule with the new
+      ones:* the editor's "No Sheet Selected" placeholder (large, light, centred) and the accent
+      colour of the `#` keyword-filter button while a keyword filter is on. Both restored. The same
+      comparison also checked every attribute, handler, timer, effect, `bind:`, prop, API call and
+      default value from the old `App.svelte` against the new code, and found nothing else missing.
+

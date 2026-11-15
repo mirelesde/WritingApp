@@ -420,6 +420,10 @@
     color: var(--muted);
     cursor: default;
   }
+  .kw-button.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
   .kw-menu {
     left: auto;
     right: 10px;
