@@ -23,6 +23,7 @@
   import { RecoveryFlow } from './recoveryFlow.svelte'
   import { sheetsKey, treeKey, windowKey } from './keyActions'
   import { DragDrop } from './dragDrop.svelte'
+  import { NodeOps } from './nodeOps.svelte'
   import { TabDrag } from './tabDrag'
   import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
@@ -93,7 +94,6 @@
   let groupWords = $state<number | null>(null)
   let readId = 0
   let saveStatus = $state<SaveStatus>('saved')
-  let renaming = $state<string | null>(null)
   let notice = $state('')
   let info = $state('')
   let infoTimer: ReturnType<typeof setTimeout> | undefined
@@ -337,7 +337,7 @@
     if (!parent) return
     const at = parent.children.findIndex((c) => c.path === sel.cursor)
     const result = await runOp(() => window.api.importFiles(parent.path, at >= 0 ? at + 1 : undefined))
-    if (result?.copied?.length) await selectCopies(result.copied)
+    if (result?.copied?.length) await ops.selectCopies(result.copied)
     const done = result?.copied?.length ?? 0
     const bad = result?.skipped ?? []
     if (bad.length > 0) {
@@ -727,153 +727,26 @@
     infoTimer = setTimeout(() => (info = ''), 3000)
   }
 
-  async function splitAtCursor(): Promise<void> {
-    const part = open?.parts.find((p) => editors[p.path]?.cursorInfo())
-    const where = part && editors[part.path]?.cursorInfo()
-    if (!part || !where) {
-      notice = 'Put the cursor in a sheet to split it there.'
-      return
-    }
-    const path = part.path
-    const result = await runOp(() => window.api.split(path, where.text, where.offset), true)
-    if (result?.created) {
-      sel.anchor = result.created
-      await setSelection([result.created], result.created, true)
-    }
-  }
+  const ops = new NodeOps(window.api, sel, nav, {
+    library: () => library,
+    runOp,
+    setSelection,
+    selectGroup,
+    clearSheets,
+    treeFocused: () => treeEl?.contains(document.activeElement) ?? false,
+    focusTree: async () => {
+      await tick()
+      treeEl?.focus()
+    },
+    cursor: () => {
+      const part = open?.parts.find((p) => editors[p.path]?.cursorInfo())
+      const where = part && editors[part.path]?.cursorInfo()
+      return part && where ? { path: part.path, text: where.text, offset: where.offset } : undefined
+    },
+    info: showInfo,
+    warn: (text) => (notice = text)
+  })
 
-  async function mergeSelected(): Promise<void> {
-    if (sel.paths.length < 2) {
-      notice = 'Select two or more sheets to merge.'
-      return
-    }
-    const chosen = [...sel.paths]
-    const result = await runOp(() => window.api.merge(chosen), true)
-    if (result?.created) {
-      sel.anchor = result.created
-      await setSelection([result.created], result.created)
-    }
-  }
-
-  async function glueSelected(glue: boolean): Promise<void> {
-    if (sel.paths.length === 0) {
-      notice = 'Select a sheet first.'
-      return
-    }
-    const chosen = [...sel.paths]
-    await runOp(() => (glue ? window.api.glue(chosen) : window.api.unglue(chosen)))
-  }
-
-  /** Moves the selected sheets, or the selected group when the tree has focus, to the trash. */
-  async function deleteSelected(): Promise<void> {
-    if (!library) return
-    const inTree = treeEl?.contains(document.activeElement) ?? false
-    let paths: string[]
-    let fallback = nav.selectedGroup
-    if (inTree || sel.paths.length === 0) {
-      if (nav.selectedGroup === library.tree.path) {
-        notice = 'Select a sheet or group to delete first.'
-        return
-      }
-      paths = [nav.selectedGroup]
-      fallback = nav.selectedGroup.slice(0, nav.selectedGroup.lastIndexOf('/'))
-    } else paths = [...sel.paths] // a plain array: state proxies cannot cross the bridge
-    const result = await runOp(() => window.api.deleteNodes(paths))
-    if (!result) return
-    nav.keep(result.library.tree, fallback)
-    showInfo('Moved to the trash. Undo with Cmd/Ctrl+Alt+Z.')
-  }
-
-  // --- Duplicate, copy, cut and paste --------------------------------------
-
-  /** What Cut or Copy last took: sheets or groups, waiting for Paste. */
-  let nodeClip = $state<{ paths: string[]; cut: boolean } | null>(null)
-
-  /** What these commands act on: the selected sheets, or the selected group when the tree has focus. */
-  function nodeTargets(): string[] {
-    if (!library) return []
-    const inTree = treeEl?.contains(document.activeElement) ?? false
-    if (inTree || sel.paths.length === 0) {
-      return nav.selectedGroup === library.tree.path ? [] : [nav.selectedGroup]
-    }
-    return [...sel.paths] // a plain array: state proxies cannot cross the bridge
-  }
-
-  const dirOf = (path: string): string => path.slice(0, path.lastIndexOf('/'))
-
-  /** Selects what a copy or move produced: the new sheets, or the new group. */
-  async function selectCopies(paths: string[]): Promise<void> {
-    if (!library || paths.length === 0) return
-    if (paths.every((p) => sheetExists(library!.tree, p))) {
-      sel.anchor = paths[0]!
-      await setSelection(paths, paths[0]!, false)
-    } else if (findGroup(library.tree, paths[0]!)) {
-      selectGroup(paths[0]!)
-    }
-  }
-
-  async function duplicateSelected(): Promise<void> {
-    const targets = nodeTargets()
-    const first = targets[0]
-    if (!library || !first) {
-      notice = 'Select a sheet or group to duplicate first.'
-      return
-    }
-    const parent = findGroup(library.tree, dirOf(first))
-    const after = Math.max(...targets.map((p) => parent?.children.findIndex((c) => c.path === p) ?? -1))
-    const result = await runOp(() =>
-      window.api.copy(targets, dirOf(first), after >= 0 ? after + 1 : undefined, 'Duplicate')
-    )
-    if (result?.copied) await selectCopies(result.copied)
-  }
-
-  function copySelected(cut: boolean): void {
-    const targets = nodeTargets()
-    if (targets.length === 0) {
-      notice = `Select a sheet or group to ${cut ? 'cut' : 'copy'} first.`
-      return
-    }
-    nodeClip = { paths: targets, cut }
-    showInfo(`${cut ? 'Cut' : 'Copied'} ${targets.length === 1 ? '1 item' : `${targets.length} items`}. Paste with Cmd/Ctrl+V.`)
-  }
-
-  async function pasteNodes(): Promise<void> {
-    const clip = nodeClip
-    const parent = group
-    if (!library || !clip || !parent) return
-    const inTree = treeEl?.contains(document.activeElement) ?? false
-    const at = inTree ? -1 : parent.children.findIndex((c) => c.path === sel.cursor)
-    const index = at >= 0 ? at + 1 : undefined
-    const paths = [...clip.paths]
-    if (clip.cut) {
-      const result = await runOp(() => window.api.move(paths, parent.path, index))
-      if (!result) return
-      nodeClip = null
-      await selectCopies(paths.map((p) => remapPath(p, result.moved)))
-    } else {
-      const result = await runOp(() => window.api.copy(paths, parent.path, index, 'Paste'))
-      if (result?.copied) await selectCopies(result.copied)
-    }
-  }
-
-  /** Cmd/Ctrl+C, X, V and D in the sheet list and the tree. Returns whether the key was used. */
-  function nodeClipboardKey(e: KeyboardEvent): boolean {
-    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return false
-    if ((e.target as HTMLElement).closest('input, textarea')) return false
-    const key = e.key.toLowerCase()
-    if (key === 'c') copySelected(false)
-    else if (key === 'x') copySelected(true)
-    else if (key === 'v') void pasteNodes()
-    else if (key === 'd') void duplicateSelected()
-    else return false
-    e.preventDefault()
-    return true
-  }
-
-  async function undoSheetChange(): Promise<void> {
-    const result = await runOp(() => window.api.undo(), true)
-    if (result?.label) showInfo(`Undid ${result.label.toLowerCase()}`)
-  }
 
   /** The right-click menu being shown, if any. */
   let contextMenu = $state<{ x: number; y: number; items: MenuItem[]; onpick: (item: MenuItem) => void } | null>(null)
@@ -904,7 +777,7 @@
     }
     contextMenu = {
       ...at,
-      items: nodeMenuItems(kind, nodeClip !== null, isMac),
+      items: nodeMenuItems(kind, ops.clip !== null, isMac),
       onpick: (item) => void nodeAction(kind, path, item.action)
     }
   }
@@ -913,17 +786,17 @@
     if (action === 'reveal') await window.api.revealPath(path)
     else if (action === 'copy-path') await window.api.copyPath(path)
     else if (action === 'new-sheet') await newSheet()
-    else if (action === 'new-group') await newGroup(kind === 'root')
+    else if (action === 'new-group') await ops.newGroup(kind === 'root')
     else if (action === 'open-tab') await openInTab(path)
     else if (action === 'open-window') await window.api.newWindow(path)
     else if (action === 'keywords') openKeywords()
-    else if (action === 'rename') void startRename(path)
+    else if (action === 'rename') void ops.startRename(path)
     else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
       if (kind === 'group') treeEl?.focus()
       await tick()
-      if (action === 'duplicate') await duplicateSelected()
-      else if (action === 'paste') await pasteNodes()
-      else copySelected(action === 'cut')
+      if (action === 'duplicate') await ops.duplicate()
+      else if (action === 'paste') await ops.paste()
+      else ops.copy(action === 'cut')
     }
     else if (action === 'move') {
       if (kind === 'group') treeEl?.focus()
@@ -932,7 +805,7 @@
     } else if (action === 'delete') {
       if (kind === 'group') treeEl?.focus()
       await tick()
-      await deleteSelected()
+      await ops.remove()
     }
   }
 
@@ -1009,38 +882,6 @@
     await window.api.saveTemplate(text)
     templates = await window.api.listTemplates()
     showInfo('Saved as a template')
-  }
-
-  async function newGroup(inRoot: boolean): Promise<void> {
-    if (!library) return
-    const parent = inRoot ? library.tree.path : nav.selectedGroup
-    const result = await runOp(() =>
-      window.api.createGroup(parent, inRoot ? 'Untitled Project' : undefined)
-    )
-    if (!result?.created) return
-    nav.expand(parent)
-    nav.selectedGroup = result.created
-    clearSheets()
-    renaming = result.created
-  }
-
-  async function startRename(path: string): Promise<void> {
-    if (library && path !== library.tree.path) renaming = path
-  }
-
-  async function finishRename(): Promise<void> {
-    renaming = null
-    await tick()
-    treeEl?.focus()
-  }
-
-  async function commitRename(path: string, name: string): Promise<void> {
-    if (renaming !== path) return
-    const trimmed = name.trim()
-    await finishRename()
-    const current = library ? labelOf(findGroup(library.tree, path)) : undefined
-    if (trimmed === '' || trimmed === (current ?? path.slice(path.lastIndexOf('/') + 1))) return
-    await runOp(() => window.api.renameGroup(path, trimmed))
   }
 
   /** A click on the empty page around the text (below the last line, beside the column) puts the cursor at the end. */
@@ -1329,16 +1170,16 @@
   // --- Keyboard -----------------------------------------------------------
 
   function treeKeydown(e: KeyboardEvent): void {
-    if (!library || renaming) return
+    if (!library || ops.renaming) return
     const result = treeKey(e, visibleGroups(library.tree, nav.expanded), nav.selectedGroup, nav.expanded, () =>
-      nodeClipboardKey(e)
+      ops.clipboardKey(e)
     )
     if (result.handled) e.preventDefault()
     const action = result.action
     if (!action) return
     if (action.kind === 'select') void selectGroup(action.path)
     else if (action.kind === 'expand') nav.expanded[action.path] = action.open
-    else if (action.kind === 'rename') void startRename(action.path)
+    else if (action.kind === 'rename') void ops.startRename(action.path)
     else void runOp(() => window.api.move(action.paths, action.parent, action.slot))
   }
 
@@ -1357,7 +1198,7 @@
           return parent?.children.map((c) => c.path)
         }
       },
-      () => nodeClipboardKey(e)
+      () => ops.clipboardKey(e)
     )
     if (result.handled) e.preventDefault()
     const action = result.action
@@ -1431,24 +1272,24 @@
     else if (command === 'previous-heading') activeEditor()?.jumpHeading('previous')
     else if (command === 'next-heading') activeEditor()?.jumpHeading('next')
     else if (command === 'find-replace') openFind('sheet', true)
-    else if (command === 'copy-sheets') copySelected(false)
-    else if (command === 'cut-sheets') copySelected(true)
-    else if (command === 'paste-sheets') void pasteNodes()
+    else if (command === 'copy-sheets') ops.copy(false)
+    else if (command === 'cut-sheets') ops.copy(true)
+    else if (command === 'paste-sheets') void ops.paste()
     else if (command === 'import') void importFiles()
     else if (command === 'fold-section') foldHere(true)
     else if (command === 'unfold-section') foldHere(false)
     else if (command === 'fold-all') foldAll(true)
     else if (command === 'unfold-all') foldAll(false)
     else if (command.startsWith('format-')) formatActive(command.slice(7) as FormatKind)
-    else if (command === 'delete') void deleteSelected()
-    else if (command === 'duplicate') void duplicateSelected()
-    else if (command === 'split') void splitAtCursor()
-    else if (command === 'merge') void mergeSelected()
-    else if (command === 'glue') void glueSelected(true)
+    else if (command === 'delete') void ops.remove()
+    else if (command === 'duplicate') void ops.duplicate()
+    else if (command === 'split') void ops.split()
+    else if (command === 'merge') void ops.merge()
+    else if (command === 'glue') void ops.glue(true)
     else if (command === 'edit-keywords') openKeywords()
-    else if (command === 'unglue') void glueSelected(false)
-    else if (command === 'undo-sheet-change') void undoSheetChange()
-    else void newGroup(command === 'new-project')
+    else if (command === 'unglue') void ops.glue(false)
+    else if (command === 'undo-sheet-change') void ops.undo()
+    else void ops.newGroup(command === 'new-project')
   }
 
   function toggleZen(): void {
@@ -1579,7 +1420,7 @@
       {library}
       selectedGroup={nav.selectedGroup}
       expanded={nav.expanded}
-      {renaming}
+      renaming={ops.renaming}
       {notice}
       {info}
       conflictCount={conflictPairs.length}
@@ -1593,13 +1434,13 @@
         const box = e.currentTarget.closest('.sidebar')
         if (ui.sidebarHidden && !box?.contains(e.relatedTarget as Node | null)) ui.sidebarPeek = false
       }}
-      onnewgroup={() => void newGroup(false)}
+      onnewgroup={() => void ops.newGroup(false)}
       onhide={ui.toggleSidebar}
       onselect={(path) => void selectGroup(path)}
       ontoggle={toggle}
-      onstartrename={startRename}
-      oncommitrename={commitRename}
-      oncancelrename={finishRename}
+      onstartrename={ops.startRename}
+      oncommitrename={ops.commitRename}
+      oncancelrename={ops.finishRename}
       oncolor={(path, color) => void runOp(() => window.api.setColor(path, color))}
       onnodemenu={(kind, path, at) => void nodeMenu(kind, path, at)}
       onconflicts={conflicts.restart}
