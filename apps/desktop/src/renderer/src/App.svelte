@@ -345,8 +345,15 @@
     ask: (names, what) => unsavedPrompt.ask(names, what),
     discard: (path) => {
       autosaver.discard(path)
-      // The card showed the typed text; show what is on disk again.
-      void window.api.readSheet(path).then((saved) => list.edited(path, saved), () => {})
+      // The card and any editor still showing the sheet held the typed text; show what is on disk again.
+      void window.api.readSheet(path).then(
+        (saved) => {
+          list.edited(path, saved)
+          if (run.edits[path] !== undefined) run.edits[path] = saved
+          editors[path]?.replaceText(saved)
+        },
+        () => {}
+      )
     },
     flush: (paths) => autosaver.flush(paths),
     unsaved: () => autosaver.unsavedPaths(),
