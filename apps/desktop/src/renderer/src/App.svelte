@@ -1070,8 +1070,9 @@
     y={menu.y}
     items={menu.items}
     onchoose={(item) => {
+      const pick = menu.onpick
       menus.close()
-      menu.onpick(item)
+      pick(item)
     }}
     onclose={menus.close}
   />
