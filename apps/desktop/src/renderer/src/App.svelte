@@ -27,6 +27,7 @@
   import { SheetRun } from './sheetRun.svelte'
   import { DiskConflicts } from './diskConflicts.svelte'
   import { TabDrag } from './tabDrag'
+  import { Trail } from './trail.svelte'
   import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
   import { SelectionState } from './selectionState.svelte'
@@ -537,35 +538,10 @@
 
   // --- Back and forward ---------------------------------------------------
 
-  const TRAIL_LIMIT = 100
-  let trail = $state<string[]>([])
-  let trailAt = $state(-1)
-  let navigating = false
-
-  /** Remembers a sheet the user opened, dropping whatever lay ahead of the current one. */
-  function visit(path: string): void {
-    if (navigating || trail[trailAt] === path) return
-    trail = [...trail.slice(0, trailAt + 1), path].slice(-TRAIL_LIMIT)
-    trailAt = trail.length - 1
-  }
-
-  /** Steps through the visited sheets, skipping any that no longer exist. */
-  async function step(delta: -1 | 1): Promise<void> {
-    if (!library) return
-    let at = trailAt + delta
-    while (trail[at] !== undefined && !sheetExists(library.tree, trail[at]!)) at += delta
-    const path = trail[at]
-    if (path === undefined) return
-    trailAt = at
-    navigating = true
-    try {
-      await revealSheet(path, false)
-    } finally {
-      navigating = false
-    }
-  }
-  const canBack = $derived(trailAt > 0)
-  const canForward = $derived(trailAt >= 0 && trailAt < trail.length - 1)
+  const trail = new Trail({
+    exists: (path) => (library ? sheetExists(library.tree, path) : false),
+    show: (path) => revealSheet(path, false)
+  })
 
   /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
   async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
@@ -575,7 +551,7 @@
     sel.cursor = to
     if (paths.length === 1) {
       const path = paths[0]!
-      visit(path)
+      trail.visit(path)
       if (!run.isOpen(path)) {
         focusEditor = focus
         await run.load(path)
@@ -602,7 +578,7 @@
   function focusedPart(path: string): void {
     if (sel.only === path) return
     sel.selectOnly(path)
-    visit(path)
+    trail.visit(path)
   }
 
   /** Arrow keys at the edge of a sheet carry on into its neighbour in the run. */
@@ -1132,8 +1108,8 @@
   function windowKeydown(e: KeyboardEvent): void {
     const action = windowKey(e, library !== null, sel.paths[0] !== undefined)
     if (!action) return
-    if (action === 'back') void step(-1)
-    else if (action === 'forward') void step(1)
+    if (action === 'back') void trail.step(-1)
+    else if (action === 'forward') void trail.step(1)
     else if (action === 'focus-library') {
       if (ui.sidebarHidden) ui.sidebarPeek = true
       treeEl?.focus()
@@ -1399,8 +1375,8 @@
         sidebarCollapsed={ui.sidebarCollapsed}
         sheetsCollapsed={ui.sheetsCollapsed}
         outlineOpen={ui.outlineOpen}
-        {canBack}
-        {canForward}
+        canBack={trail.canBack}
+        canForward={trail.canForward}
         finding={finding !== null}
         hasSheet={run.open !== null}
         {styleOpen}
@@ -1413,7 +1389,7 @@
         ontogglesidebar={ui.toggleSidebar}
         ontogglesheets={ui.toggleSheets}
         ontoggleoutline={ui.toggleOutline}
-        onstep={(d) => void step(d)}
+        onstep={(d) => void trail.step(d)}
         ontogglefind={() => (finding ? closeFind() : openFind())}
         onformat={formatActive}
         oninsertimage={() => void insertImage()}
