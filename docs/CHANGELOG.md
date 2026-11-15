@@ -979,3 +979,19 @@ the items marked done above.
     Checked live: creating a group with `:` and `?`. Not checked live: the inline rename box
     and Finder rename (UAT 13.40).
 
+
+88. **Small changes that had no entry.** **Done.** Found by checking every commit against
+    this file; written from the commit messages, not re-checked in the app.
+    - *Empty page click* (8aea10b): clicking anywhere on the empty page below the text puts
+      the cursor at the end of the sheet.
+    - *Tight marks* (90730d4): Bold and Italic keep their marks tight to the text, so
+      toggling them repeatedly adds and removes the marks cleanly (tests in `formatting.test.ts`).
+    - *Comments in titles and previews* (1580b59, 76af341, 1db6243): a sheet's title and card
+      preview skip commented-out text and stray comment markers. The saved sheet cache has a
+      new version number so existing libraries rebuild their titles and previews.
+    - *Picture hash index* (2f44f2b): a stored hash index of the pictures speeds up duplicate
+      checks (see item 23).
+    - *Line endings* (9e49932): `.gitattributes` keeps LF on every system, so Windows checkouts
+      do not turn the files into CRLF.
+    - *CI* (2408b72, 85c0beb): CI runs on Ubuntu, Windows and macOS (see
+      [RELEASING.md](RELEASING.md)); five lint errors that failed the lint step were fixed.
