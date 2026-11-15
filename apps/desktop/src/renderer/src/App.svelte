@@ -17,7 +17,7 @@
     libraryKeywords,
     parseFilter
   } from '@writingapp/core'
-  import type { EditMenuInfo, LibraryInfo, MenuCommand, OpResult } from '../../preload/api'
+  import type { EditMenuInfo, LibraryInfo, MenuCommand } from '../../preload/api'
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
   import { RecoveryFlow } from './recoveryFlow.svelte'
@@ -52,6 +52,8 @@
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
   import { TabFlow } from './tabFlow'
+  import { SelectionFlow } from './selectionFlow'
+  import { OpRunner } from './opRunner'
   import { EditorActions } from './editorActions'
   import LibraryPane from './LibraryPane.svelte'
   import Welcome from './Welcome.svelte'
@@ -69,8 +71,6 @@
   import {
     errorMessage,
     moveTargets,
-    pathRange,
-    remapPath,
     runOf,
     visibleGroups,
     type MoveTarget
@@ -467,99 +467,34 @@
     show: (path) => revealSheet(path, false)
   })
 
-  /** Selects sheets. The editor shows the sheet, with its whole run, when exactly one is selected. */
-  async function setSelection(paths: string[], to: string | null, focus = false): Promise<void> {
-    await settle()
-    const left = sel.paths.filter((p) => !paths.includes(p))
-    sel.paths = paths
-    sel.cursor = to
-    if (paths.length === 1) {
-      const path = paths[0]!
-      trail.visit(path)
-      if (!run.isOpen(path)) {
-        focusEditor = focus
-        await run.load(path)
-      } else if (focus) editors[path]?.focus()
-      void scrollToPart(path)
-    } else run.clear()
-    // Renaming is a change to the library, which saves what is open first. In manual
-    // mode nothing is saved unasked, so renames wait until nothing has unsaved text.
-    if (left.length > 0 && !(manual() && autosaver.unsavedPaths().length > 0)) void renameToMatchTitles(left)
-  }
+  const selection = new SelectionFlow(window.api, sel, run, {
+    settle,
+    visit: (path) => trail.visit(path),
+    wantFocus: (focus) => (focusEditor = focus),
+    focusEditor: (path) => editors[path]?.focus(),
+    focusAt: (path, where) => editors[path]?.focusAt(where),
+    scrollToPart,
+    reveal: (path) => revealSheet(path, false),
+    manual,
+    hasUnsaved: () => autosaver.unsavedPaths().length > 0,
+    apply: (result) => runOp(() => Promise.resolve(result)),
+    listPaths: () => listPaths,
+    keywordMode: () => keywordMode
+  })
+  const { setSelection, focusedPart, crossEdge, clickSheet } = selection
 
-  /** Sheets just left are renamed to follow their titles; the UI follows the new paths. */
-  async function renameToMatchTitles(paths: string[]): Promise<void> {
-    try {
-      const result = await window.api.syncSheetNames(paths)
-      if (result.moved.length === 0) return
-      await runOp(() => Promise.resolve(result))
-    } catch {
-      // A name that cannot change is not worth interrupting anyone for.
-    }
-  }
-
-  /** The cursor moved into another sheet of the open run: the list follows. */
-  function focusedPart(path: string): void {
-    if (sel.only === path) return
-    sel.selectOnly(path)
-    trail.visit(path)
-  }
-
-  /** Arrow keys at the edge of a sheet carry on into its neighbour in the run. */
-  function crossEdge(path: string, direction: 'back' | 'forward'): boolean {
-    const parts = run.open?.parts ?? []
-    const next = parts[parts.findIndex((p) => p.path === path) + (direction === 'forward' ? 1 : -1)]
-    if (!next) return false
-    editors[next.path]?.focusAt(direction === 'forward' ? 'start' : 'end')
-    return true
-  }
-
-  function clickSheet(path: string, e: MouseEvent): Promise<void> {
-    if (keywordMode && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
-      sel.anchor = path
-      return revealSheet(path, false)
-    }
-    if (e.shiftKey && sel.anchor) return setSelection(pathRange(listPaths, sel.anchor, path), path)
-    sel.anchor = path
-    if (e.metaKey || e.ctrlKey) {
-      const next = sel.has(path)
-        ? sel.paths.filter((p) => p !== path)
-        : [...sel.paths, path]
-      return setSelection(next, path)
-    }
-    return setSelection([path], path)
-  }
-
-  /** Runs a structural change, then brings the UI in line with the result. */
-  async function runOp(op: () => Promise<OpResult>, reload = false): Promise<OpResult | undefined> {
-    await autosaver.flush()
-    try {
-      const result = await op()
-      const remap = (path: string): string => remapPath(path, result.moved)
-      library = result.library
-      sel.remap(remap)
-      tabs.remap(remap)
-      nav.follow(result.library.tree, remap)
-      await refreshOpen(reload)
-      notice = ''
-      return result
-    } catch (e) {
-      notice = errorMessage(e)
-      return undefined
-    }
-  }
-
-  /** Makes the editor match the selection: drops sheets that are gone, reloads when told to. */
-  async function refreshOpen(force: boolean): Promise<void> {
-    if (!library) return
-    const tree = library.tree
-    sel.prune((p) => sheetExists(tree, p))
-    if (sel.paths.length !== 1) {
-      if (run.open) run.clear()
-      return
-    }
-    if (force || !run.isOpen(sel.paths[0]!)) await run.load(sel.paths[0]!)
-  }
+  const opRunner = new OpRunner(sel, run, {
+    flush: () => autosaver.flush(),
+    library: () => library,
+    setLibrary: (info) => (library = info),
+    remap: (change, tree) => {
+      sel.remap(change)
+      tabs.remap(change)
+      nav.follow(tree, change)
+    },
+    notice: (text) => (notice = text)
+  })
+  const { runOp, refreshOpen } = opRunner
 
   function showInfo(text: string): void {
     info = text
