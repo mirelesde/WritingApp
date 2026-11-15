@@ -4,7 +4,7 @@ This is the register of everything that is not finished: things only the owner c
 
 ## Status
 
-- **Done:** milestones 1–9 and numbered items 1–87 (see [CHANGELOG.md](CHANGELOG.md)). Licensed AGPL-3.0. App version is `0.0.0`; no tags or releases exist.
+- **Done:** milestones 1–9 and numbered items 1–89 (see [CHANGELOG.md](CHANGELOG.md)). Licensed AGPL-3.0. App version is `0.0.0`; no tags or releases exist.
 - **Next:** confirm the items in `UAT.md` section 15 live, then pick from the lists below, one commit per feature, each verified live first.
 
 If you are picking this up in a new session, read [ARCHITECTURE.md](ARCHITECTURE.md) ("Working in this repo") first.
@@ -141,13 +141,13 @@ The target is an OS X-inspired look that is the same on every OS, with the main 
 - **Preferences** as a separate window, as macOS does, instead of a dialog over the editor: a bigger change, undecided. Top tabs suit four sections; move to a sidebar (wider dialog, icons, a search box) at about six or more, for example Shortcuts, Export or Library. The owner also wants a way to choose the tabs' orientation in Preferences (top or side), to be built with that change.
 - **Title-bar area:** a visible title-bar strip when the sidebar is hidden; on macOS the group title sits further right so the traffic lights do not cover it, and when the sidebar slides in on hover the sheet list is pushed with it (the fully open state was not seen; the screenshot was mid-animation). Windows and Linux have no traffic lights, so the title area and window-control spacing need a look there.
 - **Cross-OS look:** Inter metrics, the solid (non-vibrant) sidebar, scrollbars, and fonts the built-in export styles name (Palatino, Courier New, Times) on Linux; dark mode was checked on dialogs only, not every surface; the editor's own font choices stay the writer's.
-- Row padding in the palettes (7 × 10) still differs from the menus (5 × 9); older scoped `h2` rules are not all removed; lint reports a handful of errors (see ARCHITECTURE).
+- Row padding in the palettes (7 × 10) still differs from the menus (5 × 9); older scoped `h2` rules are not all removed.
 - The text context menu's main-process path (a real right-click on editor text, then Cut, Copy, Paste) was not clicked through.
 - Accessibility settings (reduced motion, increased contrast) fall under item 51.
 
 ## 6. Housekeeping and maintainability
 
-- `App.svelte` is about 3,300 lines with no component-level tests; splitting it into focused pieces would make later changes safer but carries its own regression risk.
+- `App.svelte` was split into tested modules (item 89), from 3,366 to 1,336 lines. What remains is wiring, template and styles; there are still no component-level tests of the wiring itself, so the unchecked paths listed in item 89 are where a regression would hide.
 - CI: about 1,000 prettier warnings in lint; the `actions/*` bump for the Node 20 deprecation notice; CI is green on Ubuntu, Windows and macOS as of a4b89e2. Ubuntu had been failing since 74f7c27 because a test used a lowercase file name, which only a case-sensitive file system notices; macOS and Windows missed it. Any new test that names a file should use the exact case.
 - Add a "Show Log" menu item for `errors.log` (see section 3).
 - User-facing documentation: the plan has a "built, for the user guide" section in [CHANGELOG.md](CHANGELOG.md); the image behaviour in particular is not written up for users.

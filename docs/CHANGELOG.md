@@ -995,3 +995,28 @@ the items marked done above.
       do not turn the files into CRLF.
     - *CI* (2408b72, 85c0beb): CI runs on Ubuntu, Windows and macOS (see
       [RELEASING.md](RELEASING.md)); five lint errors that failed the lint step were fixed.
+
+
+89. **App.svelte split into tested modules.** **Done.** `App.svelte` went from 3,366 to 1,336
+    lines (PR #1, 40 commits, one per step, each checked live before it was committed). No
+    behaviour was meant to change. Core now has 436 tests and the desktop app 528.
+    - *Stores* (`*.svelte.ts`, reactive state): `ViewState` (view settings, and the reactions
+      to autosave turning on and zen turning on), `TabsState`, `SelectionState`, `GroupNav`,
+      `SheetList` (filter, sections, live card titles), `GroupWords`, `OutlineState`, `Trail`.
+    - *Flows* (classes that take `window.api` and a small host of callbacks, so they test with
+      fakes): `ExportFlow`, `FindFlow`, `MoveFlow`, `KeywordEdit`, `ConflictFlow`, `RecoveryFlow`,
+      `UnusedImages`, `SheetCreation` (including following a `[[link]]`), `NodeOps`, `SheetRun`,
+      `DiskConflicts`, `ContextMenus`, `DragDrop`, `TabDrag`.
+    - *Plain modules:* `EditorActions`, `TabFlow`, `SelectionFlow`, `OpRunner`, `Navigation`,
+      `KeyboardFlow`, `UnsavedResolver`, `takeExternalChange`, `runMenuCommand` (a table instead of a
+      long switch), `tabRuns`, `pageClick`, `listing`, `organise`, `keyActions`, `findScopes`,
+      `paletteCommands`.
+    - *Components split out:* `SheetsPane`, `LibraryPane`, `TabBar`, `EditorBar`, `Welcome`.
+    - *What is left in `App.svelte`:* building these modules and wiring them together, the
+      template and the styles; plus `scrollToPart`, `openExport`, the style menu, quick-open and
+      palette focus handling, and `conflictPairs`, which were judged too small to move.
+    - *Not checked live (unit tests only):* import, export, the image dialogs, templates and
+      save-as-template, dragging a tab to another window, Trash, the conflict banner, and a real
+      backlink. Two oddities seen and not traced: Duplicate from the right-click menu did nothing
+      under a scripted click (the older build behaved the same; never tried with a real mouse), and
+      after Don't Save on a duplicated tab the other tab still showed the discarded text.

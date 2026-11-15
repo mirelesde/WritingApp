@@ -26,8 +26,31 @@ apps/desktop/           @writingapp/desktop — Electron + Svelte 5
                         remembered library path (userData/settings.json)
   src/preload/          the bridge exposed to the UI as window.api;
                         api.ts holds its types
-  src/renderer/src/     Svelte UI
+  src/renderer/src/     Svelte UI. App.svelte only builds and wires the
+                        modules below; the logic lives in them (see
+                        "How the renderer is organised")
 ```
+
+### How the renderer is organised
+
+`App.svelte` constructs each module with `window.api` (as a `Pick<Api, ...>` of just
+what it uses) and a small host object of callbacks, then wires them to the template.
+Because modules see only that narrow surface, each has a `.test.ts` using fakes.
+
+- **Stores** (`*.svelte.ts`, Svelte 5 runes): own reactive state. `ViewState`, `TabsState`,
+  `SelectionState`, `GroupNav`, `SheetList`, `GroupWords`, `OutlineState`, `Trail`.
+- **Flows** (classes, some `*.svelte.ts` when they hold state for a dialog): one user task
+  each, such as `FindFlow`, `ExportFlow`, `MoveFlow`, `SheetCreation`, `NodeOps`, `TabFlow`,
+  `SelectionFlow`, `OpRunner`, `Navigation`, `ContextMenus`, `KeyboardFlow`.
+- **Pure functions** (`.ts`): `listing`, `organise`, `keyActions`, `menuCommands` (a command
+  table), `tabRuns`, `pageClick`, `findScopes`, `paletteCommands`.
+- **Components** hold markup and local styles: panes, dialogs, `TabBar`, `EditorBar`.
+
+Conventions: callbacks are arrow-function properties so `this` survives destructuring;
+a `$derived` that reads the constructor's host uses `$derived.by`; a plain `Set` is not
+allowed in a `.svelte.ts` file (lint); anything passed bare to a constructor must be
+declared before it in `App.svelte` (temporal dead zone). New logic goes in a module with a
+test, not into `App.svelte`.
 
 ### Commands (run from the repo root)
 
