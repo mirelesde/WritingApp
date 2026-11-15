@@ -1,3 +1,4 @@
+import { writeFileAtomic } from './atomicWrite'
 import { app, ipcMain, shell } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
@@ -66,7 +67,7 @@ export function registerExportStyleIpc(): void {
       if (name.trim() === '') throw new Error('Give the style a name')
       await fs.mkdir(folder(), { recursive: true })
       const file = id ? safeFile(id) : await freeFile(name)
-      await fs.writeFile(join(folder(), file), styleFileText(name, description, css), 'utf8')
+      await writeFileAtomic(join(folder(), file), styleFileText(name, description, css))
       return USER_PREFIX + file
     }
   )

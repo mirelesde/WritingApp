@@ -1,3 +1,4 @@
+import { writeFileAtomic } from './atomicWrite'
 import { promises as fs } from 'node:fs'
 import { dirname } from 'node:path'
 import { parseViewSettings, type ViewSettings } from '@writingapp/core'
@@ -56,7 +57,7 @@ export function createSettingsStore(file: string): {
 
     async save(settings) {
       await fs.mkdir(dirname(file), { recursive: true })
-      await fs.writeFile(file, JSON.stringify(settings, null, 2) + '\n', 'utf8')
+      await writeFileAtomic(file, JSON.stringify(settings, null, 2) + '\n')
     },
 
     async update(patch) {
