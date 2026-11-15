@@ -1049,9 +1049,9 @@ the items marked done above.
       show the title or the shown text; Markdown export keeps them).
     - *End-to-end checks* (`apps/desktop/e2e/`, `npm run e2e`): start the built app on a throwaway
       library and drive it over the DevTools protocol with real mouse and key events, using only
-      Node's own `fetch` and `WebSocket` (no new packages). Thirteen checks: open a library, type and
+      Node's own `fetch` and `WebSocket` (no new packages). Sixteen checks: open a library, type and
       save, right-click Duplicate and Move to Trash, copy and paste between groups, recovery after
-      the app is killed, Don't Save with the sheet in two tabs, export to Markdown, export to HTML (wiki links shown as text), import, the
+      the app is killed, Don't Save with the sheet in two tabs, export to Markdown, export to HTML (wiki links shown as text), export to Word and EPUB (real zip files), view settings kept across a restart, a sheet deleted and one renamed from outside, import, the
       empty-group placeholder, the keyword button, the changed-outside dialog, and quit with unsaved
       text. Confirmed the menu check fails when the right-click bug is put back. **CI runs them** on
       Ubuntu (under `xvfb-run`, with `--no-sandbox`), macOS and Windows. Two checks (Duplicate and

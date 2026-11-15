@@ -51,7 +51,10 @@ export class App {
   static async launch(library, dataDir) {
     if (!existsSync(join(appDir, 'out', 'main', 'index.js'))) throw new Error('Build the app first: npm run build')
     const data = dataDir ?? (await mkdtemp(join(tmpdir(), 'wa-e2e-data-')))
-    await writeFile(join(data, 'settings.json'), JSON.stringify({ libraryPath: library }))
+    // Keep what an earlier launch saved (view settings and so on); only the library is set.
+    const file = join(data, 'settings.json')
+    const saved = existsSync(file) ? JSON.parse(await readFile(file, 'utf8')) : {}
+    await writeFile(file, JSON.stringify({ ...saved, libraryPath: library }))
     // The Linux CI sandbox cannot run Chromium's own sandbox; a developer's machine can.
     const extra = process.env.CI && process.platform === 'linux' ? ['--no-sandbox'] : []
     const child = spawn(electronBin, ['.', '--remote-debugging-port=0', '--inspect=0', `--user-data-dir=${data}`, ...extra], {

@@ -2,7 +2,7 @@
 // Run: npm run build && npm run e2e   (needs a display; on Linux CI use xvfb-run)
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { writeFile } from 'node:fs/promises'
+import { rename, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { App, makeLibrary, readFile, readdir, rm, join, until, sleep } from './harness.mjs'
 const onWindows = process.platform === 'win32'
@@ -29,6 +29,20 @@ async function start(files = LIB) {
   app = await App.launch(library)
   await app.click(app.groupRow('Novel'))
   await until(() => app.eval(`document.querySelectorAll('.sheet').length >= 2`), 'the sheet list')
+}
+
+/** Exports the open group through the dialog in the given format (its name as the list shows it) to `out`. */
+async function exportAs(format, out) {
+  await app.stubDialogs()
+  await app.answerDialogs({ save: out })
+  await app.menu('export-html')
+  await until(() => app.eval(`document.querySelector('[aria-label=Format]') !== null`), 'the export dialog')
+  await app.click(`document.querySelector('[aria-label=Format]')`)
+  await until(() => app.eval(`document.querySelector('[role=option]') !== null`), 'the format list')
+  await app.click(`[...document.querySelectorAll('[role=option]')].find(o => o.textContent.trim().startsWith(${JSON.stringify(format)}))`)
+  await until(() => app.eval(`document.querySelector('.primary')?.textContent.includes(${JSON.stringify(format)})`), `the ${format} button`)
+  await app.click(`document.querySelector('[aria-label="Export preview"] .name')`)
+  await app.click(`document.querySelector('.primary')`)
 }
 
 const names = async (dir) => (await readdir(join(library, dir))).filter((n) => n.endsWith('.md')).sort()
@@ -92,6 +106,50 @@ describe('the app', () => {
     } finally {
       await rm(out, { force: true })
     }
+  })
+
+  it('exports a Word file and an EPUB book that are real zip files holding the text', async () => {
+    await start()
+    const docx = join(tmpdir(), `wa-e2e-export-${process.pid}.docx`)
+    const epub = join(tmpdir(), `wa-e2e-export-${process.pid}.epub`)
+    try {
+      await exportAs('Word', docx)
+      await until(async () => (await readFile(docx)).length > 0, 'the Word file')
+      assert.equal((await readFile(docx)).subarray(0, 2).toString(), 'PK')
+      await until(() => app.eval(`document.querySelector('[aria-label=Format]') === null`), 'the dialog to close')
+      await exportAs('EPUB', epub)
+      await until(async () => (await readFile(epub)).length > 0, 'the EPUB file')
+      const bytes = await readFile(epub)
+      assert.equal(bytes.subarray(0, 2).toString(), 'PK')
+      // The first entry of an EPUB is its uncompressed type marker.
+      assert.ok(bytes.subarray(0, 100).toString('latin1').includes('mimetype'))
+    } finally {
+      await rm(docx, { force: true })
+      await rm(epub, { force: true })
+    }
+  })
+
+  it('keeps the view settings after the app is closed and opened again', async () => {
+    await start()
+    await app.eval(`window.api.setView({ saveMode: 'manual' })`)
+    await sleep(800)
+    const data = app.dataDir
+    await app.quit()
+    app = await App.launch(library, data)
+    assert.equal(await app.eval(`window.api.getView().then(v => v.saveMode)`), 'manual')
+  })
+
+  it('follows a sheet deleted and a sheet renamed from outside the app', async () => {
+    await start()
+    await app.open('Alpha')
+    await rm(join(library, 'Novel', 'Alpha.md'))
+    await rename(join(library, 'Novel', 'Beta.md'), join(library, 'Novel', 'Renamed.md'))
+    // Cards show a sheet's heading, so the renamed file keeps its card; the deleted one goes.
+    await until(() => app.eval(`${app.sheetCard('Alpha')} === undefined`), 'the deleted sheet to leave the list', 15000)
+    assert.deepEqual(await names('Novel'), ['Renamed.md'])
+    assert.ok(await app.eval(`${app.sheetCard('Beta')} !== undefined`))
+    // The app is still alive and the renamed sheet opens.
+    await app.open('Beta')
   })
 
   it('brings back text that was typed when the app was killed', async () => {
