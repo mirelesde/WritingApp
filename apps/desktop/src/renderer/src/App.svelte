@@ -54,6 +54,7 @@
   import { TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
+  import { runMenuCommand, type CommandActions } from './menuCommands'
   import { EditorActions } from './editorActions'
   import LibraryPane from './LibraryPane.svelte'
   import Welcome from './Welcome.svelte'
@@ -950,54 +951,51 @@
   function handleCommand(command: MenuCommand): void {
     if (command === 'close-tab' && !library) void window.api.closeWindow()
     if (!library) return
-    if (command === 'new-tab') tabFlow.newTab()
-    else if (command === 'close-tab') tabFlow.close()
-    else if (command === 'next-tab') tabFlow.cycle(1)
-    else if (command === 'previous-tab') tabFlow.cycle(-1)
-    else if (command === 'save') void autosaver.flush(manual() ? (run.open?.parts.map((p) => p.path) ?? []) : undefined)
-    else if (command === 'save-all') void autosaver.flush()
-    else if (command === 'toggle-sidebar') ui.toggleSidebar()
-    else if (command === 'toggle-sheets') ui.toggleSheets()
-    else if (command === 'new-sheet') void creation.newSheet()
-    else if (command === 'daily-note') void creation.dailyNote()
-    else if (command === 'save-template') void creation.saveAsTemplate()
-    else if (command === 'new-from-template') openPalette()
-    else if (command === 'move-to') openMoveTo()
-    else if (command === 'export-html') void openExport()
-    else if (command === 'search') openFind(findScopes.some((x) => x.value === 'group') ? 'group' : undefined)
-    else if (command === 'quick-open') openQuick()
-    else if (command === 'command-palette') openPalette()
-    else if (command === 'distraction-free') toggleZen()
-    else if (command === 'preferences') preferencesOpen = true
-    else if (command === 'insert-table') editing.insertTable()
-    else if (command === 'insert-footnote') editing.insertFootnote()
-    else if (command === 'insert-contents') editing.insertContents()
-    else if (command === 'insert-image') void editing.insertImage()
-    else if (command === 'clean-images') void unused.open()
-    else if (command === 'resolve-conflicts') conflicts.restart()
-    else if (command === 'go-to-footnote') editing.goToFootnote()
-    else if (command === 'toggle-task') editing.toggleTask()
-    else if (command === 'previous-heading') editing.jumpHeading('previous')
-    else if (command === 'next-heading') editing.jumpHeading('next')
-    else if (command === 'find-replace') openFind('sheet', true)
-    else if (command === 'copy-sheets') ops.copy(false)
-    else if (command === 'cut-sheets') ops.copy(true)
-    else if (command === 'paste-sheets') void ops.paste()
-    else if (command === 'import') void creation.importFiles()
-    else if (command === 'fold-section') editing.foldHere(true)
-    else if (command === 'unfold-section') editing.foldHere(false)
-    else if (command === 'fold-all') editing.foldAll(true)
-    else if (command === 'unfold-all') editing.foldAll(false)
-    else if (command.startsWith('format-')) editing.format(command.slice(7) as FormatKind)
-    else if (command === 'delete') void ops.remove()
-    else if (command === 'duplicate') void ops.duplicate()
-    else if (command === 'split') void ops.split()
-    else if (command === 'merge') void ops.merge()
-    else if (command === 'glue') void ops.glue(true)
-    else if (command === 'edit-keywords') openKeywords()
-    else if (command === 'unglue') void ops.glue(false)
-    else if (command === 'undo-sheet-change') void ops.undo()
-    else void ops.newGroup(command === 'new-project')
+    runMenuCommand(command, commandActions)
+  }
+
+  const commandActions: CommandActions = {
+    newTab: tabFlow.newTab,
+    closeTab: () => void tabFlow.close(),
+    cycleTab: tabFlow.cycle,
+    save: () => void autosaver.flush(manual() ? (run.open?.parts.map((p) => p.path) ?? []) : undefined),
+    saveAll: () => void autosaver.flush(),
+    toggleSidebar: ui.toggleSidebar,
+    toggleSheets: ui.toggleSheets,
+    newSheet: () => void creation.newSheet(),
+    dailyNote: () => void creation.dailyNote(),
+    saveTemplate: () => void creation.saveAsTemplate(),
+    openTemplates: () => openPalette(),
+    moveTo: () => openMoveTo(),
+    exportHtml: () => void openExport(),
+    search: () => openFind(findScopes.some((x) => x.value === 'group') ? 'group' : undefined),
+    findReplace: () => openFind('sheet', true),
+    quickOpen: () => openQuick(),
+    commandPalette: () => openPalette(),
+    distractionFree: () => toggleZen(),
+    preferences: () => (preferencesOpen = true),
+    insertTable: editing.insertTable,
+    insertFootnote: editing.insertFootnote,
+    insertContents: editing.insertContents,
+    insertImage: () => void editing.insertImage(),
+    cleanImages: () => void unused.open(),
+    resolveConflicts: () => conflicts.restart(),
+    goToFootnote: editing.goToFootnote,
+    toggleTask: editing.toggleTask,
+    jumpHeading: editing.jumpHeading,
+    copySheets: (cut) => ops.copy(cut),
+    pasteSheets: () => void ops.paste(),
+    importFiles: () => void creation.importFiles(),
+    fold: (fold, all) => (all ? editing.foldAll(fold) : editing.foldHere(fold)),
+    format: editing.format,
+    remove: () => void ops.remove(),
+    duplicate: () => void ops.duplicate(),
+    split: () => void ops.split(),
+    merge: () => void ops.merge(),
+    glue: (glued) => void ops.glue(glued),
+    editKeywords: () => openKeywords(),
+    undo: () => void ops.undo(),
+    newGroup: (project) => void ops.newGroup(project)
   }
 
   function toggleZen(): void {
