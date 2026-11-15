@@ -8,6 +8,7 @@ import { strToU8, zipSync } from 'fflate'
 import { assetNameFromUrl } from './images'
 import { escapeXml } from './xml'
 import { markdownTokens } from './export'
+import { withoutWikiLinks } from './wikiLinks'
 import { findFootnoteDefs, findFootnoteRefs } from './footnotes'
 
 export interface DocxOptions {
@@ -312,7 +313,8 @@ const NS =
   'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'
 
 /** A Word document for some Markdown. */
-export function markdownToDocx(markdown: string, options: DocxOptions = {}): Uint8Array {
+export function markdownToDocx(source: string, options: DocxOptions = {}): Uint8Array {
+  const markdown = withoutWikiLinks(source)
   const [pageW, pageH] = PAGES[options.pageSize ?? 'A4']
   const margin = MARGINS[options.margin ?? 'normal']
   const b = new Builder(options, pageW - margin * 2)

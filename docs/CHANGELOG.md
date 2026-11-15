@@ -1045,7 +1045,8 @@ the items marked done above.
     - *Seen, not changed:* a name clash on a move makes `Beta-2.md`, while Duplicate makes
       `Beta 2.md` (fixed afterwards: moving and copying both add ` 2`, ` 3`, ...). Inserting a picture at the very start of a line puts it on the heading's line, so
       the file is renamed from that line (fixed afterwards: a picture sharing a line with text is set
-      apart by blank lines). Exported HTML and Word leave `[[wiki links]]` as written.
+      apart by blank lines). Exported HTML and Word leave `[[wiki links]]` as written (fixed afterwards: HTML, Word and EPUB
+      show the title or the shown text; Markdown export keeps them).
     - *End-to-end checks* (`apps/desktop/e2e/`, `npm run e2e`): start the built app on a throwaway
       library and drive it over the DevTools protocol with real mouse and key events, using only
       Node's own `fetch` and `WebSocket` (no new packages). Six checks: open a library, type and save,

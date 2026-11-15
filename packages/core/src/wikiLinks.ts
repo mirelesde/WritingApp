@@ -41,6 +41,15 @@ export function findWikiLinks(text: string): WikiLink[] {
   return links
 }
 
+/** The text with each `[[Title]]` or `[[Title|shown]]` link replaced by what a reader would see. */
+export function withoutWikiLinks(text: string): string {
+  let out = text
+  for (const link of [...findWikiLinks(text)].reverse()) {
+    out = out.slice(0, link.from) + (link.label ?? link.target) + out.slice(link.to)
+  }
+  return out
+}
+
 /** The distinct sheet titles a text links to, as written. */
 export function linkTargets(text: string): string[] {
   return [...new Set(findWikiLinks(text).map((l) => l.target))]

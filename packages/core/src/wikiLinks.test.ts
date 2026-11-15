@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLink } from './wikiLinks'
+import { backlinksTo, completeTitles, findWikiLinks, linkTargets, resolveWikiLink, withoutWikiLinks } from './wikiLinks'
 import type { GroupNode, SheetNode } from './library'
 
 const sheet = (title: string, links: string[] = []): SheetNode => ({
@@ -42,5 +42,12 @@ describe('resolving and backlinks', () => {
   it('completes titles, prefix matches first', () => {
     expect(completeTitles(root, 'c')).toEqual(['Cast', 'Notes'].slice(0, 1))
     expect(completeTitles(tree(sheet('Zed'), sheet('Red'), sheet('Edit')), 'ed')).toEqual(['Edit', 'Zed', 'Red'])
+  })
+})
+
+describe('withoutWikiLinks', () => {
+  it('shows the shown text or the title, and leaves code alone', () => {
+    const text = 'See [[Castle]] and [[Castle|the keep]].\n`[[Code]]`\n```\n[[Fenced]]\n```\n'
+    expect(withoutWikiLinks(text)).toBe('See Castle and the keep.\n`[[Code]]`\n```\n[[Fenced]]\n```\n')
   })
 })

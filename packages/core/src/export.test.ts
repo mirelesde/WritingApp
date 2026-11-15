@@ -179,3 +179,11 @@ describe('table of contents in exports', () => {
     expect(md.markdown).not.toContain('(cnt)')
   })
 })
+
+describe('wiki links in exports', () => {
+  it('shows the title or shown text instead of the brackets', () => {
+    const html = markdownToHtml('Go to [[Castle]] or [[Castle|the keep]].\n')
+    expect(html).toContain('Go to Castle or the keep.')
+    expect(html).not.toContain('[[')
+  })
+})

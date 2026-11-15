@@ -1,3 +1,4 @@
+import { withoutWikiLinks } from './wikiLinks'
 import { assetNameFromUrl, embedImages, findImages, imagesSize, linkImagesToFolder } from './images'
 import { Marked } from 'marked'
 import { stripComments } from './comments'
@@ -77,7 +78,8 @@ export function escapeHtml(text: string): string {
 }
 
 /** Converts Markdown to an HTML fragment. */
-export function markdownToHtml(markdown: string): string {
+export function markdownToHtml(source: string): string {
+  const markdown = withoutWikiLinks(source)
   const defs = findFootnoteDefs(markdown)
   if (defs.length === 0) return marked.parse(markdown, { async: false })
 
