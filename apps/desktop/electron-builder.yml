@@ -24,6 +24,7 @@ mac:
 dmg:
   artifactName: ${productName}-${version}.${ext}
 linux:
+  executableName: writingapp
   target:
     - AppImage
     - deb

@@ -52,6 +52,11 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # A secret that does not exist arrives as an empty variable, which electron-builder
+          # reads as a certificate path (the current folder) and fails on. Drop the empty ones.
+          for v in CSC_LINK CSC_KEY_PASSWORD WIN_CSC_LINK WIN_CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!v}" ]; then unset "$v"; fi
+          done
           extra=""
           if [ "${{ matrix.os }}" = "macos-latest" ] && [ -n "$APPLE_ID" ]; then
             extra="-c.mac.notarize=true"
