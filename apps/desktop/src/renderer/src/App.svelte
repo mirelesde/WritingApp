@@ -48,6 +48,7 @@
   import StatusBar from './StatusBar.svelte'
   import ToolButton from './ToolButton.svelte'
   import SheetsPane from './SheetsPane.svelte'
+  import TabBar from './TabBar.svelte'
   import type { FormatKind, LineStyle } from './blockStyle'
   import Preferences from './Preferences.svelte'
   import SaveIndicator from './SaveIndicator.svelte'
@@ -1940,37 +1941,19 @@
       </div>
       <div class="above">
       {#if (tabs.list.length > 1 || (manual() && tabs.list.length > 0)) && !ui.zen}
-        <div class="tabs" role="tablist" aria-label="Open sheets">
-          {#each tabs.list as path, i (i)}
-            <div
-              class="tab"
-              class:active={i === tabs.active}
-              class:before={tabs.hint === i}
-              class:after={tabs.hint === tabs.list.length && i === tabs.list.length - 1}
-              data-tab={i}
-              draggable="true"
-              role="presentation"
-              ondragstart={(e) => tabDragStart(i, e)}
-              ondragend={tabDragEnd}
-            >
-              <button
-                class="tab-label"
-                role="tab"
-                aria-selected={i === tabs.active}
-                title={tabTitles.get(path) ?? path}
-                onclick={() => void showTab(i)}
-                onauxclick={(e) => {
-                  if (e.button === 1) closeTab(i)
-                }}
-              >
-                {#if tabHasChanges(path)}<span class="tab-dot" role="img" aria-label="Unsaved changes"></span>{/if}
-                {tabTitles.get(path) ?? 'Untitled'}
-              </button>
-              <button class="tab-close" aria-label="Close tab" onclick={() => closeTab(i)}>×</button>
-            </div>
-          {/each}
-          <button class="tab-new" aria-label="New tab" title="New tab ({keyMod}T)" onclick={newTab}>+</button>
-        </div>
+        <TabBar
+          paths={tabs.list}
+          active={tabs.active}
+          hint={tabs.hint}
+          titles={tabTitles}
+          {keyMod}
+          hasChanges={tabHasChanges}
+          onshow={(i) => void showTab(i)}
+          onclose={closeTab}
+          onnew={newTab}
+          ondragstart={tabDragStart}
+          ondragend={tabDragEnd}
+        />
       {/if}
       {#if finding && !ui.zen}
         {#key finding.key}
@@ -2374,99 +2357,6 @@
     grid-column: 1;
     grid-row: 2;
     min-width: 0;
-  }
-  .tabs {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    padding: 0 10px 4px;
-    overflow-x: auto;
-    user-select: none;
-    border-bottom: 1px solid var(--border);
-  }
-  .tab {
-    display: flex;
-    align-items: center;
-    flex: 0 1 180px;
-    min-width: 90px;
-    border-radius: 6px;
-    color: var(--muted);
-  }
-  .tab {
-    position: relative;
-  }
-  .tab.before::before,
-  .tab.after::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    bottom: 3px;
-    width: 2px;
-    border-radius: 1px;
-    background: var(--accent);
-  }
-  .tab.before::before {
-    left: -2px;
-  }
-  .tab.after::after {
-    right: -2px;
-  }
-  .tab-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    margin-right: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    vertical-align: 1px;
-  }
-  .tab:hover {
-    background: var(--hover);
-  }
-  .tab.active {
-    background: var(--hover);
-    color: var(--text);
-  }
-  .tab button,
-  .tabs .tab-new {
-    font: inherit;
-    font-size: 13px;
-    color: inherit;
-    background: transparent;
-    border: 0;
-    cursor: default;
-  }
-  .tab-label {
-    flex: 1;
-    min-width: 0;
-    padding: 4px 4px 4px 10px;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tab-close {
-    padding: 2px 7px;
-    border-radius: 5px;
-    opacity: 0;
-  }
-  .tab:hover .tab-close,
-  .tab.active .tab-close,
-  .tab-close:focus-visible {
-    opacity: 0.7;
-  }
-  .tab-close:hover {
-    opacity: 1;
-    background: var(--border);
-  }
-  .tabs .tab-new {
-    flex-shrink: 0;
-    padding: 2px 9px;
-    border-radius: 6px;
-    color: var(--muted);
-  }
-  .tabs .tab-new:hover {
-    background: var(--hover);
   }
   .scroller {
     grid-column: 1;
