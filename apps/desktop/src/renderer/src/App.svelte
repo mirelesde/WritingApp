@@ -28,6 +28,7 @@
   import { GroupNav } from './groupNav.svelte'
   import { ExportFlow } from './exportFlow.svelte'
   import { UnusedImages } from './unusedImages.svelte'
+  import { findScopeOptions, replacedMessage, seedQuery, startScope } from './findScopes'
   import { ConflictFlow } from './conflictFlow.svelte'
   import { createSaveGuard, SaveConflict } from './conflict'
   import ConflictDialog from './ConflictDialog.svelte'
@@ -1264,41 +1265,26 @@
   let findKey = 0
 
   /** The scopes the Find bar offers: the open sheet, the selected group, its project, the library. */
-  const findScopes = $derived.by(() => {
-    if (!library) return []
-    const root = library.tree.path
-    const list: { value: FindScope; label: string; name: string; path: string | undefined }[] = []
-    const sheetPath = sel.only
-    if (sheetPath && open) {
-      list.push({ value: 'sheet', label: 'Look in sheet', name: tabTitles.get(sheetPath) ?? 'this sheet', path: sheetPath })
-    }
-    const inGroup = nav.selectedGroup !== root ? nav.selectedGroup : undefined
-    const projectPath = inGroup ? inGroup.slice(0, root.length + 1 + inGroup.slice(root.length + 1).split('/')[0]!.length) : undefined
-    if (inGroup && inGroup !== projectPath) {
-      list.push({ value: 'group', label: 'Look in group', name: labelOf(findGroup(library.tree, inGroup)) ?? 'group', path: inGroup })
-    }
-    if (projectPath) {
-      list.push({ value: 'project', label: 'Look in project', name: labelOf(findGroup(library.tree, projectPath)) ?? 'project', path: projectPath })
-    }
-    list.push({ value: 'library', label: 'Look in library', name: 'library', path: undefined })
-    return list
-  })
+  const findScopes = $derived(
+    library
+      ? findScopeOptions(
+          library.tree,
+          nav.selectedGroup,
+          sel.only && open ? { path: sel.only, title: tabTitles.get(sel.only) ?? 'this sheet' } : undefined
+        )
+      : []
+  )
 
   /** Opens the Find bar. Without a scope it starts as narrow as makes sense. */
   function openFind(scope?: FindScope, replace = false): void {
     if (finding) {
       const wanted = scope && findScopes.some((s) => s.value === scope) ? scope : undefined
       if (wanted) finding.scope = wanted
-      const text = selectedText && !selectedText.includes('\n') ? selectedText.slice(0, 200) : undefined
-      findBar?.focusQuery(text, replace)
+      findBar?.focusQuery(seedQuery(selectedText), replace)
       return
     }
     searchReturnFocus = document.activeElement as HTMLElement | null
-    const have = (v: FindScope): boolean => findScopes.some((s) => s.value === v)
-    const chosen: FindScope =
-      scope && have(scope) ? scope : have('sheet') ? 'sheet' : have('group') ? 'group' : have('project') ? 'project' : 'library'
-    const query = selectedText && !selectedText.includes('\n') ? selectedText.slice(0, 200) : ''
-    finding = { scope: chosen, replace, query, key: ++findKey }
+    finding = { scope: startScope(scope, findScopes), replace, query: seedQuery(selectedText) ?? '', key: ++findKey }
   }
 
   function closeFind(): void {
@@ -1363,7 +1349,7 @@
       () => window.api.replaceAll(query, replacement, path ? [path] : undefined, options),
       true
     )
-    if (result?.replaced) showInfo(`Replaced ${result.replaced} ${result.replaced === 1 ? 'match' : 'matches'}. Undo Library Change brings them back.`)
+    if (result?.replaced) showInfo(replacedMessage(result.replaced))
     return result?.replaced ?? 0
   }
 
