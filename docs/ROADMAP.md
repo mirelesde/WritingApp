@@ -148,7 +148,7 @@ The target is an OS X-inspired look that is the same on every OS, with the main 
 ## 6. Housekeeping and maintainability
 
 - `App.svelte` is about 3,300 lines with no component-level tests; splitting it into focused pieces would make later changes safer but carries its own regression risk.
-- CI: about 1,000 prettier warnings in lint; the `actions/*` bump for the Node 20 deprecation notice; first results on Windows and macOS runners were green, Ubuntu was not seen, and results for the most recent pushes have not been checked.
+- CI: about 1,000 prettier warnings in lint; the `actions/*` bump for the Node 20 deprecation notice; CI is green on Ubuntu, Windows and macOS as of a4b89e2. Ubuntu had been failing since 74f7c27 because a test used a lowercase file name, which only a case-sensitive file system notices; macOS and Windows missed it. Any new test that names a file should use the exact case.
 - Add a "Show Log" menu item for `errors.log` (see section 3).
 - User-facing documentation: the plan has a "built, for the user guide" section in [CHANGELOG.md](CHANGELOG.md); the image behaviour in particular is not written up for users.
 
