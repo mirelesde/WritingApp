@@ -32,9 +32,9 @@ describe('remapPath', () => {
   it('handles several pairs', () => {
     const pairs: [string, string][] = [
       ['/Lib/a.md', '/Lib/G/a.md'],
-      ['/Lib/b.md', '/Lib/G/b-2.md']
+      ['/Lib/b.md', '/Lib/G/b 2.md']
     ]
-    expect(remapPath('/Lib/b.md', pairs)).toBe('/Lib/G/b-2.md')
+    expect(remapPath('/Lib/b.md', pairs)).toBe('/Lib/G/b 2.md')
   })
 })
 

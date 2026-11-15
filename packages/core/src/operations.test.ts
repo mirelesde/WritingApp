@@ -238,9 +238,9 @@ describe('moveNode', () => {
   it('renames on a name clash instead of overwriting', async () => {
     const fs = new MemoryFileSystem({ '/Lib/a.md': 'moving', '/Lib/G/a.md': 'existing' })
     const path = await moveNode(fs, '/Lib/a.md', '/Lib/G')
-    expect(path).toBe('/Lib/G/a-2.md')
+    expect(path).toBe('/Lib/G/a 2.md')
     expect(await fs.readText('/Lib/G/a.md')).toBe('existing')
-    expect(await fs.readText('/Lib/G/a-2.md')).toBe('moving')
+    expect(await fs.readText('/Lib/G/a 2.md')).toBe('moving')
   })
 
   it('renames a clashing group with a space suffix', async () => {
@@ -388,8 +388,8 @@ describe('moveNodes', () => {
     const fs = setup()
     await fs.writeText('/Lib/G/b.md', 'existing')
     const paths = await moveNodes(fs, ['/Lib/c.md', '/Lib/b.md'], '/Lib/G', 0)
-    expect(paths).toEqual(['/Lib/G/c.md', '/Lib/G/b-2.md'])
-    expect((await sidecarOf(fs, '/Lib/G')).order).toEqual(['b-2.md', 'c.md', 'x.md', 'b.md'])
+    expect(paths).toEqual(['/Lib/G/c.md', '/Lib/G/b 2.md'])
+    expect((await sidecarOf(fs, '/Lib/G')).order).toEqual(['b 2.md', 'c.md', 'x.md', 'b.md'])
     expect((await sidecarOf(fs, '/Lib')).order).toEqual(['a.md', 'd.md', 'G'])
     expect(await fs.readText('/Lib/G/b.md')).toBe('existing')
   })

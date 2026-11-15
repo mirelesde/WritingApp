@@ -1043,7 +1043,7 @@ the items marked done above.
       text (Cancel keeps the app open, Save saves and exits); both choices in the changed-outside
       dialog.
     - *Seen, not changed:* a name clash on a move makes `Beta-2.md`, while Duplicate makes
-      `Beta 2.md`. Inserting a picture at the very start of a line puts it on the heading's line, so
+      `Beta 2.md` (fixed afterwards: moving and copying both add ` 2`, ` 3`, ...). Inserting a picture at the very start of a line puts it on the heading's line, so
       the file is renamed from that line. Exported HTML and Word leave `[[wiki links]]` as written.
     - *End-to-end checks* (`apps/desktop/e2e/`, `npm run e2e`): start the built app on a throwaway
       library and drive it over the DevTools protocol with real mouse and key events, using only

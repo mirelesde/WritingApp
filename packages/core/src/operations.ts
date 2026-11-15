@@ -377,7 +377,7 @@ export async function moveNodes(
   for (const from of ordered) {
     const name = baseName(from)
     const isSheet = source.entries.find((e) => e.name === name)!.kind === 'file'
-    const newName = uniqueName(name, isSheet ? '.md' : '', isSheet ? '-' : ' ', taken)
+    const newName = uniqueName(name, isSheet ? '.md' : '', ' ', taken)
     taken.add(newName.toLowerCase())
     newNames.set(from, newName)
   }
@@ -476,7 +476,7 @@ export async function copyNodes(
   for (const [i, from] of ordered.entries()) {
     const name = baseName(from)
     const isDir = kinds.get(from)!
-    const newName = uniqueName(name, isDir ? '' : '.md', isDir ? ' ' : '-', taken)
+    const newName = uniqueName(name, isDir ? '' : '.md', ' ', taken)
     taken.add(newName.toLowerCase())
     await copyTree(fs, from, joinPath(target, newName), isDir)
     written.push(joinPath(target, newName))
