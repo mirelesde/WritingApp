@@ -27,6 +27,7 @@
   import { SheetRun } from './sheetRun.svelte'
   import { DiskConflicts } from './diskConflicts.svelte'
   import { TabDrag } from './tabDrag'
+  import { SheetCreation } from './sheetCreation.svelte'
   import { Trail } from './trail.svelte'
   import { UnsavedPrompt, type UnsavedAnswer, type UnsavedWhat } from './unsavedPrompt.svelte'
   import { TabsState } from './tabsState.svelte'
@@ -307,22 +308,6 @@
     if (!path || !editors[path]) return
     const markdown = await window.api.chooseImages()
     editors[path]?.insertImagesAtCursor(markdown)
-  }
-
-  async function importFiles(): Promise<void> {
-    const parent = group
-    if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === sel.cursor)
-    const result = await runOp(() => window.api.importFiles(parent.path, at >= 0 ? at + 1 : undefined))
-    if (result?.copied?.length) await ops.selectCopies(result.copied)
-    const done = result?.copied?.length ?? 0
-    const bad = result?.skipped ?? []
-    if (bad.length > 0) {
-      const names = bad.slice(0, 3).join(', ') + (bad.length > 3 ? ` and ${bad.length - 3} more` : '')
-      notice = `${done > 0 ? `Imported ${done}. ` : ''}Could not import ${names}.`
-    } else if (done > 0) {
-      showInfo(`Imported ${done === 1 ? '1 sheet' : `${done} sheets`}.`)
-    }
   }
 
   function foldHere(fold: boolean): void {
@@ -701,7 +686,7 @@
   async function nodeAction(kind: 'sheet' | 'group' | 'root', path: string, action: string | undefined): Promise<void> {
     if (action === 'reveal') await window.api.revealPath(path)
     else if (action === 'copy-path') await window.api.copyPath(path)
-    else if (action === 'new-sheet') await newSheet()
+    else if (action === 'new-sheet') await creation.newSheet()
     else if (action === 'new-group') await ops.newGroup(kind === 'root')
     else if (action === 'open-tab') await openInTab(path)
     else if (action === 'open-window') await window.api.newWindow(path)
@@ -740,65 +725,23 @@
       await revealSheet(path)
       return
     }
-    await settle()
-    const parent = group
-    if (!parent) return
-    await autosaver.flush()
-    const at = parent.children.findIndex((c) => c.path === sel.cursor)
-    const result = await runOp(() =>
-      window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
-    )
-    if (!result?.created) return
-    await window.api.writeSheet(result.created, `# ${target.trim()}\n\n`)
-    await setSelection([result.created], result.created, true)
+    await creation.forLink(target)
   }
 
-  async function newSheet(): Promise<void> {
-    const parent = group
-    if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === sel.cursor)
-    const result = await runOp(() =>
-      window.api.createSheet(parent.path, at >= 0 ? at + 1 : undefined)
-    )
-    if (result?.created) {
-      sel.anchor = result.created
-      await setSelection([result.created], result.created, true)
-    }
-  }
-
-  let templates = $state<{ name: string; path: string }[]>([])
-
-  async function newFromTemplate(template: string): Promise<void> {
-    const parent = group
-    if (!parent) return
-    const at = parent.children.findIndex((c) => c.path === sel.cursor)
-    const result = await runOp(() =>
-      window.api.newFromTemplate(parent.path, template, at >= 0 ? at + 1 : undefined)
-    )
-    if (result?.created) {
-      sel.anchor = result.created
-      await setSelection([result.created], result.created, true)
-    }
-  }
-
-  async function openDailyNote(): Promise<void> {
-    const parent = group
-    if (!parent) return
-    const result = await runOp(() => window.api.dailyNote(parent.path))
-    if (result?.created) {
-      sel.anchor = result.created
-      await setSelection([result.created], result.created, true)
-    }
-  }
-
-  async function saveAsTemplate(): Promise<void> {
-    const path = sel.only ?? run.open?.parts[0]?.path
-    const text = path ? editors[path]?.getText() : undefined
-    if (text === undefined) return
-    await window.api.saveTemplate(text)
-    templates = await window.api.listTemplates()
-    showInfo('Saved as a template')
-  }
+  const creation = new SheetCreation(window.api, sel, {
+    group: () => group,
+    runOp: (op) => runOp(op),
+    setSelection,
+    selectCopies: (paths) => ops.selectCopies(paths),
+    settle,
+    flush: () => autosaver.flush(),
+    currentText: () => {
+      const path = sel.only ?? run.open?.parts[0]?.path
+      return path ? editors[path]?.getText() : undefined
+    },
+    info: showInfo,
+    warn: (text) => (notice = text)
+  })
 
   /** A click on the empty page around the text (below the last line, beside the column) puts the cursor at the end. */
   function clickBelowText(e: MouseEvent): void {
@@ -1141,9 +1084,9 @@
     else if (command === 'save-all') void autosaver.flush()
     else if (command === 'toggle-sidebar') ui.toggleSidebar()
     else if (command === 'toggle-sheets') ui.toggleSheets()
-    else if (command === 'new-sheet') void newSheet()
-    else if (command === 'daily-note') void openDailyNote()
-    else if (command === 'save-template') void saveAsTemplate()
+    else if (command === 'new-sheet') void creation.newSheet()
+    else if (command === 'daily-note') void creation.dailyNote()
+    else if (command === 'save-template') void creation.saveAsTemplate()
     else if (command === 'new-from-template') openPalette()
     else if (command === 'move-to') openMoveTo()
     else if (command === 'export-html') void openExport()
@@ -1168,7 +1111,7 @@
     else if (command === 'copy-sheets') ops.copy(false)
     else if (command === 'cut-sheets') ops.copy(true)
     else if (command === 'paste-sheets') void ops.paste()
-    else if (command === 'import') void importFiles()
+    else if (command === 'import') void creation.importFiles()
     else if (command === 'fold-section') foldHere(true)
     else if (command === 'unfold-section') foldHere(false)
     else if (command === 'fold-all') foldAll(true)
@@ -1199,7 +1142,7 @@
   function openPalette(): void {
     searchReturnFocus = document.activeElement as HTMLElement | null
     palette = true
-    void window.api.listTemplates().then((found) => (templates = found))
+    void creation.loadTemplates()
   }
 
   function closePalette(): void {
@@ -1219,14 +1162,14 @@
       keyShift,
       styles: STYLES,
       sorts: SORTS,
-      templates,
+      templates: creation.templates,
       unusedCount: unused.list.length,
       conflictCount: conflictPairs.length,
       zen: ui.zen,
       view: prefs,
       command: handleCommand,
       setView: (patch) => void window.api.setView(patch),
-      newFromTemplate: (path) => void newFromTemplate(path),
+      newFromTemplate: (path) => void creation.fromTemplate(path),
       toggleOutline: ui.toggleOutline
     })
   )
@@ -1364,7 +1307,7 @@
       onsheetdragover={dnd.sheetOver}
       onsheetclick={clickSheet}
       onsheetmenu={(path, at) => void nodeMenu('sheet', path, at)}
-      onnew={() => void newSheet()}
+      onnew={() => void creation.newSheet()}
       onsort={(value) => void window.api.setView({ sheetSort: value })}
     />
 
