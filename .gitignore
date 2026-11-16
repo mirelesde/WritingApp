@@ -4,3 +4,6 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Impeccable: per-developer settings
+.impeccable/config.local.json
