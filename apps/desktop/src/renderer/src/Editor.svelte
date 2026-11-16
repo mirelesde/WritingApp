@@ -7,7 +7,7 @@
   import { focusExtensions } from './focusMode'
   import { smartTypography } from './smartTypography'
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
-  import { linkCommand, toggleBold, toggleItalic } from './formatting'
+  import { insertParagraphBreak, linkCommand, toggleBold, toggleItalic } from './formatting'
   import { insertTable } from './tableWidget'
   import { insertContents } from './contentsChip'
   import { toggleTaskCommand } from './taskBoxes'
@@ -107,8 +107,13 @@
   }
 
   /** Applies a formatting command to the selection, as the keyboard shortcuts do. */
-  export function format(kind: 'bold' | 'italic' | 'link' | FormatKind): void {
+  export function format(kind: 'bold' | 'italic' | 'link' | 'paragraph' | FormatKind): void {
     if (!view) return
+    if (kind === 'paragraph') {
+      view.dispatch(insertParagraphBreak(view.state))
+      view.focus()
+      return
+    }
     const command =
       kind === 'bold'
         ? toggleBold

@@ -1,7 +1,7 @@
 import { EditorSelection, EditorState } from '@codemirror/state'
 import { describe, expect, it } from 'vitest'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
-import { insertLink, toggleComment, toggleEmphasis } from './formatting'
+import { insertLink, insertParagraphBreak, toggleComment, toggleEmphasis } from './formatting'
 
 /** Applies `spec` to `doc`, where `[` `]` mark the selection; returns the result in the same notation. */
 function apply(
@@ -153,5 +153,18 @@ describe('commenting out', () => {
 
   it('does nothing where comments would nest', () => {
     expect(toggle('[a <!-- b --> c]')).toBe('[a <!-- b --> c]')
+  })
+})
+
+describe('insertParagraphBreak', () => {
+  it('splits the text with a blank line and puts the cursor after it', () => {
+    const state = EditorState.create({ doc: 'onetwo', selection: { anchor: 3 } })
+    const next = state.update(insertParagraphBreak(state)).state
+    expect(next.doc.toString()).toBe('one\n\ntwo')
+    expect(next.selection.main.head).toBe(5)
+  })
+  it('replaces a selection', () => {
+    const state = EditorState.create({ doc: 'one two', selection: { anchor: 3, head: 4 } })
+    expect(state.update(insertParagraphBreak(state)).state.doc.toString()).toBe('one\n\ntwo')
   })
 })

@@ -16,6 +16,7 @@
     | 'outline'
     | 'export'
     | 'style'
+    | 'paragraph'
     | 'sort'
 
   interface Props {
@@ -48,6 +49,8 @@
 >
   {#if icon === 'style'}
     <span class="letter aa">Aa</span>
+  {:else if icon === 'paragraph'}
+    <span class="letter">¶</span>
   {:else if icon === 'bold' || icon === 'italic'}
     <span class="letter" class:bold={icon === 'bold'} class:italic={icon === 'italic'}>
       {icon === 'bold' ? 'B' : 'I'}

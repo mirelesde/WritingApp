@@ -237,3 +237,14 @@ export const formattingKeymap = [
   { key: 'Mod-k', run: linkCommand },
   { key: 'Mod-/', run: commentCommand }
 ]
+
+/** A paragraph break at the cursor: a blank line, replacing any selected text. */
+export function insertParagraphBreak(state: EditorState): TransactionSpec {
+  const range = state.selection.main
+  return {
+    changes: { from: range.from, to: range.to, insert: '\n\n' },
+    selection: { anchor: range.from + 2 },
+    scrollIntoView: true,
+    userEvent: 'input'
+  }
+}

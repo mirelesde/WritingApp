@@ -33,7 +33,7 @@ export class EditorActions {
 
   /** Puts the cursor in the text. */
   focus = (): void => this.host.editor()?.focus()
-  format = (kind: 'bold' | 'italic' | 'link' | FormatKind): void => this.host.editor()?.format(kind)
+  format = (kind: 'bold' | 'italic' | 'link' | 'paragraph' | FormatKind): void => this.host.editor()?.format(kind)
   insertTable = (): void => this.host.editor()?.insertTableAtCursor()
   insertFootnote = (): void => this.host.editor()?.insertFootnoteAtCursor()
   insertContents = (): void => this.host.editor()?.insertContentsAtCursor()
