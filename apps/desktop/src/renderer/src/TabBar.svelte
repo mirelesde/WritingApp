@@ -65,7 +65,7 @@
     align-items: center;
     flex: 0 1 180px;
     min-width: 90px;
-    border-radius: 6px;
+    border-bottom: 2px solid transparent;
     color: var(--muted);
   }
   .tab {
@@ -97,10 +97,10 @@
     vertical-align: 1px;
   }
   .tab:hover {
-    background: var(--hover);
+    color: var(--text);
   }
   .tab.active {
-    background: var(--hover);
+    border-bottom-color: var(--accent);
     color: var(--text);
   }
   .tab button,
@@ -123,7 +123,6 @@
   }
   .tab-close {
     padding: 2px 7px;
-    border-radius: 5px;
     opacity: 0;
   }
   .tab:hover .tab-close,
@@ -138,10 +137,9 @@
   .tabs .tab-new {
     flex-shrink: 0;
     padding: 2px 9px;
-    border-radius: 6px;
     color: var(--muted);
   }
   .tabs .tab-new:hover {
-    background: var(--hover);
+    color: var(--text);
   }
 </style>
