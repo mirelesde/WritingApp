@@ -14,6 +14,15 @@
         "value": "source serif 4",
         "createdAt": "2026-11-16T09:26:13.728Z",
         "reason": "user confirmed: Source Serif 4 is a bundled interface and editor font the user asked for; documented in DESIGN.md Typography"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "apps/desktop/src/renderer/src/SheetsPane.svelte"
+        ],
+        "createdAt": "2026-11-16T09:29:45.776Z",
+        "reason": "existing documented signature: the 3px accent bar marks a glued run of sheets (DESIGN.md Sheet cards); it carries state, not decoration"
       }
     ]
   }
