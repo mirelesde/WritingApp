@@ -63,6 +63,20 @@
   }: Props = $props()
 </script>
 
+<svelte:window
+  onmousedowncapture={(e) => {
+    if (styleOpen && !(e.target as Element | null)?.closest?.('.style-wrap')) onstyleclose()
+  }}
+  onkeydowncapture={(e) => {
+    if (styleOpen && e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      onstyleclose()
+    }
+  }}
+  onblur={() => styleOpen && onstyleclose()}
+/>
+
 <div class="editor-bar" role="toolbar" aria-label="Editor tools">
   <span class="tools">
     {#if sidebarCollapsed}
@@ -85,8 +99,6 @@
     <span class="style-wrap">
       <ToolButton icon="style" label="Styles" pressed={styleOpen} disabled={!hasSheet} onclick={onstylemenu} />
       {#if styleOpen}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="scrim" onmousedown={onstyleclose}></div>
         <div class="style-menu" role="menu" tabindex="-1" aria-label="Styles" onmousedown={(e) => e.preventDefault()}>
           {#each styles as group, i (i)}
             {#if i > 0}<hr />{/if}
