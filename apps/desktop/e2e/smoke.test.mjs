@@ -174,7 +174,7 @@ describe('the app', () => {
     await app.open('Alpha')
     await app.type('DISCARDME ')
     // A new tab is empty; close the first one without saving.
-    await app.click(`document.querySelector('[aria-label="New tab"]')`)
+    await app.menu('new-tab')
     await until(() => app.eval(`document.querySelectorAll('.tab').length === 2`), 'the second tab')
     await app.click(`document.querySelectorAll('.tab-close')[0]`)
     await until(() => app.eval(`${app.button('Don’t Save')} !== undefined`), 'the question')

@@ -944,7 +944,7 @@
         onexport={() => void openExport()}
       />
       <div class="above">
-      {#if (tabs.list.length > 1 || (manual() && tabs.list.length > 0)) && !ui.zen}
+      {#if tabs.list.length > 1 && !ui.zen}
         <TabBar
           paths={tabs.list}
           active={tabs.active}

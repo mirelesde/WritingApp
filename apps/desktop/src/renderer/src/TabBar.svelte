@@ -60,8 +60,8 @@
   .tabs {
     display: flex;
     align-items: stretch;
-    height: 42px;
-    padding: 6px 8px 0;
+    height: 31px;
+    padding: 5px 8px 0;
     box-sizing: border-box;
     overflow-x: auto;
     overflow-y: hidden;
@@ -80,7 +80,6 @@
     flex: 0 1 180px;
     min-width: 90px;
     box-sizing: border-box;
-    padding-top: 4px;
     color: var(--muted);
   }
   .tab:hover {
@@ -88,7 +87,7 @@
   }
   .tab.active {
     z-index: 1;
-    border-radius: 8px 8px 0 0;
+    border-radius: 6px 6px 0 0;
     color: var(--text);
     background: var(--bg);
   }
@@ -96,8 +95,8 @@
   .tab:not(.active)::after {
     content: '';
     position: absolute;
-    top: 11px;
-    bottom: 7px;
+    top: 8px;
+    bottom: 4px;
     right: 0;
     width: 1px;
     background: var(--border);
@@ -111,16 +110,16 @@
     content: '';
     position: absolute;
     bottom: 0;
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   .tab.active::before {
-    left: -8px;
-    background: radial-gradient(circle at 0 0, transparent 7.5px, var(--bg) 8px);
+    left: -6px;
+    background: radial-gradient(circle at 0 0, transparent 5.5px, var(--bg) 6px);
   }
   .tab.active::after {
-    right: -8px;
-    background: radial-gradient(circle at 100% 0, transparent 7.5px, var(--bg) 8px);
+    right: -6px;
+    background: radial-gradient(circle at 100% 0, transparent 5.5px, var(--bg) 6px);
   }
   /* Where a dragged tab would land. */
   .tab.before {
