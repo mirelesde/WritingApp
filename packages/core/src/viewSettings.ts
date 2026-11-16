@@ -3,8 +3,8 @@
  * app's settings file, so these are per machine, not part of a library.
  */
 export const THEMES = ['system', 'light', 'dark'] as const
-/** Editor fonts: three system stacks, the interface fonts that come with the app, and `custom` (any installed font, named in `fontCustom`). */
-export const FONTS = ['serif', 'sans', 'mono', 'geist', 'georgia', 'source-serif-4', 'custom'] as const
+/** Editor fonts: three system stacks, the interface fonts that come with the app, and `interface` (the same font as the interface), and `custom` (any installed font, named in `fontCustom`). */
+export const FONTS = ['serif', 'sans', 'mono', 'geist', 'georgia', 'source-serif-4', 'interface', 'custom'] as const
 
 /** Options that are one of a few named choices; the first of each list is not necessarily the default. */
 export const CHOICES = {
@@ -168,6 +168,7 @@ export const FONT_STACKS: Record<Font, string> = {
   geist: "'Geist', sans-serif",
   georgia: "Georgia, 'Times New Roman', serif",
   'source-serif-4': "'Source Serif 4', serif",
+  interface: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
   custom: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
 }
 
@@ -177,7 +178,8 @@ export function isFontName(value: string): boolean {
 }
 
 /** The CSS font stack for the editor. */
-export function editorFontStack(view: Pick<ViewSettings, 'font' | 'fontCustom'>): string {
+export function editorFontStack(view: Pick<ViewSettings, 'font' | 'fontCustom'> & Partial<Pick<ViewSettings, 'uiFont'>>): string {
+  if (view.font === 'interface') return `${UI_FONT_FAMILIES[view.uiFont ?? DEFAULT_VIEW.uiFont]}, ${FONT_STACKS.sans}`
   if (view.font === 'custom' && isFontName(view.fontCustom)) return `'${view.fontCustom}', ${FONT_STACKS.sans}`
   return FONT_STACKS[view.font]
 }

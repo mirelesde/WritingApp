@@ -15,7 +15,7 @@ import { listThemes } from './themes'
 let current: ViewSettings = resolveView()
 let onChange: () => void = () => {}
 
-const FONT_LABELS: Record<string, string> = { sans: 'Sans-serif', geist: 'Geist', georgia: 'Georgia', 'source-serif-4': 'Source Serif 4' }
+const FONT_LABELS: Record<string, string> = { sans: 'Sans-serif', geist: 'Geist', georgia: 'Georgia', 'source-serif-4': 'Source Serif 4', interface: 'Same as Interface' }
 
 export function currentView(): ViewSettings {
   return current

@@ -146,3 +146,10 @@ describe('interface text size', () => {
     expect(parseViewSettings({ uiFontSize: 99 })).toEqual({ uiFontSize: 18 })
   })
 })
+
+describe('editor font that follows the interface', () => {
+  it('uses the interface font, whichever it is', () => {
+    expect(editorFontStack({ font: 'interface', fontCustom: '', uiFont: 'georgia' }).startsWith('Georgia')).toBe(true)
+    expect(editorFontStack({ font: 'interface', fontCustom: '', uiFont: 'geist' }).startsWith("'Geist'")).toBe(true)
+  })
+})

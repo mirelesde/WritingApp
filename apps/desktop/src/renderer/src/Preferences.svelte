@@ -72,6 +72,7 @@
     geist: 'Geist',
     georgia: 'Georgia',
     'source-serif-4': 'Source Serif 4',
+    interface: 'Same as interface',
     custom: 'System font…'
   }
   /** Families installed on this computer, when the browser will list them. */
@@ -90,7 +91,7 @@
 
   const TABS = [
     ['appearance', 'Appearance'],
-    ['page', 'Page'],
+    ['editor', 'Editor'],
     ['writing', 'Writing'],
     ['saving', 'Saving']
   ] as const
@@ -257,8 +258,22 @@
           >
         </div>
       </div>
+      <label class="row">
+        <span>Sheet count in groups<small>Show how many sheets each group holds in the library</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.groupCounts}
+          onchange={(e) => onchange({ groupCounts: e.currentTarget.checked })}
+        />
+      </label>
+    </div>
+    {/if}
+
+    {#if tab === 'editor'}
+    <div id="pref-panel-editor" role="tabpanel" aria-labelledby="pref-tab-editor">
       <div class="row">
-        <span>Editor font<small>Comes with the app, or any font installed on this computer</small></span>
+        <span>Editor font<small>Follow the interface font, pick one that comes with the app, or use any font installed on this computer</small></span>
         <Select
           label="Editor font"
           value={view.font}
@@ -303,20 +318,6 @@
           >
         </div>
       </div>
-      <label class="row">
-        <span>Sheet count in groups<small>Show how many sheets each group holds in the library</small></span>
-        <input
-          type="checkbox"
-          class="switch"
-          checked={view.groupCounts}
-          onchange={(e) => onchange({ groupCounts: e.currentTarget.checked })}
-        />
-      </label>
-    </div>
-    {/if}
-
-    {#if tab === 'page'}
-    <div id="pref-panel-page" role="tabpanel" aria-labelledby="pref-tab-page">
       {@render choice('Text column', 'columnWidth')}
       <div class="row">
         <span id="pref-spacing">Line spacing</span>

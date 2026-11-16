@@ -440,10 +440,10 @@ Quick checks that earlier features still work with today's changes.
 
 ## 13.38 Tabbed Preferences
 
-1. Open Preferences: four tabs, Appearance, Page, Writing and Saving, with Appearance first on a fresh install. The dialog stays the same size as you change tabs; a tab with many settings scrolls inside it.
+1. Open Preferences: four tabs, Appearance, Editor, Writing and Saving, with Appearance first on a fresh install. The dialog stays the same size as you change tabs; a tab with many settings scrolls inside it.
 2. Click each tab: its settings appear and every switch, picker and stepper still works.
 3. With a tab focused, the Left and Right arrow keys move to the previous or next tab. Escape closes the dialog.
-4. Choose Page, close Preferences, reopen it: it opens on Page. Quit and reopen the app: still Page.
+4. Choose Editor, close Preferences, reopen it: it opens on Editor. Quit and reopen the app: still Editor.
 
 ## 13.39 Saving only when I ask (manual mode)
 
