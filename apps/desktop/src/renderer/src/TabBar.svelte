@@ -24,14 +24,14 @@
       class="tab"
       class:active={i === active}
       class:dirty={hasChanges(path)}
-      class:before={hint === i}
-      class:after={hint === paths.length && i === paths.length - 1}
       data-tab={i}
       draggable="true"
       role="presentation"
       ondragstart={(e) => ondragstart(i, e)}
       {ondragend}
     >
+      {#if hint === i}<span class="drop-line before"></span>{/if}
+      {#if hint === paths.length && i === paths.length - 1}<span class="drop-line after"></span>{/if}
       <button
         class="tab-label"
         role="tab"
@@ -121,12 +121,22 @@
     right: -6px;
     background: radial-gradient(circle at 100% 0, transparent 5.5px, var(--bg) 6px);
   }
-  /* Where a dragged tab would land. */
-  .tab.before {
-    box-shadow: inset 2px 0 0 var(--accent);
+  /* Where a dragged tab would land: an accent line in the gap, as when moving sheet cards. */
+  .drop-line {
+    position: absolute;
+    top: 6px;
+    bottom: 2px;
+    width: 3px;
+    border-radius: 1.5px;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 2;
   }
-  .tab.after {
-    box-shadow: inset -2px 0 0 var(--accent);
+  .drop-line.before {
+    left: -2px;
+  }
+  .drop-line.after {
+    right: -2px;
   }
   .tab button,
   .tabs .tab-new {
