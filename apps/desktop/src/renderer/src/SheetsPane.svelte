@@ -397,15 +397,16 @@
     opacity: 0.7;
   }
   .sheet-title {
+    font-size: 13px;
     font-weight: 600;
   }
   .sheet-preview {
     color: var(--muted);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.4;
     margin-top: 3px;
     /* Always three lines tall, so every card is the same height. */
-    height: calc(3 * 1.4 * 13px);
+    height: calc(3 * 1.4 * 12px);
     /* Up to three lines, like a card in Ulysses. */
     white-space: normal;
     display: -webkit-box;

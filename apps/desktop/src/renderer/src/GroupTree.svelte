@@ -266,6 +266,7 @@
   }
   .name {
     flex: 1;
+    font-size: 13px;
     text-align: left;
     padding: 5px 6px 5px 0;
     overflow: hidden;
