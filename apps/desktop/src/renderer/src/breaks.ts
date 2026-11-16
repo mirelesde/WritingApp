@@ -88,9 +88,8 @@ class Mark extends WidgetType {
 }
 
 const PARAGRAPH = Decoration.widget({ widget: new Mark('¶'), side: 1 })
-const LINE_BREAK = Decoration.widget({ widget: new Mark('⏎'), side: 1 })
 
-/** Marks inside the selected text: ¶ where a paragraph ends and ⏎ at a soft line break. */
+/** Marks inside the selected text with a ¶ wherever a paragraph ends. Soft line breaks are not marked. */
 export const breakMarks = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet
@@ -110,8 +109,7 @@ export const breakMarks = ViewPlugin.fromClass(
           const line = state.doc.line(n)
           // The mark belongs to the break after the line, so the selection has to run past the line's end.
           if (range.to <= line.to || line.text.trim() === '') continue
-          if (endsInLineBreak(line.text)) at.set(line.to, LINE_BREAK)
-          else if (n < state.doc.lines && state.doc.line(n + 1).text.trim() === '') at.set(line.to, PARAGRAPH)
+          if (n < state.doc.lines && state.doc.line(n + 1).text.trim() === '') at.set(line.to, PARAGRAPH)
         }
       }
       for (const pos of [...at.keys()].sort((a, b) => a - b)) builder.add(pos, pos, at.get(pos)!)
