@@ -46,6 +46,8 @@ export {
   clampLineSpacing,
   DEFAULT_VIEW,
   FONT_STACKS,
+  editorFontStack,
+  isFontName,
   FONTS,
   MAX_FONT_SIZE,
   MAX_LINE_SPACING,
@@ -55,6 +57,7 @@ export {
   parseViewSettings,
   resolveView,
   THEMES,
+  UI_FONT_FAMILIES,
 } from './viewSettings'
 export type { Font, SheetSort, Theme, ViewSettings } from './viewSettings'
 export { fuzzyScore, listSheets, rankSheets } from './quickOpen'

@@ -15,6 +15,8 @@ import { listThemes } from './themes'
 let current: ViewSettings = resolveView()
 let onChange: () => void = () => {}
 
+const FONT_LABELS: Record<string, string> = { sans: 'Sans-serif', 'public-sans': 'Public Sans', onest: 'Onest', inter: 'Inter', geist: 'Geist', roboto: 'Roboto', georgia: 'Georgia' }
+
 export function currentView(): ViewSettings {
   return current
 }
@@ -117,8 +119,8 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
       },
       {
         label: 'Editor Font',
-        submenu: FONTS.map((font: Font) => ({
-          label: label(font === 'sans' ? 'sans-serif' : font),
+        submenu: FONTS.filter((font: Font) => font !== 'custom').map((font: Font) => ({
+          label: FONT_LABELS[font] ?? label(font),
           type: 'radio' as const,
           checked: current.font === font,
           click: () => setView({ font })

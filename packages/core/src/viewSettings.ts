@@ -3,7 +3,8 @@
  * app's settings file, so these are per machine, not part of a library.
  */
 export const THEMES = ['system', 'light', 'dark'] as const
-export const FONTS = ['serif', 'sans', 'mono'] as const
+/** Editor fonts: three system stacks, the interface fonts that come with the app, and `custom` (any installed font, named in `fontCustom`). */
+export const FONTS = ['serif', 'sans', 'mono', 'onest', 'inter', 'geist', 'roboto', 'public-sans', 'georgia', 'custom'] as const
 
 /** Options that are one of a few named choices; the first of each list is not necessarily the default. */
 export const CHOICES = {
@@ -17,7 +18,8 @@ export const CHOICES = {
   textAlign: ['left', 'justify'],
   sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
   saveMode: ['auto', 'switch', 'manual'],
-  openSheetIn: ['same', 'tab', 'window']
+  openSheetIn: ['same', 'tab', 'window'],
+  uiFont: ['onest', 'inter', 'geist', 'roboto', 'public-sans', 'georgia']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -30,6 +32,8 @@ export type TypewriterPosition = (typeof CHOICES.typewriterPosition)[number]
 export type TextAlign = (typeof CHOICES.textAlign)[number]
 /** Where clicking a different sheet opens it: in the current tab, a new tab, or a new window. */
 export type OpenSheetIn = (typeof CHOICES.openSheetIn)[number]
+/** The typeface of the app's own interface (the editor has its own font setting). */
+export type UiFont = (typeof CHOICES.uiFont)[number]
 export type SheetSort = (typeof CHOICES.sheetSort)[number]
 /** When text is written to disk: while typing; on Save, switching sheets and closing; or only when asked (manual, with tabs). */
 export type SaveMode = (typeof CHOICES.saveMode)[number]
@@ -48,6 +52,8 @@ export interface ViewSettings {
   font: Font
   /** Editor text size in pixels. */
   fontSize: number
+  /** Family name of an installed font, used when `font` is `custom`. */
+  fontCustom: string
   /** True when the library pane is hidden (it still slides in on hover). */
   sidebarCollapsed: boolean
   /** True when the sheet list is hidden, leaving the editor wider. */
@@ -96,6 +102,8 @@ export interface ViewSettings {
   saveMode: SaveMode
   /** Where choosing a different sheet in the list opens it. Right-click always offers a new tab or window. */
   openSheetIn: OpenSheetIn
+  /** Typeface of the interface: lists, menus, dialogs. */
+  uiFont: UiFont
   /** Show how many sheets each group holds, beside its name in the library. */
   groupCounts: boolean
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
@@ -106,6 +114,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   theme: 'system',
   font: 'sans',
   fontSize: 16,
+  fontCustom: '',
   sidebarCollapsed: false,
   sheetsCollapsed: false,
   outline: false,
@@ -131,8 +140,20 @@ export const DEFAULT_VIEW: ViewSettings = {
   colorTheme: '',
   saveMode: 'auto',
   openSheetIn: 'same',
+  uiFont: 'onest',
   groupCounts: true,
   saveIndicator: true,
+}
+
+/** CSS font names of the bundled interface fonts. */
+export const UI_FONT_FAMILIES: Record<UiFont, string> = {
+  onest: "'Onest'",
+  inter: "'Inter'",
+  geist: "'Geist'",
+  roboto: "'Roboto'",
+  'public-sans': "'Public Sans'",
+  // Not bundled: it is on macOS and Windows, and falls back to a serif where it is missing.
+  georgia: "Georgia, 'Times New Roman', serif"
 }
 
 /** CSS font stacks, by name. */
@@ -140,6 +161,24 @@ export const FONT_STACKS: Record<Font, string> = {
   serif: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
   sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
   mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+  onest: "'Onest', sans-serif",
+  inter: "'Inter', sans-serif",
+  geist: "'Geist', sans-serif",
+  roboto: "'Roboto', sans-serif",
+  'public-sans': "'Public Sans', sans-serif",
+  georgia: "Georgia, 'Times New Roman', serif",
+  custom: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+}
+
+/** True for a font family name that is safe to put in a CSS font stack. */
+export function isFontName(value: string): boolean {
+  return /^[^\\"'`;{}<>\n\r]{1,80}$/.test(value)
+}
+
+/** The CSS font stack for the editor. */
+export function editorFontStack(view: Pick<ViewSettings, 'font' | 'fontCustom'>): string {
+  if (view.font === 'custom' && isFontName(view.fontCustom)) return `'${view.fontCustom}', ${FONT_STACKS.sans}`
+  return FONT_STACKS[view.font]
 }
 
 export function clampLineSpacing(spacing: number): number {
@@ -165,6 +204,9 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   }
   if (typeof font === 'string' && (FONTS as readonly string[]).includes(font)) {
     out.font = font as Font
+  }
+  if (typeof (data as Record<string, unknown>).fontCustom === 'string' && ((data as Record<string, unknown>).fontCustom === '' || isFontName((data as Record<string, unknown>).fontCustom as string))) {
+    out.fontCustom = (data as Record<string, string>).fontCustom.trim()
   }
   if (typeof fontSize === 'number' && Number.isFinite(fontSize)) {
     out.fontSize = clampFontSize(fontSize)

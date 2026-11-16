@@ -54,6 +54,7 @@
     textAlign: { left: 'Left', justify: 'Justified' },
     sheetSort: {},
     openSheetIn: { same: 'This tab', tab: 'A new tab', window: 'A new window' },
+    uiFont: { onest: 'Onest', inter: 'Inter', geist: 'Geist', roboto: 'Roboto', 'public-sans': 'Public Sans', georgia: 'Georgia' },
     saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' }
   }
 
@@ -65,8 +66,28 @@
   const fontNames: Record<(typeof FONTS)[number], string> = {
     serif: 'Serif',
     sans: 'Sans',
-    mono: 'Mono'
+    mono: 'Mono',
+    onest: 'Onest',
+    inter: 'Inter',
+    geist: 'Geist',
+    roboto: 'Roboto',
+    'public-sans': 'Public Sans',
+    georgia: 'Georgia',
+    custom: 'System font…'
   }
+  /** Families installed on this computer, when the browser will list them. */
+  let systemFonts = $state<string[]>([])
+  async function loadSystemFonts(): Promise<void> {
+    try {
+      const all = await (window as unknown as { queryLocalFonts?: () => Promise<{ family: string }[]> }).queryLocalFonts?.()
+      systemFonts = [...new Set((all ?? []).map((f) => f.family))].sort((a, b) => a.localeCompare(b))
+    } catch {
+      systemFonts = []
+    }
+  }
+  $effect(() => {
+    if (view.font === 'custom' && !systemFonts.length) void loadSystemFonts()
+  })
 
   const TABS = [
     ['appearance', 'Appearance'],
@@ -213,17 +234,44 @@
         </div>
       </div>
       <div class="row">
-        <span id="pref-font">Editor font</span>
-        <div class="segments" role="radiogroup" aria-labelledby="pref-font">
-          {#each FONTS as font (font)}
-            <button
-              role="radio"
-              aria-checked={view.font === font}
-              onclick={() => onchange({ font })}>{fontNames[font]}</button
-            >
-          {/each}
-        </div>
+        <span>Interface font<small>Lists, menus and dialogs</small></span>
+        <Select
+          label="Interface font"
+          value={view.uiFont}
+          options={CHOICES.uiFont.map((value) => ({ value, label: names.uiFont[value] }))}
+          onchange={(uiFont) => onchange({ uiFont: uiFont as typeof view.uiFont })}
+        />
       </div>
+      <div class="row">
+        <span>Editor font<small>Comes with the app, or any font installed on this computer</small></span>
+        <Select
+          label="Editor font"
+          value={view.font}
+          options={FONTS.map((value) => ({ value, label: fontNames[value] }))}
+          onchange={(font) => onchange({ font: font as typeof view.font })}
+        />
+      </div>
+      {#if view.font === 'custom'}
+        <div class="row">
+          <span>System font</span>
+          {#if systemFonts.length}
+            <Select
+              label="System font"
+              value={view.fontCustom}
+              options={[{ value: '', label: 'Choose…' }, ...systemFonts.map((f) => ({ value: f, label: f }))]}
+              onchange={(fontCustom) => onchange({ fontCustom })}
+            />
+          {:else}
+            <input
+              type="text"
+              aria-label="System font name"
+              placeholder="Font name"
+              value={view.fontCustom}
+              onchange={(e) => onchange({ fontCustom: e.currentTarget.value.trim() })}
+            />
+          {/if}
+        </div>
+      {/if}
       <div class="row">
         <span id="pref-size">Text size</span>
         <div class="stepper" role="group" aria-labelledby="pref-size">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
+import { editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
 
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
@@ -116,5 +116,25 @@ describe('saving settings', () => {
     expect(parseViewSettings({ autosave: false })).toEqual({ saveMode: 'switch' })
     expect(parseViewSettings({ autosave: true })).toEqual({})
     expect(parseViewSettings({ autosave: false, saveMode: 'auto' })).toEqual({ saveMode: 'auto' })
+  })
+})
+
+describe('interface font', () => {
+  it('defaults to Onest and accepts only the bundled fonts', () => {
+    expect(resolveView().uiFont).toBe('onest')
+    expect(parseViewSettings({ uiFont: 'public-sans' })).toEqual({ uiFont: 'public-sans' })
+    expect(parseViewSettings({ uiFont: 'comic-sans' })).toEqual({})
+  })
+})
+
+describe('editor font', () => {
+  it('takes an installed font by name, and builds a stack from it', () => {
+    const view = resolveView({ font: 'custom', fontCustom: 'Avenir Next' })
+    expect(editorFontStack(view).startsWith("'Avenir Next', ")).toBe(true)
+    expect(parseViewSettings({ fontCustom: 'Avenir Next' })).toEqual({ fontCustom: 'Avenir Next' })
+  })
+  it('refuses names that could break out of the stack', () => {
+    expect(parseViewSettings({ fontCustom: "x'; color: red" })).toEqual({})
+    expect(editorFontStack({ font: 'custom', fontCustom: '' })).toBe(editorFontStack({ font: 'sans', fontCustom: '' }))
   })
 })
