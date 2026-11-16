@@ -36,6 +36,7 @@ If you are picking this up in a new session, read [ARCHITECTURE.md](ARCHITECTURE
 - Hanging heading marks: six `#` could reach the pane edge in a narrow window (unchecked), and caret and selection behaviour across the collapsed space after the hashes, and the cursor moving onto and off a hanging `---`, were not checked by hand.
 - Footnote-aware live Markdown preview waits on item 18, which does not exist.
 - Format menu does not show check marks for the style at the cursor (item 76; only the Aa popover does).
+- Word count (`countWords` in `packages/core/src/stats.ts`) splits on whitespace and keeps pieces that contain a letter or digit, so it differs from other editors: list numbers such as `1.` count as words (a bug; other Markdown syntax needs checking too); an em dash with no spaces joins two words into one (Google Docs counts two); Chinese, Japanese and Korean text without spaces counts as one word per run instead of per character; comment and image text is left out, which other editors count. To do: strip Markdown syntax before counting, then decide the em dash and CJK rules against the editor the writer compares with. Not changed yet.
 - Tables: cells are one line each and pasting flattens line breaks; inserting a table adds two empty body rows; columns are equal width.
 - Wiki links and import leftovers are listed under items 30 and 57 (a folder of Markdown as a project, dropping files on the window, RTF headings and tables).
 
