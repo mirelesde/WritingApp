@@ -7,3 +7,5 @@ out
 
 # Impeccable: per-developer settings
 .impeccable/config.local.json
+.impeccable/hook.cache.json
+**/.impeccable/hook.cache.json
