@@ -54,18 +54,20 @@
 </div>
 
 <style>
-  /* VS Code's tab strip: a darker bar, square tabs divided by thin lines, and the front tab
-     on the editor's own colour with a line along its top. */
+  /* Folder tabs: the front tab is the editor's own colour with rounded top corners and no line
+     under it, curving out at the bottom so the editor flows into it. The line along the bar
+     runs under every other tab. */
   .tabs {
     display: flex;
     align-items: stretch;
-    padding: 0;
+    height: 36px;
+    padding: 0 8px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     user-select: none;
     background: var(--sidebar);
-    border-bottom: 1px solid var(--border);
+    box-shadow: inset 0 -1px 0 var(--border);
   }
   .tabs::-webkit-scrollbar {
     display: none;
@@ -76,35 +78,55 @@
     align-items: center;
     flex: 0 1 180px;
     min-width: 90px;
-    height: 35px;
     box-sizing: border-box;
-    border-right: 1px solid var(--border);
+    padding-top: 4px;
     color: var(--muted);
-    background: var(--sidebar);
   }
   .tab:hover {
     color: var(--text);
   }
   .tab.active {
-    margin-bottom: -1px;
-    height: 36px;
+    z-index: 1;
+    border-radius: 8px 8px 0 0;
     color: var(--text);
     background: var(--bg);
   }
-  .tab.before::before,
-  .tab.after::after {
+  /* A thin divider after each tab, except beside the front one. */
+  .tab:not(.active)::after {
     content: '';
     position: absolute;
-    top: 0;
+    top: 11px;
+    bottom: 7px;
+    right: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .tab:has(+ .tab.active)::after {
+    display: none;
+  }
+  /* The outward curves where the front tab meets the bar. */
+  .tab.active::before,
+  .tab.active::after {
+    content: '';
+    position: absolute;
     bottom: 0;
-    width: 2px;
-    background: var(--accent);
+    width: 8px;
+    height: 8px;
   }
-  .tab.before::before {
-    left: -1px;
+  .tab.active::before {
+    left: -8px;
+    background: radial-gradient(circle at 0 0, transparent 7.5px, var(--bg) 8px);
   }
-  .tab.after::after {
-    right: -1px;
+  .tab.active::after {
+    right: -8px;
+    background: radial-gradient(circle at 100% 0, transparent 7.5px, var(--bg) 8px);
+  }
+  /* Where a dragged tab would land. */
+  .tab.before {
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .tab.after {
+    box-shadow: inset -2px 0 0 var(--accent);
   }
   .tab button,
   .tabs .tab-new {
