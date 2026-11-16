@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "georgia",
+        "createdAt": "2026-11-16T09:24:18.669Z",
+        "reason": "Claude triage: Georgia appears only in CSS_EXAMPLE, the placeholder text showing writers sample CSS for their own export style; it is not an interface font"
+      }
+    ]
+  }
+}
