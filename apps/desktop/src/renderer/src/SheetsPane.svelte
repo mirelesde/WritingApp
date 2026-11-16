@@ -232,7 +232,8 @@
     min-height: var(--topbar-height);
     position: sticky;
     top: 0;
-    background: inherit;
+    z-index: 3;
+    background: var(--list);
   }
   .title {
     font-weight: 600;
