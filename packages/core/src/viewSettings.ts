@@ -16,7 +16,8 @@ export const CHOICES = {
   typewriterPosition: ['centre', 'upper'],
   textAlign: ['left', 'justify'],
   sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
-  saveMode: ['auto', 'switch', 'manual']
+  saveMode: ['auto', 'switch', 'manual'],
+  openSheetIn: ['same', 'tab', 'window']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -27,6 +28,8 @@ export type FocusScope = (typeof CHOICES.focusScope)[number]
 export type FocusDim = (typeof CHOICES.focusDim)[number]
 export type TypewriterPosition = (typeof CHOICES.typewriterPosition)[number]
 export type TextAlign = (typeof CHOICES.textAlign)[number]
+/** Where clicking a different sheet opens it: in the current tab, a new tab, or a new window. */
+export type OpenSheetIn = (typeof CHOICES.openSheetIn)[number]
 export type SheetSort = (typeof CHOICES.sheetSort)[number]
 /** When text is written to disk: while typing; on Save, switching sheets and closing; or only when asked (manual, with tabs). */
 export type SaveMode = (typeof CHOICES.saveMode)[number]
@@ -91,6 +94,8 @@ export interface ViewSettings {
   colorTheme: string
   /** When text is saved: `auto` while typing; `switch` only on Save (⌘S), when switching sheets, and on close; `manual` only when asked, with a prompt before changes are dropped. */
   saveMode: SaveMode
+  /** Where choosing a different sheet in the list opens it. Right-click always offers a new tab or window. */
+  openSheetIn: OpenSheetIn
   /** Show how many sheets each group holds, beside its name in the library. */
   groupCounts: boolean
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
@@ -125,6 +130,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   accent: '#6b7280',
   colorTheme: '',
   saveMode: 'auto',
+  openSheetIn: 'same',
   groupCounts: true,
   saveIndicator: true,
 }

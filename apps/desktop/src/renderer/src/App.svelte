@@ -44,7 +44,7 @@
   import { createAutosaver, type SaveStatus } from './autosave'
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
-  import { EMPTY_TAB, TabFlow } from './tabFlow'
+  import { clickDestination, EMPTY_TAB, TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
   import { OutlineState } from './outlineState.svelte'
@@ -400,7 +400,18 @@
     listPaths: () => list.paths,
     keywordMode: () => list.keywordMode
   })
-  const { setSelection, focusedPart, crossEdge, clickSheet } = selection
+  const { setSelection, focusedPart, crossEdge } = selection
+
+  /**
+   * Clicking a sheet in the list. By default it fills the current tab; the "open in" preference
+   * can send a plain click on a different sheet to a new tab or window instead.
+   */
+  const clickSheet = (path: string, e: Pick<MouseEvent, 'shiftKey' | 'metaKey' | 'ctrlKey'>): Promise<void> => {
+    const plain = !e.shiftKey && !e.metaKey && !e.ctrlKey
+    const to = list.keywordMode ? 'here' : clickDestination(prefs?.openSheetIn ?? 'same', plain, sel.only, path)
+    if (to === 'here') return selection.clickSheet(path, e)
+    return to === 'tab' ? tabFlow.open(path) : window.api.newWindow(path)
+  }
 
   const opRunner = new OpRunner(sel, run, {
     flush: () => autosaver.flush(),

@@ -188,6 +188,20 @@ describe('the app', () => {
     assert.ok(!(await readFile(join(library, 'Novel', 'Alpha.md'), 'utf8')).includes('DISCARDME'))
   })
 
+  it('opens a clicked sheet in a new tab when the preference says so, and in the same tab otherwise', async () => {
+    await start()
+    await app.open('Alpha')
+    await app.open('Beta')
+    assert.equal(await app.eval(`document.querySelectorAll('.tab').length`), 0) // same tab: no bar
+    await app.eval(`window.api.setView({ openSheetIn: 'tab' })`)
+    await sleep(300)
+    await app.open('Alpha')
+    await until(() => app.eval(`document.querySelectorAll('.tab').length === 2`), 'a second tab')
+    await app.open('Beta') // already has a tab: switches to it
+    await sleep(300)
+    assert.equal(await app.eval(`document.querySelectorAll('.tab').length`), 2)
+  })
+
   it('exports the group as Markdown through the export dialog', async () => {
     await start()
     await app.stubDialogs()

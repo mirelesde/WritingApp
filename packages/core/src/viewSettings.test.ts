@@ -87,6 +87,14 @@ describe('writing comfort settings', () => {
   })
 })
 
+describe('open sheets in', () => {
+  it('defaults to the same tab, and keeps only a known choice', () => {
+    expect(resolveView().openSheetIn).toBe('same')
+    expect(parseViewSettings({ openSheetIn: 'window' })).toEqual({ openSheetIn: 'window' })
+    expect(parseViewSettings({ openSheetIn: 'elsewhere' })).toEqual({})
+  })
+})
+
 describe('group counts', () => {
   it('are shown by default, and keep only a boolean', () => {
     expect(resolveView().groupCounts).toBe(true)

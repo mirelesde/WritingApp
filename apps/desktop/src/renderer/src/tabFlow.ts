@@ -4,6 +4,21 @@ import type { UnsavedWhat } from './unsavedPrompt.svelte'
 /** The path of a tab that holds no sheet yet. */
 export const EMPTY_TAB = ''
 
+/**
+ * Where a click on `path` in the sheet list takes it: 'here' fills the current tab (the
+ * default, and always for modified clicks, the first sheet and the one already open), else
+ * the preference's new tab or window.
+ */
+export function clickDestination(
+  mode: 'same' | 'tab' | 'window',
+  plain: boolean,
+  current: string | undefined,
+  path: string
+): 'here' | 'tab' | 'window' {
+  if (mode === 'same' || !plain || current === undefined || current === path) return 'here'
+  return mode
+}
+
 /** What opening and closing tabs needs from the rest of the app. */
 export interface TabFlowHost {
   /** The sheet being edited alone, if exactly one is selected. */

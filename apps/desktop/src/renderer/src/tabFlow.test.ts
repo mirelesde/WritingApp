@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { TabFlow } from './tabFlow'
+import { clickDestination, TabFlow } from './tabFlow'
 import { TabsState } from './tabsState.svelte'
 
 function setup(
@@ -99,5 +99,18 @@ describe('TabFlow', () => {
     await flow.close(0)
     expect(closeWindow).toHaveBeenCalled()
     expect(resolve).not.toHaveBeenCalled()
+  })
+})
+
+describe('clickDestination', () => {
+  it('follows the preference for a plain click on a different sheet', () => {
+    expect(clickDestination('tab', true, 'a', 'b')).toBe('tab')
+    expect(clickDestination('window', true, 'a', 'b')).toBe('window')
+    expect(clickDestination('same', true, 'a', 'b')).toBe('here')
+  })
+  it('fills the current tab for modified clicks, the first sheet and the sheet already shown', () => {
+    expect(clickDestination('tab', false, 'a', 'b')).toBe('here')
+    expect(clickDestination('tab', true, undefined, 'b')).toBe('here')
+    expect(clickDestination('window', true, 'b', 'b')).toBe('here')
   })
 })

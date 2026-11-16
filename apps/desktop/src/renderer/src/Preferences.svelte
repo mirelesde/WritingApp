@@ -53,6 +53,7 @@
     typewriterPosition: { centre: 'Middle', upper: 'Upper third' },
     textAlign: { left: 'Left', justify: 'Justified' },
     sheetSort: {},
+    openSheetIn: { same: 'This tab', tab: 'A new tab', window: 'A new window' },
     saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' }
   }
 
@@ -308,6 +309,24 @@
 
     {#if tab === 'writing'}
     <div id="pref-panel-writing" role="tabpanel" aria-labelledby="pref-tab-writing">
+      <div class="row">
+        <span id="pref-openSheetIn"
+          >Choosing a sheet opens it in<small>{view.openSheetIn === 'tab'
+            ? 'A new tab each time; a sheet that is already open in a tab switches to it'
+            : view.openSheetIn === 'window'
+              ? 'A new window each time'
+              : 'The tab you are in. Right-click a sheet to open it in a new tab or window instead'}</small></span
+        >
+        <div class="segments" role="radiogroup" aria-labelledby="pref-openSheetIn">
+          {#each CHOICES.openSheetIn as value (value)}
+            <button
+              role="radio"
+              aria-checked={view.openSheetIn === value}
+              onclick={() => onchange({ openSheetIn: value })}>{names.openSheetIn[value]}</button
+            >
+          {/each}
+        </div>
+      </div>
       <label class="row">
         <span>Focus mode<small>Dim everything but the paragraph being written</small></span>
         <input
