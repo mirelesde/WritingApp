@@ -6,6 +6,10 @@
     label: string
     /** Options with the same group are listed together under its heading. */
     group?: string
+    /** Shown in italics, for a choice that is a behaviour rather than a name. */
+    italic?: boolean
+    /** A font to show the label in. */
+    family?: string
   }
 
   interface Props {
@@ -62,6 +66,21 @@
     void tick().then(() => list?.querySelector('.active')?.scrollIntoView({ block: 'nearest' }))
   }
 
+  let typed = ''
+  let typedAt = 0
+  /** Typing the start of a name moves to the first choice that begins with it. */
+  function typeahead(key: string): boolean {
+    if (key.length !== 1 || key === ' ' && !typed) return false
+    typed = Date.now() - typedAt > 800 ? key : typed + key
+    typedAt = Date.now()
+    const at = options.findIndex((o) => o.label.toLowerCase().startsWith(typed.toLowerCase()))
+    if (at >= 0) {
+      active = at
+      void tick().then(() => list?.querySelector('.active')?.scrollIntoView({ block: 'nearest' }))
+    }
+    return true
+  }
+
   function keydown(e: KeyboardEvent): void {
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -81,6 +100,8 @@
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       move(-1)
+    } else if (!e.metaKey && !e.ctrlKey && !e.altKey && typeahead(e.key)) {
+      e.preventDefault()
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       e.stopPropagation()
@@ -107,7 +128,7 @@
   onclick={() => (open ? close() : void show())}
   onkeydown={keydown}
 >
-  <span class="value">{current?.label ?? ''}</span>
+  <span class="value" class:italic={current?.italic} style:font-family={current?.family}>{current?.label ?? ''}</span>
   <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" /></svg>
 </button>
 
@@ -130,6 +151,8 @@
         role="option"
         aria-selected={option.value === value}
         class:active={i === active}
+        class:italic={option.italic}
+        style:font-family={option.family}
         onmouseenter={() => (active = i)}
         onmousedown={(e) => e.preventDefault()}
         onclick={() => pick(i)}
@@ -196,6 +219,9 @@
   li.active {
     background: var(--accent);
     color: var(--on-accent);
+  }
+  .italic {
+    font-style: italic;
   }
   .tick {
     width: 16px;

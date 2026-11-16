@@ -1,8 +1,7 @@
 <script lang="ts">
-  import Select from './Select.svelte'
+  import Select, { type Option } from './Select.svelte'
   import {
     CHOICES,
-    FONTS,
     MAX_LINE_SPACING,
     MIN_LINE_SPACING,
     MAX_FONT_SIZE,
@@ -56,7 +55,7 @@
     textAlign: { left: 'Left', justify: 'Justified' },
     sheetSort: {},
     openSheetIn: { same: 'This tab', tab: 'A new tab', window: 'A new window' },
-    uiFont: { geist: 'Geist', georgia: 'Georgia', 'source-serif-4': 'Source Serif 4' },
+    uiFont: { geist: 'Geist', 'source-serif-4': 'Source Serif 4' },
     saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' }
   }
 
@@ -64,16 +63,6 @@
     system: 'Match system',
     light: 'Light',
     dark: 'Dark'
-  }
-  const fontNames: Record<(typeof FONTS)[number], string> = {
-    serif: 'Serif',
-    sans: 'Sans',
-    mono: 'Mono',
-    geist: 'Geist',
-    georgia: 'Georgia',
-    'source-serif-4': 'Source Serif 4',
-    interface: 'Same as interface',
-    custom: 'System font…'
   }
   /** Families installed on this computer, when the browser will list them. */
   let systemFonts = $state<string[]>([])
@@ -86,8 +75,31 @@
     }
   }
   $effect(() => {
-    if (view.font === 'custom' && !systemFonts.length) void loadSystemFonts()
+    void loadSystemFonts()
   })
+
+  const INCLUDED_FONTS = [
+    { value: 'geist', label: 'Geist', family: "'Geist'" },
+    { value: 'source-serif-4', label: 'Source Serif 4', family: "'Source Serif 4'" }
+  ]
+  /** The editor font picker: follow the system font, the fonts that come with the app, then every installed font. */
+  const editorFonts = $derived.by(() => {
+    const out: Option[] = [{ value: 'interface', label: '(Follow System Font)', italic: true }]
+    // An old setting that is no longer offered stays visible while it is in use.
+    if (view.font === 'mono') out.push({ value: 'mono', label: 'Monospace (old setting)', group: 'Included with the app' })
+    for (const f of INCLUDED_FONTS) out.push({ ...f, group: 'Included with the app' })
+    const installed = new Set(systemFonts.filter((f) => !INCLUDED_FONTS.some((i) => i.label === f)))
+    if (view.font === 'custom' && view.fontCustom) installed.add(view.fontCustom)
+    for (const f of [...installed].sort((a, b) => a.localeCompare(b))) {
+      out.push({ value: `family:${f}`, label: f, family: `'${f}'`, group: 'Installed on this computer' })
+    }
+    return out
+  })
+  const editorFontValue = $derived(view.font === 'custom' ? `family:${view.fontCustom}` : view.font)
+  function chooseEditorFont(value: string): void {
+    if (value.startsWith('family:')) onchange({ font: 'custom', fontCustom: value.slice('family:'.length) })
+    else onchange({ font: value as typeof view.font })
+  }
 
   const TABS = [
     ['appearance', 'Appearance'],
@@ -234,16 +246,16 @@
         </div>
       </div>
       <div class="row">
-        <span>Interface font<small>Lists, menus and dialogs</small></span>
+        <span>System font<small>The app's own text: lists, menus and dialogs</small></span>
         <Select
-          label="Interface font"
+          label="System font"
           value={view.uiFont}
           options={CHOICES.uiFont.map((value) => ({ value, label: names.uiFont[value] }))}
           onchange={(uiFont) => onchange({ uiFont: uiFont as typeof view.uiFont })}
         />
       </div>
       <div class="row">
-        <span id="pref-ui-size">Interface text size<small>Lists, menus and dialogs</small></span>
+        <span id="pref-ui-size">System text size<small>The app's own text: lists, menus and dialogs</small></span>
         <div class="stepper" role="group" aria-labelledby="pref-ui-size">
           <button
             aria-label="Smaller"
@@ -273,35 +285,9 @@
     {#if tab === 'editor'}
     <div id="pref-panel-editor" role="tabpanel" aria-labelledby="pref-tab-editor">
       <div class="row">
-        <span>Editor font<small>Follow the interface font, pick one that comes with the app, or use any font installed on this computer</small></span>
-        <Select
-          label="Editor font"
-          value={view.font}
-          options={FONTS.map((value) => ({ value, label: fontNames[value] }))}
-          onchange={(font) => onchange({ font: font as typeof view.font })}
-        />
+        <span>Editor font<small>Follow the system font, or choose any font on this computer</small></span>
+        <Select label="Editor font" value={editorFontValue} options={editorFonts} onchange={chooseEditorFont} />
       </div>
-      {#if view.font === 'custom'}
-        <div class="row">
-          <span>System font</span>
-          {#if systemFonts.length}
-            <Select
-              label="System font"
-              value={view.fontCustom}
-              options={[{ value: '', label: 'Choose…' }, ...systemFonts.map((f) => ({ value: f, label: f }))]}
-              onchange={(fontCustom) => onchange({ fontCustom })}
-            />
-          {:else}
-            <input
-              type="text"
-              aria-label="System font name"
-              placeholder="Font name"
-              value={view.fontCustom}
-              onchange={(e) => onchange({ fontCustom: e.currentTarget.value.trim() })}
-            />
-          {/if}
-        </div>
-      {/if}
       <div class="row">
         <span id="pref-size">Text size</span>
         <div class="stepper" role="group" aria-labelledby="pref-size">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
+import { FONT_STACKS, editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
 
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
@@ -122,7 +122,7 @@ describe('saving settings', () => {
 describe('interface font', () => {
   it('defaults to Geist and accepts only the offered fonts', () => {
     expect(resolveView().uiFont).toBe('geist')
-    expect(parseViewSettings({ uiFont: 'georgia' })).toEqual({ uiFont: 'georgia' })
+    expect(parseViewSettings({ uiFont: 'source-serif-4' })).toEqual({ uiFont: 'source-serif-4' })
     expect(parseViewSettings({ uiFont: 'comic-sans' })).toEqual({})
   })
 })
@@ -135,7 +135,7 @@ describe('editor font', () => {
   })
   it('refuses names that could break out of the stack', () => {
     expect(parseViewSettings({ fontCustom: "x'; color: red" })).toEqual({})
-    expect(editorFontStack({ font: 'custom', fontCustom: '' })).toBe(editorFontStack({ font: 'sans', fontCustom: '' }))
+    expect(editorFontStack({ font: 'custom', fontCustom: '' })).toBe(FONT_STACKS.custom)
   })
 })
 
@@ -149,7 +149,16 @@ describe('interface text size', () => {
 
 describe('editor font that follows the interface', () => {
   it('uses the interface font, whichever it is', () => {
-    expect(editorFontStack({ font: 'interface', fontCustom: '', uiFont: 'georgia' }).startsWith('Georgia')).toBe(true)
+    expect(editorFontStack({ font: 'interface', fontCustom: '', uiFont: 'source-serif-4' }).startsWith("'Source Serif 4'")).toBe(true)
     expect(editorFontStack({ font: 'interface', fontCustom: '', uiFont: 'geist' }).startsWith("'Geist'")).toBe(true)
+  })
+})
+
+describe('old generic font names', () => {
+  it('turns Sans and Serif into specific choices and keeps Mono', () => {
+    expect(parseViewSettings({ font: 'sans' })).toEqual({ font: 'interface' })
+    expect(parseViewSettings({ font: 'serif' })).toEqual({ font: 'source-serif-4' })
+    expect(parseViewSettings({ font: 'mono' })).toEqual({ font: 'mono' })
+    expect(parseViewSettings({ font: 'georgia' })).toEqual({})
   })
 })

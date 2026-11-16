@@ -259,7 +259,7 @@ saved colours). Everything drawn inside the window is the app's own.
   runs the edit commands, reveal and copy path. Keys are caught on the window
   while a menu is open, so the editor keeps its selection.
 - U5. ~~**Bundled UI font.**~~ **Done.** Geist (SIL OFL; latin and latin-ext, about 45 KB
-  in `assets/fonts`) replaces the per-OS system font (Preferences can switch it to Georgia or Source Serif 4, and the editor also takes any installed font). The editor fonts are
+  in `assets/fonts`) replaces the per-OS system font (Preferences can switch it to Source Serif 4, and the editor also takes any installed font). The editor fonts are
   the writer's own choice and are unchanged.
 - Gaps, to do when needed:
   - The text context menu's main-process path (a real right-click on editor

@@ -150,9 +150,9 @@ export function buildPaletteCommands(input: PaletteInput): PaletteCommand[] {
     setting('View', 'Light Theme', { theme: 'light' }),
     setting('View', 'Dark Theme', { theme: 'dark' }),
     setting('View', 'Match System Theme', { theme: 'system' }),
-    setting('View', 'Serif Font', { font: 'serif' }),
-    setting('View', 'Sans-serif Font', { font: 'sans' }),
-    setting('View', 'Monospace Font', { font: 'mono' }),
+    setting('View', 'Editor Font: Follow System Font', { font: 'interface' }),
+    setting('View', 'Editor Font: Geist', { font: 'geist' }),
+    setting('View', 'Editor Font: Source Serif 4', { font: 'source-serif-4' }),
     {
       ...setting('View', 'Larger Text', { fontSize: (view?.fontSize ?? 18) + 1 }),
       shortcut: `${keyMod}+`

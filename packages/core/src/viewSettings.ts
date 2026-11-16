@@ -3,8 +3,12 @@
  * app's settings file, so these are per machine, not part of a library.
  */
 export const THEMES = ['system', 'light', 'dark'] as const
-/** Editor fonts: three system stacks, the interface fonts that come with the app, and `interface` (the same font as the interface), and `custom` (any installed font, named in `fontCustom`). */
-export const FONTS = ['serif', 'sans', 'mono', 'geist', 'georgia', 'source-serif-4', 'interface', 'custom'] as const
+/**
+ * Editor fonts: `interface` follows the interface font, then the fonts that come with the app, and
+ * `custom` (any installed font, named in `fontCustom`). `mono` is an old setting, still honoured but
+ * no longer offered: generic names sit badly beside specific fonts.
+ */
+export const FONTS = ['interface', 'geist', 'source-serif-4', 'custom', 'mono'] as const
 
 /** Options that are one of a few named choices; the first of each list is not necessarily the default. */
 export const CHOICES = {
@@ -19,7 +23,7 @@ export const CHOICES = {
   sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
   saveMode: ['auto', 'switch', 'manual'],
   openSheetIn: ['same', 'tab', 'window'],
-  uiFont: ['geist', 'georgia', 'source-serif-4']
+  uiFont: ['geist', 'source-serif-4']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -118,7 +122,7 @@ export interface ViewSettings {
 
 export const DEFAULT_VIEW: ViewSettings = {
   theme: 'system',
-  font: 'sans',
+  font: 'interface',
   fontSize: 16,
   fontCustom: '',
   sidebarCollapsed: false,
@@ -155,21 +159,16 @@ export const DEFAULT_VIEW: ViewSettings = {
 /** CSS font names of the bundled interface fonts. */
 export const UI_FONT_FAMILIES: Record<UiFont, string> = {
   geist: "'Geist'",
-  // Not bundled: it is on macOS and Windows, and falls back to a serif where it is missing.
-  georgia: "Georgia, 'Times New Roman', serif",
-  'source-serif-4': "'Source Serif 4', serif"
+  'source-serif-4': "'Source Serif 4'"
 }
 
 /** CSS font stacks, by name. */
 export const FONT_STACKS: Record<Font, string> = {
-  serif: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
-  sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-  mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
-  geist: "'Geist', sans-serif",
-  georgia: "Georgia, 'Times New Roman', serif",
-  'source-serif-4': "'Source Serif 4', serif",
   interface: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+  geist: "'Geist', sans-serif",
+  'source-serif-4': "'Source Serif 4', serif",
   custom: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+  mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 }
 
 /** True for a font family name that is safe to put in a CSS font stack. */
@@ -179,8 +178,8 @@ export function isFontName(value: string): boolean {
 
 /** The CSS font stack for the editor. */
 export function editorFontStack(view: Pick<ViewSettings, 'font' | 'fontCustom'> & Partial<Pick<ViewSettings, 'uiFont'>>): string {
-  if (view.font === 'interface') return `${UI_FONT_FAMILIES[view.uiFont ?? DEFAULT_VIEW.uiFont]}, ${FONT_STACKS.sans}`
-  if (view.font === 'custom' && isFontName(view.fontCustom)) return `'${view.fontCustom}', ${FONT_STACKS.sans}`
+  if (view.font === 'interface') return `${UI_FONT_FAMILIES[view.uiFont ?? DEFAULT_VIEW.uiFont]}, ${FONT_STACKS.interface}`
+  if (view.font === 'custom' && isFontName(view.fontCustom)) return `'${view.fontCustom}', ${FONT_STACKS.interface}`
   return FONT_STACKS[view.font]
 }
 
@@ -205,8 +204,10 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof theme === 'string' && (THEMES as readonly string[]).includes(theme)) {
     out.theme = theme as Theme
   }
-  if (typeof font === 'string' && (FONTS as readonly string[]).includes(font)) {
-    out.font = font as Font
+  // Settings from when the choices were Serif, Sans and Mono: Sans was the system look, Serif is closest to Source Serif.
+  const named = font === 'sans' ? 'interface' : font === 'serif' ? 'source-serif-4' : font
+  if (typeof named === 'string' && (FONTS as readonly string[]).includes(named)) {
+    out.font = named as Font
   }
   if (typeof (data as Record<string, unknown>).fontCustom === 'string' && ((data as Record<string, unknown>).fontCustom === '' || isFontName((data as Record<string, unknown>).fontCustom as string))) {
     out.fontCustom = (data as Record<string, string>).fontCustom.trim()

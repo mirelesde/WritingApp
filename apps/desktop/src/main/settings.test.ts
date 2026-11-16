@@ -43,8 +43,8 @@ describe('createSettingsStore', () => {
 
   it('reads view settings next to the library path', async () => {
     const store = createSettingsStore(join(dir, 'settings.json'))
-    await store.save({ libraryPath: '/L', view: { font: 'sans' } })
-    expect(await store.load()).toEqual({ libraryPath: '/L', view: { font: 'sans' } })
+    await store.save({ libraryPath: '/L', view: { font: 'geist' } })
+    expect(await store.load()).toEqual({ libraryPath: '/L', view: { font: 'geist' } })
   })
 
   it('update keeps the other fields and merges view settings', async () => {

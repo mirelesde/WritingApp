@@ -15,7 +15,7 @@ import { listThemes } from './themes'
 let current: ViewSettings = resolveView()
 let onChange: () => void = () => {}
 
-const FONT_LABELS: Record<string, string> = { sans: 'Sans-serif', geist: 'Geist', georgia: 'Georgia', 'source-serif-4': 'Source Serif 4', interface: 'Same as Interface' }
+const FONT_LABELS: Record<string, string> = { interface: 'Follow System Font', geist: 'Geist', 'source-serif-4': 'Source Serif 4' }
 
 export function currentView(): ViewSettings {
   return current
@@ -119,7 +119,7 @@ export function viewMenu(isMac: boolean): MenuItemConstructorOptions {
       },
       {
         label: 'Editor Font',
-        submenu: FONTS.filter((font: Font) => font !== 'custom').map((font: Font) => ({
+        submenu: FONTS.filter((font: Font) => font in FONT_LABELS).map((font: Font) => ({
           label: FONT_LABELS[font] ?? label(font),
           type: 'radio' as const,
           checked: current.font === font,
