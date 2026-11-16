@@ -197,7 +197,13 @@ const chevrons = ViewPlugin.fromClass(
           if (!/^#{1,6}(\s|$)/.test(line.text)) continue
           // Headings are never justified: folding adds the "…" chip to the line, which would
           // change the spacing between the words of a justified heading.
-          builder.add(line.from, line.from, Decoration.line({ class: 'cm-heading-line' }))
+          // With no blank line under it, a heading would sit tight against what follows (another
+          // heading, or the text of a folded section): give it the paragraph gap itself.
+          const hidden = foldedAt(state, line.to)
+          const after = hidden ? hidden.to : line.to
+          const next = after < state.doc.length ? state.doc.lineAt(after + 1) : null
+          const tight = next !== null && next.length > 0
+          builder.add(line.from, line.from, Decoration.line({ class: 'cm-heading-line' + (tight ? ' cm-heading-tight' : '') }))
           if (!section(state, line.from, line.to)) continue
           const folded = foldedAt(state, line.to) !== null
           const level = line.text.match(/^#+/)![0].length
