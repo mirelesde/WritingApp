@@ -258,14 +258,14 @@ saved colours). Everything drawn inside the window is the app's own.
   reports the right-click's position and spelling data (`context:edit`) and
   runs the edit commands, reveal and copy path. Keys are caught on the window
   while a menu is open, so the editor keeps its selection.
-- U5. ~~**Bundled UI font.**~~ **Done.** Inter (SIL OFL; latin and latin-ext, about 130 KB
+- U5. ~~**Bundled UI font.**~~ **Done.** Onest (SIL OFL; latin and latin-ext, about 130 KB
   in `assets/fonts`) replaces the per-OS system font. The editor fonts are
   the writer's own choice and are unchanged.
 - Gaps, to do when needed:
   - The text context menu's main-process path (a real right-click on editor
     text, then Cut/Copy/Paste through `webContents`) was not clicked through;
     only the in-window half was checked.
-  - Windows and Linux have not been looked at: Inter metrics, the solid
+  - Windows and Linux have not been looked at: Onest metrics, the solid
     (non-vibrant) sidebar, window-control spacing, scrollbars.
   - Dark mode was checked on the dialogs only, not every surface.
   - Inactive-window state (greyed selection and toolbar when the window is
