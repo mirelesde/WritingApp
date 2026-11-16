@@ -292,6 +292,26 @@
   .sheets ul {
     padding: 0 6px 12px;
   }
+  /* A short hairline in the gap between two cards, inset so it does not span the pane. It steps
+     aside for a card that is hovered or selected, and for the members of a glued run. */
+  .sheets li:not(.sheet-section) {
+    position: relative;
+  }
+  .sheets li:not(.sheet-section) + li:not(.sheet-section)::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: var(--border);
+    pointer-events: none;
+  }
+  .sheets li:has(> .sheet:is(.selected, :hover))::before,
+  .sheets li:has(> .sheet:is(.selected, :hover)) + li::before,
+  .sheets li:has(> .sheet:is(.run-middle, .run-end))::before {
+    opacity: 0;
+  }
   .sheet {
     position: relative;
     display: block;
