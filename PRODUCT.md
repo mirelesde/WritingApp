@@ -4,9 +4,9 @@
 
 ## Platform
 
-adaptive
+web
 
-(Today an Electron desktop app for macOS, Windows and Linux with one OS-neutral look. A Capacitor mobile app is a possible later port; `packages/core` has no UI or platform imports so it can be shared. Which OS design language the mobile version would adopt is undecided.)
+(An Electron desktop app for macOS, Windows and Linux, built with web technology and one OS-neutral look, not a native design language per OS. A Capacitor mobile app is a possible later port; `packages/core` has no UI or platform imports so it can be shared. Which OS design language a mobile version would adopt is undecided; revisit this field if that port starts.)
 
 ## Stack
 
