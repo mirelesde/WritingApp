@@ -25,7 +25,10 @@ export interface MenuHost {
   focusTree(): void
   newSheet(): Promise<void>
   newGroup(atRoot: boolean): Promise<void>
-  openTab(path: string): Promise<void>
+  /** The sheet in the front tab. */
+  frontTab(): string | undefined
+  /** Opens `path` in a tab beside `before`, the sheet the front tab had before the right-click selected `path`. */
+  openTab(path: string, before: string | undefined): Promise<void>
   openKeywords(): void
   startRename(path: string): void
   duplicate(): Promise<void>
@@ -38,7 +41,12 @@ export interface MenuHost {
 /** The right-click menus: for text, and for sheets and groups in the library. */
 export class ContextMenus {
   /** The menu being shown, or null. */
-  current = $state<{ x: number; y: number; items: MenuItem[]; onpick: (item: MenuItem) => void } | null>(null)
+  current = $state<{
+    x: number
+    y: number
+    items: MenuItem[]
+    onpick: (item: MenuItem) => void
+  } | null>(null)
 
   constructor(
     private readonly api: MenuApi,
@@ -60,7 +68,8 @@ export class ContextMenus {
         if (item.action === 'replace-misspelling') void this.api.replaceMisspelling(value)
         else if (item.action === 'add-to-dictionary') void this.api.addToDictionary(value)
         else if (item.action === 'select-all') void this.api.editCommand('selectAll')
-        else if (item.action) void this.api.editCommand(item.action as 'undo' | 'redo' | 'cut' | 'copy' | 'paste')
+        else if (item.action)
+          void this.api.editCommand(item.action as 'undo' | 'redo' | 'cut' | 'copy' | 'paste')
       }
     }
   }
@@ -68,6 +77,8 @@ export class ContextMenus {
   /** Right-click menu: act on what was clicked, selecting it first if it is not already. */
   showNode = async (kind: NodeKind, path: string, at: { x: number; y: number }): Promise<void> => {
     if (!this.host.hasLibrary()) return
+    // Selecting a sheet replaces the front tab's sheet, so note what it held for Open in New Tab.
+    const before = this.host.frontTab()
     if (kind === 'sheet') {
       if (!this.host.isSelected(path)) await this.host.selectSheet(path)
     } else if (this.host.selectedGroup() !== path) {
@@ -77,22 +88,32 @@ export class ContextMenus {
     this.current = {
       ...at,
       items: nodeMenuItems(kind, this.host.canPaste(), this.host.isMac),
-      onpick: (item) => void this.act(kind, path, item.action)
+      onpick: (item) => void this.act(kind, path, item.action, before)
     }
   }
 
   /** Does what a chosen item says. Commands that act on the selection first make sure the right pane has focus. */
-  act = async (kind: NodeKind, path: string, action: string | undefined): Promise<void> => {
+  act = async (
+    kind: NodeKind,
+    path: string,
+    action: string | undefined,
+    before?: string
+  ): Promise<void> => {
     const h = this.host
     if (action === 'reveal') await this.api.revealPath(path)
     else if (action === 'copy-path') await this.api.copyPath(path)
     else if (action === 'new-sheet') await h.newSheet()
     else if (action === 'new-group') await h.newGroup(kind === 'root')
-    else if (action === 'open-tab') await h.openTab(path)
+    else if (action === 'open-tab') await h.openTab(path, before)
     else if (action === 'open-window') await this.api.newWindow(path)
     else if (action === 'keywords') h.openKeywords()
     else if (action === 'rename') h.startRename(path)
-    else if (action === 'duplicate' || action === 'copy' || action === 'cut' || action === 'paste') {
+    else if (
+      action === 'duplicate' ||
+      action === 'copy' ||
+      action === 'cut' ||
+      action === 'paste'
+    ) {
       if (kind === 'group') h.focusTree()
       await h.tick()
       if (action === 'duplicate') await h.duplicate()

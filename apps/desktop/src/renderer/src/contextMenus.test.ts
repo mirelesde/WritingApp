@@ -24,6 +24,7 @@ function setup(over: { library?: boolean; selected?: boolean; group?: string } =
     focusTree: vi.fn(() => void order.push('focus')),
     newSheet: vi.fn(async () => undefined),
     newGroup: vi.fn(async () => undefined),
+    frontTab: vi.fn(() => '/L/Front'),
     openTab: vi.fn(async () => undefined),
     openKeywords: vi.fn(),
     startRename: vi.fn(),
@@ -70,6 +71,14 @@ describe('ContextMenus', () => {
     expect(u.menus.current).toBeNull()
   })
 
+  it('hands Open in New Tab the sheet the front tab had before the click selected the new one', async () => {
+    const t = setup()
+    await t.menus.showNode('sheet', '/L/a', at)
+    t.menus.current?.onpick({ label: 'Open in New Tab', action: 'open-tab' })
+    await Promise.resolve()
+    expect(t.host.openTab).toHaveBeenCalledWith('/L/a', '/L/Front')
+  })
+
   it('passes simple actions straight through', async () => {
     const t = setup()
     await run(t, 'sheet', 'reveal')
@@ -80,7 +89,7 @@ describe('ContextMenus', () => {
     expect(t.api.revealPath).toHaveBeenCalledWith('/L/A')
     expect(t.api.copyPath).toHaveBeenCalledWith('/L/A')
     expect(t.api.newWindow).toHaveBeenCalledWith('/L/A')
-    expect(t.host.openTab).toHaveBeenCalledWith('/L/A')
+    expect(t.host.openTab).toHaveBeenCalledWith('/L/A', undefined)
     expect(t.host.newGroup).toHaveBeenCalledWith(true)
   })
 
@@ -111,7 +120,13 @@ describe('ContextMenus', () => {
 
   it('sends text menu choices to the main process', () => {
     const t = setup()
-    t.menus.showText({ x: 0, y: 0, editFlags: {}, misspelledWord: 'teh', dictionarySuggestions: ['the'] } as never)
+    t.menus.showText({
+      x: 0,
+      y: 0,
+      editFlags: {},
+      misspelledWord: 'teh',
+      dictionarySuggestions: ['the']
+    } as never)
     const pick = t.menus.current!.onpick
     pick({ action: 'replace-misspelling', value: 'the' } as never)
     pick({ action: 'select-all' } as never)

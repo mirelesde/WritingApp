@@ -33,6 +33,16 @@ export class TabFlow {
     await this.show(this.tabs.open(path, reuse))
   }
 
+  /**
+   * Open in New Tab from a right-click. The click selected `path` first, which put it in the
+   * front tab in place of `before`; give the front tab its sheet back and open `path` beside it.
+   */
+  openBeside = async (path: string, before: string | undefined): Promise<void> => {
+    if (before !== undefined && before !== path && this.tabs.front === path)
+      this.tabs.replaceFront(before)
+    await this.open(path)
+  }
+
   newTab = (): void => {
     void this.open(this.host.only() ?? this.tabs.front, false)
   }
@@ -44,7 +54,11 @@ export class TabFlow {
       return
     }
     const closing = this.tabs.list[index]
-    if (closing !== undefined && !(await this.host.resolveUnsaved(this.host.runFor(closing), 'tab'))) return
+    if (
+      closing !== undefined &&
+      !(await this.host.resolveUnsaved(this.host.runFor(closing), 'tab'))
+    )
+      return
     if (this.tabs.list[index] !== closing) return
     if (this.tabs.remove(index)) void this.show(this.tabs.active)
   }
