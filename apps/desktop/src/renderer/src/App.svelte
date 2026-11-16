@@ -852,6 +852,7 @@
     >
     <LibraryPane
       {library}
+      showCounts={prefs?.groupCounts !== false}
       selectedGroup={nav.selectedGroup}
       expanded={nav.expanded}
       renaming={ops.renaming}

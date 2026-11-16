@@ -91,6 +91,8 @@ export interface ViewSettings {
   colorTheme: string
   /** When text is saved: `auto` while typing; `switch` only on Save (⌘S), when switching sheets, and on close; `manual` only when asked, with a prompt before changes are dropped. */
   saveMode: SaveMode
+  /** Show how many sheets each group holds, beside its name in the library. */
+  groupCounts: boolean
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
   saveIndicator: boolean
 }
@@ -123,6 +125,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   accent: '#6b7280',
   colorTheme: '',
   saveMode: 'auto',
+  groupCounts: true,
   saveIndicator: true,
 }
 
@@ -183,6 +186,7 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof record.paragraphIndent === 'boolean') out.paragraphIndent = record.paragraphIndent
   // Settings saved before there were modes: autosave off meant saving on switch and close.
   if (record.saveMode === undefined && record.autosave === false) out.saveMode = 'switch'
+  if (typeof record.groupCounts === 'boolean') out.groupCounts = record.groupCounts
   if (typeof record.saveIndicator === 'boolean') out.saveIndicator = record.saveIndicator
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
     out.accent = record.accent.toLowerCase()

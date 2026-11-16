@@ -14,6 +14,8 @@
     info: string
     conflictCount: number
     keyMod: string
+    /** Show the number of sheets beside each group. */
+    showCounts: boolean
     keyShift: string
     el: HTMLElement | undefined
     dnd: TreeDnd
@@ -41,6 +43,7 @@
     info,
     conflictCount,
     keyMod,
+    showCounts,
     keyShift,
     el = $bindable(),
     dnd,
@@ -62,6 +65,7 @@
 
 <div
   class="pane library"
+  class:no-counts={!showCounts}
   role="tree"
   aria-label="Library"
   tabindex="0"
@@ -122,6 +126,9 @@
 </div>
 
 <style>
+  .no-counts :global(.count) {
+    display: none;
+  }
   .pane:focus {
     outline: none;
   }

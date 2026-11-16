@@ -87,6 +87,14 @@ describe('writing comfort settings', () => {
   })
 })
 
+describe('group counts', () => {
+  it('are shown by default, and keep only a boolean', () => {
+    expect(resolveView().groupCounts).toBe(true)
+    expect(parseViewSettings({ groupCounts: false })).toEqual({ groupCounts: false })
+    expect(parseViewSettings({ groupCounts: 'no' })).toEqual({})
+  })
+})
+
 describe('saving settings', () => {
   it('default to saving automatically with the indicator shown', () => {
     expect(resolveView().saveMode).toBe('auto')

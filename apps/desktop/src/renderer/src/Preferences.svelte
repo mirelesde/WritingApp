@@ -239,6 +239,15 @@
           >
         </div>
       </div>
+      <label class="row">
+        <span>Sheet count in groups<small>Show how many sheets each group holds in the library</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.groupCounts}
+          onchange={(e) => onchange({ groupCounts: e.currentTarget.checked })}
+        />
+      </label>
     </div>
     {/if}
 
