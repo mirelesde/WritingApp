@@ -23,6 +23,7 @@
     <div
       class="tab"
       class:active={i === active}
+      class:dirty={hasChanges(path)}
       class:before={hint === i}
       class:after={hint === paths.length && i === paths.length - 1}
       data-tab={i}
@@ -41,10 +42,12 @@
           if (e.button === 1) onclose(i)
         }}
       >
-        {#if hasChanges(path)}<span class="tab-dot" role="img" aria-label="Unsaved changes"></span>{/if}
         {path === '' ? 'New tab' : (titles.get(path) ?? 'Untitled')}
       </button>
-      <button class="tab-close" aria-label="Close tab" onclick={() => onclose(i)}>×</button>
+      <button class="tab-close" aria-label={hasChanges(path) ? 'Close tab, unsaved changes' : 'Close tab'} onclick={() => onclose(i)}>
+        <span class="x">×</span>
+        <span class="dot"></span>
+      </button>
     </div>
   {/each}
   <button class="tab-new" aria-label="New tab" title="New tab ({keyMod}T)" onclick={onnew}>+</button>
@@ -58,9 +61,14 @@
     align-items: stretch;
     padding: 0;
     overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
     user-select: none;
     background: var(--sidebar);
     border-bottom: 1px solid var(--border);
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
   .tab {
     position: relative;
@@ -71,7 +79,6 @@
     height: 35px;
     box-sizing: border-box;
     border-right: 1px solid var(--border);
-    border-top: 1px solid transparent;
     color: var(--muted);
     background: var(--sidebar);
   }
@@ -81,7 +88,6 @@
   .tab.active {
     margin-bottom: -1px;
     height: 36px;
-    border-top-color: var(--accent);
     color: var(--text);
     background: var(--bg);
   }
@@ -99,15 +105,6 @@
   }
   .tab.after::after {
     right: -1px;
-  }
-  .tab-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    margin-right: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    vertical-align: 1px;
   }
   .tab button,
   .tabs .tab-new {
@@ -128,15 +125,27 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .tab.dirty .tab-label {
+    font-style: italic;
+  }
   .tab-close {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
     margin-right: 6px;
-    padding: 2px 6px;
+    padding: 0;
     border-radius: 4px;
     line-height: 1;
     opacity: 0;
   }
+  .tab-close > * {
+    grid-area: 1 / 1;
+  }
   .tab:hover .tab-close,
   .tab.active .tab-close,
+  .tab.dirty .tab-close,
   .tab-close:focus-visible {
     opacity: 0.7;
   }
@@ -144,10 +153,38 @@
     opacity: 1;
     background: var(--hover);
   }
+  /* An unsaved tab shows a dot where the close mark goes, and the mark on hover. */
+  .dot {
+    display: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .tab.dirty .dot {
+    display: block;
+  }
+  .tab.dirty .x {
+    display: none;
+  }
+  .tab.dirty:hover .dot,
+  .tab.dirty .tab-close:focus-visible .dot {
+    display: none;
+  }
+  .tab.dirty:hover .x,
+  .tab.dirty .tab-close:focus-visible .x {
+    display: block;
+  }
+  /* The new-tab button shows only while the pointer is over the bar. */
   .tabs .tab-new {
     flex-shrink: 0;
     padding: 0 12px;
     color: var(--muted);
+    opacity: 0;
+  }
+  .tabs:hover .tab-new,
+  .tabs .tab-new:focus-visible {
+    opacity: 1;
   }
   .tabs .tab-new:hover {
     color: var(--text);
