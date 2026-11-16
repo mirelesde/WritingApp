@@ -1175,6 +1175,12 @@
   .layout.collapsed {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* A hairline between sidebar, sheet list and editor, like the one between sheet groups. */
+  .sidebar :global(.library),
+  .sidebar :global(.sheets) {
+    border-right: 1px solid var(--border);
+    box-sizing: border-box;
+  }
   .layout.no-sheets :global(.sheets) {
     display: none;
   }
