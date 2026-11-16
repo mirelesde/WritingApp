@@ -92,10 +92,10 @@ describe('SheetCreation', () => {
   it('selects imported sheets and says how many', async () => {
     await t.make.importFiles()
     expect(t.host.selectCopies).toHaveBeenCalledWith(['/L/A/x'])
-    expect(t.host.info).toHaveBeenCalledWith('Imported 1 sheet.')
+    expect(t.host.info).toHaveBeenCalledWith('Imported 1 sheet')
     t.api.importFiles.mockResolvedValueOnce(result({ copied: ['a', 'b'] }))
     await t.make.importFiles()
-    expect(t.host.info).toHaveBeenLastCalledWith('Imported 2 sheets.')
+    expect(t.host.info).toHaveBeenLastCalledWith('Imported 2 sheets')
   })
 
   it('warns about files that could not be imported', async () => {

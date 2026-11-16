@@ -101,7 +101,7 @@
     <span class="title">{title}</span>
     <span class="tools">
       <span class="sort-wrap">
-        <ToolButton icon="sort" label="Sort sheets" pressed={sortOpen || sortBy !== 'manual'} onclick={() => (sortOpen = !sortOpen)} />
+        <ToolButton icon="sort" label={sortBy === 'manual' ? 'Sort sheets' : `Sort sheets (by ${SORTS.find(([v]) => v === sortBy)?.[1].toLowerCase() ?? sortBy})`} pressed={sortOpen || sortBy !== 'manual'} onclick={() => (sortOpen = !sortOpen)} />
         {#if sortOpen}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="scrim" onmousedown={() => (sortOpen = false)}></div>
@@ -168,9 +168,9 @@
     <p class="placeholder small">No Sheets</p>
   {/if}
   {#if listed.length === 0}
-    <p class="placeholder small">No Sheets</p>
+    <p class="placeholder small">No Sheets<small>{keyMod}N makes one</small></p>
   {:else if shown.length === 0}
-    <p class="placeholder small">No Matches</p>
+    <p class="placeholder small">No Matches<small>Clear the filter to see every sheet</small></p>
   {:else}
     <ul>
       {#each shownSections as section (section.node.path)}
@@ -284,6 +284,13 @@
     text-align: center;
     user-select: none;
     pointer-events: none;
+  }
+  .placeholder small {
+    display: block;
+    margin-top: 6px;
+    font-size: calc(13px * var(--ui-scale, 1));
+    font-weight: 400;
+    color: var(--muted);
   }
   .placeholder.small {
     font-size: calc(17px * var(--ui-scale, 1));

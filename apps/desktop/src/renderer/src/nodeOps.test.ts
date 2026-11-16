@@ -172,7 +172,7 @@ describe('merge, glue, split, delete, undo', () => {
     t.sel.paths = ['/L/A/a']
     await t.ops.remove()
     expect(t.api.deleteNodes).toHaveBeenCalledWith(['/L/A/a'])
-    expect(t.host.info).toHaveBeenCalledWith('Moved to the trash. Undo with Cmd/Ctrl+Alt+Z.')
+    expect(t.host.info).toHaveBeenCalledWith('Moved 1 item to the trash. Undo with Cmd/Ctrl+Alt+Z.')
   })
 
   it('deletes the selected group when the tree has focus, but never the root', async () => {

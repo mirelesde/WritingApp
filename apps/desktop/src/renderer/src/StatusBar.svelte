@@ -29,11 +29,11 @@
     {/if}
   </span>
   <span class="more">
-    <span>{plural(part ? part.characters : all.characters, 'character')}</span>
+    <span>{plural(part ? part.characters : all.characters, 'character')} with spaces</span>
     {#if !part}
       <span>{all.minutes === 0 ? '0 min read' : `${all.minutes} min read`}</span>
     {/if}
-    {#if groupWords !== null}<span>Group: {plural(groupWords, 'word')}</span>{/if}
+    {#if groupWords !== null}<span>This group: {plural(groupWords, 'word')}</span>{/if}
   </span>
 </div>
 

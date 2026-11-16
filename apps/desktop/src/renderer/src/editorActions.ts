@@ -49,12 +49,12 @@ export class EditorActions {
   }
 
   goToFootnote = (): void => {
-    if (this.host.editor() && !this.host.editor()?.goToFootnoteAtCursor()) this.host.info('This sheet has no footnotes.')
+    if (this.host.editor() && !this.host.editor()?.goToFootnoteAtCursor()) this.host.info('This sheet has no footnotes')
   }
 
   toggleTask = (): void => {
     if (this.host.editor() && !this.host.editor()?.toggleTaskAtCursor()) {
-      this.host.info('Put the cursor on a task item (- [ ]) first.')
+      this.host.info('Place the cursor on a task item (- [ ]) first')
     }
   }
 }

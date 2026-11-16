@@ -186,7 +186,7 @@ export class NodeOps {
     const result = await this.host.runOp(() => this.api.deleteNodes(paths))
     if (!result) return
     nav.keep(result.library.tree, fallback)
-    this.host.info('Moved to the trash. Undo with Cmd/Ctrl+Alt+Z.')
+    this.host.info(`Moved ${paths.length === 1 ? '1 item' : `${paths.length} items`} to the trash. Undo with Cmd/Ctrl+Alt+Z.`)
   }
 
   undo = async (): Promise<void> => {

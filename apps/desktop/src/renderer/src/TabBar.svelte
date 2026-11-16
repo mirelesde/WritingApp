@@ -44,7 +44,7 @@
       >
         {path === '' ? 'New tab' : (titles.get(path) ?? 'Untitled')}
       </button>
-      <button class="tab-close" aria-label={hasChanges(path) ? 'Close tab, unsaved changes' : 'Close tab'} onclick={() => onclose(i)}>
+      <button class="tab-close" aria-label={hasChanges(path) ? 'Close tab, unsaved changes' : 'Close tab'} title={hasChanges(path) ? 'Unsaved changes. Click to close the tab' : 'Close tab'} onclick={() => onclose(i)}>
         <span class="x">×</span>
         <span class="dot"></span>
       </button>

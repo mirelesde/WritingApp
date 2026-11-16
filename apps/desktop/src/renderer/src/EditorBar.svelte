@@ -95,7 +95,7 @@
     <ToolButton icon="bold" label="Bold" hint="{keyMod}B" disabled={!hasSheet} onclick={() => onformat('bold')} />
     <ToolButton icon="italic" label="Italic" hint="{keyMod}I" disabled={!hasSheet} onclick={() => onformat('italic')} />
     <ToolButton icon="link" label="Link" hint="{keyMod}K" disabled={!hasSheet} onclick={() => onformat('link')} />
-    <ToolButton icon="paragraph" label="Paragraph break" disabled={!hasSheet} onclick={() => onformat('paragraph')} />
+    <ToolButton icon="paragraph" label="Paragraph break" hint="Return" disabled={!hasSheet} onclick={() => onformat('paragraph')} />
     <ToolButton icon="image" label="Insert image" hint="{keyMod}⌥I" disabled={!hasSheet} onclick={oninsertimage} />
     <span class="style-wrap">
       <ToolButton icon="style" label="Styles" pressed={styleOpen} disabled={!hasSheet} onclick={onstylemenu} />

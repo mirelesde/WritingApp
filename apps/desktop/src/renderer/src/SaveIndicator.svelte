@@ -8,6 +8,14 @@
   const MIN_SPIN_MS = 700
 
   let shown = $state<'saving' | 'saved' | 'unsaved' | 'error'>('saved')
+  const explain = $derived({
+    saved: 'All changes are saved to the file',
+    saving: 'Writing your changes to the file',
+    unsaved: 'These changes are not in the file yet. Save to keep them',
+    error: auto
+      ? 'The file could not be written. Your text is still here, and the app keeps trying'
+      : 'The file could not be written. Your text is still here; try saving again'
+  })
   let spinningSince = 0
   let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -27,13 +35,13 @@
   })
 </script>
 
-<span class="indicator" class:problem={shown === 'error'} role="status" aria-live="polite">
+<span class="indicator" class:problem={shown === 'error'} role="status" aria-live="polite" title={explain[shown]}>
   {#if shown === 'saving'}
     <svg class="spin" viewBox="0 0 16 16" aria-hidden="true">
       <circle class="track" cx="8" cy="8" r="6" />
       <path d="M8 2a6 6 0 0 1 6 6" />
     </svg>
-    <span>{auto ? 'Autosaving' : 'Saving'}</span>
+    <span>Saving…</span>
   {:else if shown === 'unsaved'}
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none" />

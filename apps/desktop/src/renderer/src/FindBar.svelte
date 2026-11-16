@@ -308,7 +308,7 @@
       />
       <span class="count" role="status" class:bad={problem !== ''} title={problem}>
         {#if problem}
-          Invalid
+          Invalid pattern
         {:else if blank}
           &nbsp;
         {:else if total === 0}

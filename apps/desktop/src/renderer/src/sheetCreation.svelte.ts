@@ -111,7 +111,7 @@ export class SheetCreation {
       const names = bad.slice(0, 3).join(', ') + (bad.length > 3 ? ` and ${bad.length - 3} more` : '')
       this.host.warn(`${done > 0 ? `Imported ${done}. ` : ''}Could not import ${names}.`)
     } else if (done > 0) {
-      this.host.info(`Imported ${done === 1 ? '1 sheet' : `${done} sheets`}.`)
+      this.host.info(`Imported ${done === 1 ? '1 sheet' : `${done} sheets`}`)
     }
   }
 
