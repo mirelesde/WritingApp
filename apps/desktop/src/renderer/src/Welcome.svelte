@@ -40,7 +40,7 @@
     color: var(--on-accent);
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     padding: 5px 12px;
     cursor: default;
   }

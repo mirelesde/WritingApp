@@ -176,7 +176,7 @@
     margin-left: -6px;
     border-radius: 8px;
     cursor: default;
-    font-size: 24px;
+    font-size: calc(24px * var(--ui-scale, 1));
     font-weight: 700;
     letter-spacing: -0.01em;
     text-align: left;
@@ -194,13 +194,13 @@
     margin: 0;
     padding: 8px 14px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
   .conflict-banner {
     margin: 6px 10px;
     padding: 6px 10px;
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     text-align: left;
     border: 1px solid var(--accent);
     border-radius: 7px;
@@ -211,6 +211,6 @@
     margin: 0;
     padding: 8px 14px;
     color: var(--danger);
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
 </style>

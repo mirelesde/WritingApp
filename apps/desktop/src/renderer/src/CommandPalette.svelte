@@ -108,13 +108,13 @@
     color: var(--on-accent);
   }
   .section {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     opacity: 0.6;
     margin-right: 8px;
   }
   kbd {
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     opacity: 0.7;
     white-space: nowrap;
   }

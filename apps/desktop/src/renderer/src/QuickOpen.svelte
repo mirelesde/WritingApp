@@ -113,7 +113,7 @@
     white-space: nowrap;
   }
   .where {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     opacity: 0.7;
     white-space: nowrap;
   }

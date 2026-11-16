@@ -84,7 +84,7 @@
   p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   .versions {
     display: grid;
@@ -102,7 +102,7 @@
   }
   h3 {
     margin: 0 0 4px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   h3 small {
     font-weight: 400;

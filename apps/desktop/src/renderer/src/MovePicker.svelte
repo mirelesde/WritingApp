@@ -80,7 +80,7 @@
     margin: 0;
     padding: 12px 14px 4px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
   input {
     margin: 10px;

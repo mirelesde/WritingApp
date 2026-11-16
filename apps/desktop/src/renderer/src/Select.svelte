@@ -183,7 +183,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-popover);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   li {
     display: flex;
@@ -201,11 +201,11 @@
     width: 16px;
     flex: none;
     text-align: center;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
   .group {
     padding: 6px 9px 2px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     font-weight: 600;
     color: var(--muted);
   }

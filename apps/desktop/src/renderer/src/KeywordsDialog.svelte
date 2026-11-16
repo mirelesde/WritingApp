@@ -146,7 +146,7 @@
   .label {
     margin: 4px 0 0;
     color: var(--muted);
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
   .chips {
     display: flex;
@@ -164,14 +164,14 @@
     background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--text);
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   .chip.partial {
     color: var(--muted);
   }
   .chip small {
     color: var(--muted);
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
   }
   .chip.suggestion {
     padding: 2px 10px;
@@ -189,7 +189,7 @@
     color: var(--muted);
     cursor: default;
     padding: 0 6px;
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-scale, 1));
     line-height: 1;
   }
   .x:hover {
@@ -197,6 +197,6 @@
   }
   .none {
     color: var(--muted);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
 </style>

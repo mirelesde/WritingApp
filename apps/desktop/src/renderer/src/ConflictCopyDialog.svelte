@@ -81,9 +81,9 @@
   p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   .counts {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
 </style>

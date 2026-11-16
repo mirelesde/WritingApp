@@ -67,7 +67,7 @@
   }
   h2 {
     margin: 0 8px 8px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     font-weight: 600;
     color: var(--muted);
   }
@@ -77,7 +77,7 @@
   .where {
     display: block;
     padding: 0 8px 4px;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
     color: var(--faint);
   }
   ul {
@@ -94,7 +94,7 @@
     border-radius: var(--radius-sm);
     padding: 5px 8px;
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--muted);
     cursor: default;
     overflow: hidden;
@@ -115,7 +115,7 @@
   }
   .none {
     margin: 0 8px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--muted);
     line-height: 1.4;
   }

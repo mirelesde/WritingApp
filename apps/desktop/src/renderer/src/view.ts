@@ -1,4 +1,4 @@
-import { editorFontStack, UI_FONT_FAMILIES, THEME_COLORS, type ColorTheme, type ViewSettings } from '@writingapp/core'
+import { editorFontStack, UI_FONT_SIZE, UI_FONT_FAMILIES, THEME_COLORS, type ColorTheme, type ViewSettings } from '@writingapp/core'
 
 const COLUMN_WIDTH = {
   compact: '30rem',
@@ -24,6 +24,7 @@ export function applyView(view: ViewSettings, theme?: ColorTheme): void {
       style.setProperty('--selection', `color-mix(in srgb, ${view.accent} 28%, transparent)`)
     }
   }
+  style.setProperty('--ui-scale', String(view.uiFontSize / UI_FONT_SIZE))
   style.setProperty('--ui-font', UI_FONT_FAMILIES[view.uiFont])
   style.setProperty('--editor-font', editorFontStack(view))
   style.setProperty('--editor-size', `${view.fontSize}px`)

@@ -79,7 +79,7 @@
   p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   ul {
     list-style: none;
@@ -98,7 +98,7 @@
     align-items: center;
     gap: 10px;
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   img {
     width: 40px;

@@ -141,7 +141,7 @@
   .tab button,
   .tabs .tab-new {
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: inherit;
     background: transparent;
     border: 0;

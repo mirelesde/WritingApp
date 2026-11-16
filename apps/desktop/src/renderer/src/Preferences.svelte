@@ -7,6 +7,8 @@
     MIN_LINE_SPACING,
     MAX_FONT_SIZE,
     MIN_FONT_SIZE,
+    MAX_UI_FONT_SIZE,
+    MIN_UI_FONT_SIZE,
     THEMES,
     type ColorTheme,
     type ViewSettings
@@ -54,7 +56,7 @@
     textAlign: { left: 'Left', justify: 'Justified' },
     sheetSort: {},
     openSheetIn: { same: 'This tab', tab: 'A new tab', window: 'A new window' },
-    uiFont: { onest: 'Onest', inter: 'Inter', geist: 'Geist', roboto: 'Roboto', 'public-sans': 'Public Sans', georgia: 'Georgia' },
+    uiFont: { geist: 'Geist', georgia: 'Georgia', 'source-serif-4': 'Source Serif 4' },
     saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' }
   }
 
@@ -67,12 +69,9 @@
     serif: 'Serif',
     sans: 'Sans',
     mono: 'Mono',
-    onest: 'Onest',
-    inter: 'Inter',
     geist: 'Geist',
-    roboto: 'Roboto',
-    'public-sans': 'Public Sans',
     georgia: 'Georgia',
+    'source-serif-4': 'Source Serif 4',
     custom: 'System font…'
   }
   /** Families installed on this computer, when the browser will list them. */
@@ -241,6 +240,22 @@
           options={CHOICES.uiFont.map((value) => ({ value, label: names.uiFont[value] }))}
           onchange={(uiFont) => onchange({ uiFont: uiFont as typeof view.uiFont })}
         />
+      </div>
+      <div class="row">
+        <span id="pref-ui-size">Interface text size<small>Lists, menus and dialogs</small></span>
+        <div class="stepper" role="group" aria-labelledby="pref-ui-size">
+          <button
+            aria-label="Smaller"
+            disabled={view.uiFontSize <= MIN_UI_FONT_SIZE}
+            onclick={() => onchange({ uiFontSize: view.uiFontSize - 1 })}>−</button
+          >
+          <output>{view.uiFontSize} px</output>
+          <button
+            aria-label="Larger"
+            disabled={view.uiFontSize >= MAX_UI_FONT_SIZE}
+            onclick={() => onchange({ uiFontSize: view.uiFontSize + 1 })}>+</button
+          >
+        </div>
       </div>
       <div class="row">
         <span>Editor font<small>Comes with the app, or any font installed on this computer</small></span>
@@ -493,7 +508,7 @@
     background: none;
     color: var(--accent);
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     padding: 0;
   }
   .dialog {
@@ -514,7 +529,7 @@
   .tabs button {
     flex: 1;
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--text);
     background: none;
     border: none;
@@ -537,7 +552,7 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
+    font-size: calc(15px * var(--ui-scale, 1));
   }
   .row {
     display: flex;
@@ -553,7 +568,7 @@
   small {
     display: block;
     margin-top: 2px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
   }
   .segments {
@@ -565,7 +580,7 @@
   .segments button,
   .stepper button {
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--text);
     background: none;
     border: none;

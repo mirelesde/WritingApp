@@ -4,7 +4,7 @@
  */
 export const THEMES = ['system', 'light', 'dark'] as const
 /** Editor fonts: three system stacks, the interface fonts that come with the app, and `custom` (any installed font, named in `fontCustom`). */
-export const FONTS = ['serif', 'sans', 'mono', 'onest', 'inter', 'geist', 'roboto', 'public-sans', 'georgia', 'custom'] as const
+export const FONTS = ['serif', 'sans', 'mono', 'geist', 'georgia', 'source-serif-4', 'custom'] as const
 
 /** Options that are one of a few named choices; the first of each list is not necessarily the default. */
 export const CHOICES = {
@@ -19,7 +19,7 @@ export const CHOICES = {
   sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
   saveMode: ['auto', 'switch', 'manual'],
   openSheetIn: ['same', 'tab', 'window'],
-  uiFont: ['onest', 'inter', 'geist', 'roboto', 'public-sans', 'georgia']
+  uiFont: ['geist', 'georgia', 'source-serif-4']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -46,6 +46,10 @@ export type Font = (typeof FONTS)[number]
 
 export const MIN_FONT_SIZE = 12
 export const MAX_FONT_SIZE = 32
+/** Size of the interface's own text, in pixels (14 is the design size). */
+export const MIN_UI_FONT_SIZE = 12
+export const MAX_UI_FONT_SIZE = 18
+export const UI_FONT_SIZE = 14
 
 export interface ViewSettings {
   theme: Theme
@@ -104,6 +108,8 @@ export interface ViewSettings {
   openSheetIn: OpenSheetIn
   /** Typeface of the interface: lists, menus, dialogs. */
   uiFont: UiFont
+  /** Size of the interface's text in pixels. */
+  uiFontSize: number
   /** Show how many sheets each group holds, beside its name in the library. */
   groupCounts: boolean
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
@@ -140,20 +146,18 @@ export const DEFAULT_VIEW: ViewSettings = {
   colorTheme: '',
   saveMode: 'auto',
   openSheetIn: 'same',
-  uiFont: 'onest',
+  uiFont: 'geist',
+  uiFontSize: UI_FONT_SIZE,
   groupCounts: true,
   saveIndicator: true,
 }
 
 /** CSS font names of the bundled interface fonts. */
 export const UI_FONT_FAMILIES: Record<UiFont, string> = {
-  onest: "'Onest'",
-  inter: "'Inter'",
   geist: "'Geist'",
-  roboto: "'Roboto'",
-  'public-sans': "'Public Sans'",
   // Not bundled: it is on macOS and Windows, and falls back to a serif where it is missing.
-  georgia: "Georgia, 'Times New Roman', serif"
+  georgia: "Georgia, 'Times New Roman', serif",
+  'source-serif-4': "'Source Serif 4', serif"
 }
 
 /** CSS font stacks, by name. */
@@ -161,12 +165,9 @@ export const FONT_STACKS: Record<Font, string> = {
   serif: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
   sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
   mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
-  onest: "'Onest', sans-serif",
-  inter: "'Inter', sans-serif",
   geist: "'Geist', sans-serif",
-  roboto: "'Roboto', sans-serif",
-  'public-sans': "'Public Sans', sans-serif",
   georgia: "Georgia, 'Times New Roman', serif",
+  'source-serif-4': "'Source Serif 4', serif",
   custom: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
 }
 
@@ -234,6 +235,9 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   if (typeof record.paragraphIndent === 'boolean') out.paragraphIndent = record.paragraphIndent
   // Settings saved before there were modes: autosave off meant saving on switch and close.
   if (record.saveMode === undefined && record.autosave === false) out.saveMode = 'switch'
+  if (typeof record.uiFontSize === 'number' && Number.isFinite(record.uiFontSize)) {
+    out.uiFontSize = Math.min(MAX_UI_FONT_SIZE, Math.max(MIN_UI_FONT_SIZE, Math.round(record.uiFontSize)))
+  }
   if (typeof record.groupCounts === 'boolean') out.groupCounts = record.groupCounts
   if (typeof record.saveIndicator === 'boolean') out.saveIndicator = record.saveIndicator
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {

@@ -377,7 +377,7 @@
     gap: 8px;
     padding: 6px 14px;
     border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   .styles .desc {
     flex: 1;
@@ -431,7 +431,7 @@
   }
   .problem {
     color: var(--danger);
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
   }
   button.danger {
     color: var(--danger);
@@ -465,7 +465,7 @@
   }
   button {
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     padding: 5px 12px;
     color: inherit;
     background: color-mix(in srgb, var(--text) 8%, transparent);
@@ -488,7 +488,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
   }
 
@@ -514,7 +514,7 @@
     color: var(--muted);
   }
   .hint {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--accent);
     white-space: nowrap;
   }

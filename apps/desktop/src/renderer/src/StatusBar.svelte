@@ -52,7 +52,7 @@
     border-radius: 999px;
     background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--muted);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     user-select: none;

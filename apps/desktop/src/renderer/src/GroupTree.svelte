@@ -266,7 +266,7 @@
   }
   .name {
     flex: 1;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     text-align: left;
     padding: 5px 6px 5px 0;
     overflow: hidden;
@@ -291,7 +291,7 @@
   .count {
     flex: none;
     margin: 0 8px 0 4px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
@@ -310,7 +310,7 @@
     border: 1.5px solid transparent;
     padding: 0;
     line-height: 1;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
     color: var(--muted);
   }
   .swatch.on {

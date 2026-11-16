@@ -124,12 +124,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--muted);
   }
   .all button {
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     padding: 2px 8px;
     margin-left: 4px;
     border-radius: 6px;
@@ -141,7 +141,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     font-weight: 600;
   }
   .rows {
@@ -162,7 +162,7 @@
     display: block;
     width: 100%;
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     text-align: center;
     padding: 3px;
     border: 0;
@@ -206,7 +206,7 @@
   .choose {
     align-self: flex-start;
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     padding: 1px 8px;
     border-radius: 6px;
     border: 1px solid var(--border);

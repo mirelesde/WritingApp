@@ -279,14 +279,14 @@
     margin: 0;
     padding: 0 24px 10vh;
     color: var(--faint);
-    font-size: 30px;
+    font-size: calc(30px * var(--ui-scale, 1));
     font-weight: 300;
     text-align: center;
     user-select: none;
     pointer-events: none;
   }
   .placeholder.small {
-    font-size: 17px;
+    font-size: calc(17px * var(--ui-scale, 1));
   }
   /* The group's name lines up with the sheet titles below it. */
   .sheets ul {
@@ -362,7 +362,7 @@
   .sheet-section {
     margin: 14px 4px 2px;
     padding: 0 6px 5px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     font-weight: 600;
     color: var(--muted);
     border-bottom: 1px solid var(--border);
@@ -375,7 +375,7 @@
   }
   .sheet-note {
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
     opacity: 0.65;
     font-variant-numeric: tabular-nums;
   }
@@ -397,16 +397,16 @@
     opacity: 0.7;
   }
   .sheet-title {
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     font-weight: 600;
   }
   .sheet-preview {
     color: var(--muted);
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     line-height: 1.4;
     margin-top: 3px;
     /* Always three lines tall, so every card is the same height. */
-    height: calc(3 * 1.4 * 12px);
+    height: calc(3 * 1.4 * 12px * var(--ui-scale, 1));
     /* Up to three lines, like a card in Ulysses. */
     white-space: normal;
     display: -webkit-box;
@@ -422,7 +422,7 @@
   }
   .kw-button {
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     padding: 0 9px;
     border-radius: 8px;
     border: 1px solid transparent;
@@ -450,7 +450,7 @@
   .sheet-where {
     display: block;
     margin-top: 2px;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
     opacity: 0.65;
     white-space: nowrap;
     overflow: hidden;
@@ -464,7 +464,7 @@
   }
   .kw {
     padding: 2px 9px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     border-radius: 999px;
     background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--muted);
@@ -474,7 +474,7 @@
     min-width: 0;
     width: 100%;
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--text);
     background: color-mix(in srgb, var(--text) 7%, transparent);
     border: 1px solid transparent;

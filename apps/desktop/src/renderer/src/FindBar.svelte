@@ -379,7 +379,7 @@
   .count {
     position: absolute;
     right: 52px;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
     color: var(--muted);
     white-space: nowrap;
     pointer-events: none;
@@ -423,7 +423,7 @@
   }
   .opt {
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     background: color-mix(in srgb, var(--text) 7%, transparent);
   }
   .opt.on {
@@ -449,7 +449,7 @@
   }
   .close {
     margin-left: auto;
-    font-size: 18px;
+    font-size: calc(18px * var(--ui-scale, 1));
     line-height: 1;
     width: 26px;
     height: 26px;
@@ -457,7 +457,7 @@
   }
   .act {
     padding: 5px 12px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--text);
   }
@@ -466,12 +466,12 @@
   }
   kbd {
     font: inherit;
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-scale, 1));
     margin-left: 4px;
     color: var(--muted);
   }
   .done {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
   }
 </style>

@@ -72,17 +72,17 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
+    font-size: calc(15px * var(--ui-scale, 1));
   }
   p {
     margin: 0;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     color: var(--muted);
   }
   ul {
     margin: 0;
     padding-left: 18px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
   }
   .buttons {
     display: flex;

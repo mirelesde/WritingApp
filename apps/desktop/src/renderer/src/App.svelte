@@ -1331,7 +1331,7 @@
     margin: 0;
     padding: 0 24px 10vh;
     color: var(--faint);
-    font-size: 30px;
+    font-size: calc(30px * var(--ui-scale, 1));
     font-weight: 300;
     text-align: center;
     user-select: none;
@@ -1399,7 +1399,7 @@
     background: transparent;
     color: var(--text);
     font: inherit;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     text-align: left;
     cursor: default;
   }
@@ -1412,7 +1412,7 @@
   }
   :global(.style-menu kbd) {
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
   }
   .above {

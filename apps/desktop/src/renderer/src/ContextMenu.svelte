@@ -141,7 +141,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-popover);
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-scale, 1));
     user-select: none;
   }
   li {
@@ -162,7 +162,7 @@
   }
   kbd {
     font: inherit;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
   }
   li.active kbd {

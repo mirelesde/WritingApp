@@ -120,9 +120,9 @@ describe('saving settings', () => {
 })
 
 describe('interface font', () => {
-  it('defaults to Onest and accepts only the bundled fonts', () => {
-    expect(resolveView().uiFont).toBe('onest')
-    expect(parseViewSettings({ uiFont: 'public-sans' })).toEqual({ uiFont: 'public-sans' })
+  it('defaults to Geist and accepts only the offered fonts', () => {
+    expect(resolveView().uiFont).toBe('geist')
+    expect(parseViewSettings({ uiFont: 'georgia' })).toEqual({ uiFont: 'georgia' })
     expect(parseViewSettings({ uiFont: 'comic-sans' })).toEqual({})
   })
 })
@@ -136,5 +136,13 @@ describe('editor font', () => {
   it('refuses names that could break out of the stack', () => {
     expect(parseViewSettings({ fontCustom: "x'; color: red" })).toEqual({})
     expect(editorFontStack({ font: 'custom', fontCustom: '' })).toBe(editorFontStack({ font: 'sans', fontCustom: '' }))
+  })
+})
+
+describe('interface text size', () => {
+  it('defaults to 14 and stays within 12 to 18', () => {
+    expect(resolveView().uiFontSize).toBe(14)
+    expect(parseViewSettings({ uiFontSize: 3 })).toEqual({ uiFontSize: 12 })
+    expect(parseViewSettings({ uiFontSize: 99 })).toEqual({ uiFontSize: 18 })
   })
 })

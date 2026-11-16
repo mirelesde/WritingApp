@@ -58,7 +58,7 @@
     align-items: center;
     gap: 6px;
     margin-right: 6px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-scale, 1));
     color: var(--muted);
     white-space: nowrap;
     user-select: none;
