@@ -60,8 +60,9 @@
   .tabs {
     display: flex;
     align-items: stretch;
-    height: 36px;
-    padding: 0 8px;
+    height: 42px;
+    padding: 6px 8px 0;
+    box-sizing: border-box;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
