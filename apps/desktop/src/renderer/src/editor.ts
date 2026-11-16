@@ -32,6 +32,7 @@ import { formattingKeymap } from './formatting'
 import { blockKeymap } from './blockStyle'
 import { headingMarks } from './headingMarks'
 import { paragraphStarts } from './paragraphs'
+import { lineBreaks } from './breaks'
 import { currentHeading, nextHeading, previousHeading } from './headingJump'
 
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
@@ -101,6 +102,7 @@ const theme = EditorView.theme({
   },
   '.cm-line:hover .cm-fold-chevron, .cm-fold-chevron:hover': { opacity: '1' },
   '.cm-fold-chevron:hover': { color: 'var(--accent)' },
+  '.cm-break-mark': { color: 'var(--faint)', fontFamily: 'var(--ui-font, sans-serif)', fontSize: '0.85em', marginLeft: '0.25em', userSelect: 'none', pointerEvents: 'none' },
   '.cm-heading-line': { textAlign: 'left' },
   '.cm-heading-tight': {
     paddingBottom: 'calc(var(--editor-size) * var(--editor-line-height, 1.75) * var(--blank-line-scale, 1))'
@@ -259,6 +261,7 @@ export function editorExtensions({
     blankLines,
     headingMarks,
     paragraphStarts,
+    lineBreaks,
     taskBoxes,
     contentsChip,
     tableWidgets,
