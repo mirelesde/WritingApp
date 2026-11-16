@@ -194,7 +194,11 @@ const chevrons = ViewPlugin.fromClass(
           pos = line.to + 1
           if (line.number <= lastLine) continue
           lastLine = line.number
-          if (!/^#{1,6}(\s|$)/.test(line.text) || !section(state, line.from, line.to)) continue
+          if (!/^#{1,6}(\s|$)/.test(line.text)) continue
+          // Headings are never justified: folding adds the "…" chip to the line, which would
+          // change the spacing between the words of a justified heading.
+          builder.add(line.from, line.from, Decoration.line({ class: 'cm-heading-line' }))
+          if (!section(state, line.from, line.to)) continue
           const folded = foldedAt(state, line.to) !== null
           const level = line.text.match(/^#+/)![0].length
           builder.add(line.from, line.from, Decoration.widget({ widget: new Chevron(folded, level), side: -1 }))

@@ -101,6 +101,7 @@ const theme = EditorView.theme({
   },
   '.cm-line:hover .cm-fold-chevron, .cm-fold-chevron:hover': { opacity: '1' },
   '.cm-fold-chevron:hover': { color: 'var(--accent)' },
+  '.cm-heading-line': { textAlign: 'left' },
   '.cm-fold-placeholder': {
     color: 'var(--faint)',
     border: '1px solid var(--border)',
