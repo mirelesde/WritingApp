@@ -48,22 +48,38 @@ function section(state: EditorState, lineStart: number, lineEnd: number): { from
   return last.to > from ? { from, to: last.to } : null
 }
 
+/**
+ * The height of a heading's first line as a multiple of the text size: its font size times its
+ * line height (see the heading styles in editor.ts), or the body's own line height if that is more.
+ */
+const LINE_FACTOR = [0, 2.7 * 1.3, 2.1 * 1.3, 1.6 * 1.3, 1.2 * 1.65, 1.2 * 1.65, 1.2 * 1.65]
+
 class Chevron extends WidgetType {
-  constructor(readonly folded: boolean) {
+  constructor(
+    readonly folded: boolean,
+    readonly level: number
+  ) {
     super()
   }
   eq(other: Chevron): boolean {
-    return other.folded === this.folded
+    return other.folded === this.folded && other.level === this.level
   }
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('span')
     dom.className = 'cm-fold-chevron' + (this.folded ? ' cm-fold-closed' : '')
     dom.setAttribute('aria-hidden', 'true')
+    dom.style.setProperty('--level', String(this.level))
+    // As tall as the heading's first line, so the chevron sits at the middle of its text.
+    dom.style.height = `calc(var(--editor-size) * max(var(--editor-line-height, 1.65), ${LINE_FACTOR[this.level]}))`
     // Drawn as a shape, not text, so it looks the same in every editor font: right when folded, down when open.
     const path = this.folded ? 'M5 3l5 5-5 5' : 'M3 5l5 5 5-5'
     dom.innerHTML = `<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>`
     dom.onmousedown = (event) => {
       event.preventDefault()
+      // The click rebuilds this widget, so by the time it bubbled up the page would no longer
+      // see it as part of the editor and treat it as a click below the text, moving the cursor
+      // to the end of the sheet and scrolling there.
+      event.stopPropagation()
       toggleAt(view, view.posAtDOM(dom))
     }
     return dom
@@ -73,8 +89,6 @@ class Chevron extends WidgetType {
   }
 }
 
-const closed = new Chevron(true)
-const open = new Chevron(false)
 
 /** The folded range starting at the end of the line holding `pos`, if there is one. */
 function foldedAt(state: EditorState, lineEnd: number): { from: number; to: number } | null {
@@ -182,7 +196,8 @@ const chevrons = ViewPlugin.fromClass(
           lastLine = line.number
           if (!/^#{1,6}(\s|$)/.test(line.text) || !section(state, line.from, line.to)) continue
           const folded = foldedAt(state, line.to) !== null
-          builder.add(line.from, line.from, Decoration.widget({ widget: folded ? closed : open, side: -1 }))
+          const level = line.text.match(/^#+/)![0].length
+          builder.add(line.from, line.from, Decoration.widget({ widget: new Chevron(folded, level), side: -1 }))
         }
       }
       return builder.finish()

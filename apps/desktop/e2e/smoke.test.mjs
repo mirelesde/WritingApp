@@ -202,6 +202,21 @@ describe('the app', () => {
     assert.equal(await app.eval(`document.querySelectorAll('.tab').length`), 2)
   })
 
+  it('opening a folded section with its chevron does not scroll to the end of the section', async () => {
+    const body = Array.from({ length: 120 }, (_, i) => `Line ${i} of the section.`).join('\n\n')
+    await start({ 'Novel/Alpha.md': `# Alpha heading\n\n${body}\n\n## Next\n\nafter`, 'Novel/Beta.md': 'Second.' })
+    await app.open('Alpha')
+    await until(() => app.eval(`document.querySelector('.cm-fold-chevron') !== null`), 'the chevron')
+    const chevron = `document.querySelector('.cm-fold-chevron')`
+    await app.eval(`${chevron}.style.opacity = 1`)
+    await app.click(chevron) // fold
+    await until(() => app.eval(`${chevron}.classList.contains('cm-fold-closed')`), 'the section folded')
+    await app.click(chevron) // unfold
+    await until(() => app.eval(`!${chevron}.classList.contains('cm-fold-closed')`), 'the section open')
+    await sleep(600)
+    assert.ok((await app.eval(`document.querySelector('.scroller').scrollTop`)) < 500)
+  })
+
   it('exports the group as Markdown through the export dialog', async () => {
     await start()
     await app.stubDialogs()

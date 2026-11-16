@@ -83,10 +83,10 @@ const theme = EditorView.theme({
   // Fold chevron: hung in the left margin of a heading, shown only while the pointer is near.
   '.cm-fold-chevron': {
     position: 'absolute',
-    left: '-60px',
+    // Left of the hung # marks, which are about two thirds of the text size wide each.
+    left: 'calc(-52px - var(--chev-hang, 0px) * min(var(--level, 1), 4))',
     top: '0',
     width: '48px',
-    height: '1.3em',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-end',

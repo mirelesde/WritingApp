@@ -127,6 +127,9 @@ html.indent-paras .cm-para-first {
 .cm-hang-gap {
   font-size: var(--editor-size);
 }
+html.hang-marks {
+  --chev-hang: calc(var(--editor-size) * 0.66);
+}
 html.hang-marks .cm-hang {
   display: inline-block;
   width: 0;
