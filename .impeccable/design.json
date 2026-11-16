@@ -1,0 +1,621 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T09:16:52+00:00",
+  "title": "Design System: WritingApp",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "The Writer's Accent (Graphite Gray default)",
+        "canonical": "#6b7280",
+        "tonalRamp": [
+          "#242628",
+          "#3f4248",
+          "#595e68",
+          "#737a89",
+          "#9398a3",
+          "#b3b6bd",
+          "#d3d4d7",
+          "#f2f2f3"
+        ]
+      },
+      "accent-theme": {
+        "role": "primary",
+        "displayName": "Stylesheet Teal",
+        "canonical": "#2f6f6a",
+        "tonalRamp": [
+          "#1d2f2e",
+          "#305754",
+          "#3f827d",
+          "#4bb0a8",
+          "#77beb9",
+          "#a3cdca",
+          "#cbdfde",
+          "#f0f5f4"
+        ]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "On Accent",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "editor-paper": {
+        "role": "neutral",
+        "displayName": "Editor Paper",
+        "canonical": "#fcfcfc",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "sheet-list": {
+        "role": "neutral",
+        "displayName": "Sheet List Gray",
+        "canonical": "#f4f4f4",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Sidebar Gray",
+        "canonical": "#ebebeb",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#222222",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#757575",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#e2e2e2",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover",
+        "canonical": "#eaeaea",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selected",
+        "canonical": "#dcdcdc",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "text-selection": {
+        "role": "neutral",
+        "displayName": "Text Selection",
+        "canonical": "#d3e0de",
+        "tonalRamp": [
+          "#222a29",
+          "#3b4c49",
+          "#526f6a",
+          "#68938d",
+          "#8caaa5",
+          "#afc1be",
+          "#d1d9d8",
+          "#f1f3f3"
+        ]
+      },
+      "marker": {
+        "role": "neutral",
+        "displayName": "Marker",
+        "canonical": "#b4b4b4",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "comment-red": {
+        "role": "semantic",
+        "displayName": "Comment Red",
+        "canonical": "#c8372d",
+        "tonalRamp": [
+          "#341a18",
+          "#622925",
+          "#95332c",
+          "#cd392f",
+          "#d26b64",
+          "#d99b97",
+          "#e5c7c5",
+          "#f6efef"
+        ]
+      },
+      "quote-blue": {
+        "role": "semantic",
+        "displayName": "Quote Blue",
+        "canonical": "#1f6fd0",
+        "tonalRamp": [
+          "#162537",
+          "#204067",
+          "#235b9e",
+          "#2175da",
+          "#5a95db",
+          "#91b4df",
+          "#c3d3e8",
+          "#eef2f7"
+        ]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Danger",
+        "canonical": "#c0392b",
+        "tonalRamp": [
+          "#341b18",
+          "#622b25",
+          "#95362c",
+          "#cd3e2f",
+          "#d26e63",
+          "#d99d97",
+          "#e5c8c5",
+          "#f6efef"
+        ]
+      },
+      "editor-paper-dark": {
+        "role": "neutral",
+        "displayName": "Editor Paper (dark)",
+        "canonical": "#1c1c1c",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "sheet-list-dark": {
+        "role": "neutral",
+        "displayName": "Sheet List Gray (dark)",
+        "canonical": "#242424",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "sidebar-dark": {
+        "role": "neutral",
+        "displayName": "Sidebar Gray (dark)",
+        "canonical": "#2d2d2d",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark)",
+        "canonical": "#e6e6e6",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "muted-ink-dark": {
+        "role": "neutral",
+        "displayName": "Muted Ink (dark)",
+        "canonical": "#8e8e8e",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "hairline-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "#353535",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "hover-dark": {
+        "role": "neutral",
+        "displayName": "Hover (dark)",
+        "canonical": "#393939",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "selected-dark": {
+        "role": "neutral",
+        "displayName": "Selected (dark)",
+        "canonical": "#464646",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7e7e7e",
+          "#9b9b9b",
+          "#b8b8b8",
+          "#d5d5d5",
+          "#f2f2f2"
+        ]
+      },
+      "accent-theme-dark": {
+        "role": "primary",
+        "displayName": "Stylesheet Teal (dark)",
+        "canonical": "#6fb3ac",
+        "tonalRamp": [
+          "#1f2d2c",
+          "#34524f",
+          "#477a75",
+          "#57a49c",
+          "#80b6b0",
+          "#a8c8c5",
+          "#cddddb",
+          "#f0f4f4"
+        ]
+      },
+      "on-accent-dark": {
+        "role": "primary",
+        "displayName": "On Accent (dark)",
+        "canonical": "#0f1f1e",
+        "tonalRamp": [
+          "#1f2e2d",
+          "#335452",
+          "#447d7a",
+          "#52a9a4",
+          "#7cb9b5",
+          "#a6cac8",
+          "#ccdedd",
+          "#f0f4f4"
+        ]
+      },
+      "highlight": {
+        "role": "semantic",
+        "displayName": "Highlight"
+      },
+      "control-fill": {
+        "role": "neutral",
+        "displayName": "Control Fill"
+      },
+      "control-fill-hover": {
+        "role": "neutral",
+        "displayName": "Control Fill Hover"
+      },
+      "field-fill": {
+        "role": "neutral",
+        "displayName": "Field Fill"
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim"
+      }
+    },
+    "typographyMeta": {
+      "empty-state": {
+        "displayName": "Empty state",
+        "purpose": "Quiet message centered in an empty pane, in Faint."
+      },
+      "dialog-title": {
+        "displayName": "Dialog title",
+        "purpose": "Dialog h2s; largest interface text outside empty states."
+      },
+      "pane-title": {
+        "displayName": "Pane title",
+        "purpose": "Group name in the sheet list header."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons, fields, menu items, rows, tabs; the workhorse."
+      },
+      "card-title": {
+        "displayName": "Card title",
+        "purpose": "Sheet title in its card."
+      },
+      "secondary": {
+        "displayName": "Secondary",
+        "purpose": "Card previews, counts, shortcuts."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Smallest labels."
+      },
+      "writing": {
+        "displayName": "Writing",
+        "purpose": "Editor default: Sans 16px, 1.75, justified, 46rem column. Writer-configurable."
+      },
+      "writing-h1": {
+        "displayName": "Heading 1",
+        "purpose": "In-text H1."
+      },
+      "writing-h2": {
+        "displayName": "Heading 2",
+        "purpose": "In-text H2."
+      },
+      "writing-h3": {
+        "displayName": "Heading 3",
+        "purpose": "In-text H3."
+      }
+    },
+    "shadows": [
+      {
+        "name": "popover",
+        "value": "0 12px 40px rgb(0 0 0 / 0.3)",
+        "purpose": "Dialogs, context menus, dropdown lists."
+      },
+      {
+        "name": "footnote",
+        "value": "0 6px 24px rgba(0, 0, 0, 0.18)",
+        "purpose": "Footnote popover in the text."
+      }
+    ],
+    "motion": [
+      {
+        "name": "chevron-turn",
+        "value": "transform 120ms ease-out",
+        "purpose": "Disclosure chevrons rotating open."
+      },
+      {
+        "name": "check-in",
+        "value": "transform 100ms",
+        "purpose": "Checkbox tick scaling in."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default dialog and toolbar button: a light ink tint, no border.",
+      "html": "<button class=\"ds-btn\">Cancel</button>",
+      "css": ".ds-btn{font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:13px;padding:5px 12px;border:none;border-radius:6px;background:color-mix(in srgb,var(--text, #222) 8%,transparent);color:var(--text, #222);cursor:default;transition:background 120ms} .ds-btn:hover{background:color-mix(in srgb,var(--text, #222) 13%,transparent)} .ds-btn:focus-visible{outline:2px solid var(--accent, #6b7280);outline-offset:1px}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action in a dialog (Return).",
+      "html": "<button class=\"ds-btn-primary\">Move</button>",
+      "css": ".ds-btn-primary{font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:13px;padding:5px 12px;border:none;border-radius:6px;background:var(--accent, #6b7280);color:var(--on-accent, #fff);cursor:default} .ds-btn-primary:hover{background:color-mix(in srgb,var(--accent, #6b7280) 88%,black)} .ds-btn-primary:focus-visible{outline:2px solid var(--accent, #6b7280);outline-offset:1px}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action: danger-colored text on the default tint.",
+      "html": "<button class=\"ds-btn-danger\">Delete</button>",
+      "css": ".ds-btn-danger{font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:13px;padding:5px 12px;border:none;border-radius:6px;background:color-mix(in srgb,var(--text, #222) 8%,transparent);color:var(--danger, #c0392b);cursor:default} .ds-btn-danger:hover{background:color-mix(in srgb,var(--text, #222) 13%,transparent)} .ds-btn-danger:focus-visible{outline:2px solid var(--accent, #6b7280);outline-offset:1px}"
+    },
+    {
+      "name": "Tool Button",
+      "kind": "button",
+      "refersTo": "tool-button",
+      "description": "Icon button in pane headers and the editor bar.",
+      "html": "<button class=\"ds-tool\" aria-label=\"New sheet\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 5v14M5 12h14\"/></svg></button><button class=\"ds-tool\" aria-pressed=\"true\" aria-label=\"Outline\"><svg viewBox=\"0 0 24 24\"><path d=\"M5 7h14M8 12h11M11 17h8\"/></svg></button>",
+      "css": ".ds-tool{width:30px;height:28px;display:inline-grid;place-items:center;border:none;border-radius:6px;background:transparent;color:var(--muted, #757575);padding:0;cursor:default} .ds-tool:hover{background:var(--hover, #eaeaea);color:var(--text, #222)} .ds-tool[aria-pressed='true']{color:var(--accent, #6b7280)} .ds-tool:focus-visible{outline:2px solid var(--accent, #6b7280);outline-offset:-2px} .ds-tool svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field: ink tint, accent border on focus, no glow.",
+      "html": "<input class=\"ds-input\" placeholder=\"Filter sheets\">",
+      "css": ".ds-input{font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:13px;color:var(--text, #222);background:color-mix(in srgb,var(--text, #222) 7%,transparent);border:1px solid transparent;border-radius:8px;padding:6px 9px;outline:none} .ds-input:focus{border-color:var(--accent, #6b7280)} .ds-input::placeholder{color:var(--muted, #757575)}"
+    },
+    {
+      "name": "Sheet Card",
+      "kind": "card",
+      "refersTo": "sheet-card",
+      "description": "A sheet in the sheet list: title plus a three-line preview; accent fill when selected in a focused pane.",
+      "html": "<div class=\"ds-cards\" tabindex=\"0\"><button class=\"ds-card\"><span class=\"ds-card-title\">Chapter one</span><span class=\"ds-card-preview\">The house stood at the end of the lane, where the hedges gave out and the fields began. Nobody had lived in it for years.</span></button><button class=\"ds-card ds-selected\"><span class=\"ds-card-title\">Chapter two</span><span class=\"ds-card-preview\">By morning the rain had stopped, and the road shone like a ribbon all the way down to the river.</span></button></div>",
+      "css": ".ds-cards{background:var(--list, #f4f4f4);padding:6px;width:260px;outline:none;font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-card{display:block;width:100%;text-align:left;background:none;border:none;border-radius:10px;padding:10px 12px;margin-bottom:4px;color:var(--text, #222);cursor:default} .ds-card:hover{background:var(--hover, #eaeaea)} .ds-card.ds-selected{background:var(--selected, #dcdcdc)} .ds-cards:focus .ds-card.ds-selected{background:var(--accent, #6b7280);color:var(--on-accent, #fff)} .ds-cards:focus .ds-card.ds-selected .ds-card-preview{color:inherit;opacity:.8} .ds-card-title{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ds-card-preview{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:12px;line-height:1.4;height:calc(3*1.4*12px);color:var(--muted, #757575)}"
+    },
+    {
+      "name": "Group Row",
+      "kind": "nav",
+      "refersTo": "group-row",
+      "description": "A library group in the sidebar tree, with icon and count.",
+      "html": "<div class=\"ds-tree\"><div class=\"ds-row\"><svg viewBox=\"0 0 24 24\"><path d=\"M3 7h6l2 2h10v9H3z\"/></svg><span class=\"ds-name\">Novel</span><span class=\"ds-count\">24</span></div><div class=\"ds-row ds-on\"><svg viewBox=\"0 0 24 24\"><path d=\"M3 7h6l2 2h10v9H3z\"/></svg><span class=\"ds-name\">Journal</span><span class=\"ds-count\">112</span></div></div>",
+      "css": ".ds-tree{background:var(--sidebar, #ebebeb);padding:6px 0;width:220px;font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-row{display:flex;align-items:center;gap:7px;border-radius:8px;margin:1px 8px;padding:5px 8px;font-size:13px;color:var(--text, #222)} .ds-row:hover{background:var(--hover, #eaeaea)} .ds-row.ds-on{background:var(--accent, #6b7280);color:var(--on-accent, #fff)} .ds-row svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;opacity:.75} .ds-name{flex:1} .ds-count{font-size:12px;opacity:.7;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Word-count pill floating over the editor; chips and Find toggles share the look.",
+      "html": "<span class=\"ds-pill\">1,284 words</span>",
+      "css": ".ds-pill{display:inline-flex;padding:5px 12px;border-radius:999px;background:color-mix(in srgb,var(--text, #222) 8%,transparent);color:var(--muted, #757575);font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:13px;font-variant-numeric:tabular-nums;backdrop-filter:blur(8px)} .ds-pill:hover{color:var(--text, #222)}"
+    },
+    {
+      "name": "Context Menu",
+      "kind": "custom",
+      "refersTo": "menu",
+      "description": "The one shell for right-click menus, palettes and dropdowns.",
+      "html": "<ul class=\"ds-menu\"><li>New sheet<kbd>⌘N</kbd></li><li class=\"ds-active\">Move to…<kbd>⌘⇧M</kbd></li><li class=\"ds-sep\"></li><li class=\"ds-off\">Glue with next</li></ul>",
+      "css": ".ds-menu{list-style:none;margin:0;padding:5px;min-width:190px;background:var(--bg, #fcfcfc);border:1px solid var(--border, #e2e2e2);border-radius:10px;box-shadow:0 12px 40px rgb(0 0 0 / .3);font-family:Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:13px;color:var(--text, #222)} .ds-menu li{display:flex;justify-content:space-between;gap:24px;padding:5px 10px;border-radius:6px} .ds-menu li:hover,.ds-menu li.ds-active{background:var(--accent, #6b7280);color:var(--on-accent, #fff)} .ds-menu kbd{font:inherit;font-size:12px;color:var(--muted, #757575)} .ds-menu li:hover kbd,.ds-menu li.ds-active kbd{color:inherit;opacity:.8} .ds-menu li.ds-off{color:color-mix(in srgb,var(--text, #222) 30%,transparent)} .ds-menu li.ds-sep{height:1px;margin:4px 2px;padding:0;background:var(--border, #e2e2e2)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Desk",
+    "overview": "A tidy writing desk where every tool is within reach and none of them speaks up. The window is three flat gray panes (library sidebar, sheet list, editor) that step in tone toward the page, and the page is the one place that asks for attention. Chrome is drawn in near-monochrome: muted ink for icons and secondary text, tinted fills instead of outlines, hairline dividers. Color comes in only when something is chosen, focused or being moved, or when it belongs to the writer's own text (comments, quotes, highlights, code).\n\nThe look is inspired by Ulysses and is identical on macOS, Windows and Linux. It does not try to look native. Everything drawn inside the window belongs to the app: menus, dropdowns, checkboxes, scrollbars, dialogs and the interface font (Geist, bundled). Only the window frame, the menu bar, file panels, spellcheck, the system light/dark setting and the color picker stay with the OS. Density is that of a desktop tool: 13px controls, compact rows, nothing oversized except empty-state messages.\n\nThe writer tunes a lot of it (accent, color theme, editor font, size, spacing, column width, interface font and scale). The system is therefore built on roles and CSS custom properties, not fixed values: new UI must read correctly under any accent preset, any color theme, both light and dark, and interface scales from 12 to 18px.",
+    "keyCharacteristics": [
+      "Three tonal panes, flat, separated by tone and hairlines rather than shadows.",
+      "Near-monochrome chrome; the accent is a role the writer fills.",
+      "Borderless controls with a light ink tint; the accent marks only focus, selection-with-focus and the main action.",
+      "One look on every OS, with app-drawn controls and a bundled UI font.",
+      "Quiet, compact desktop density: an 11/12/13/15px interface scale."
+    ],
+    "rules": [
+      {
+        "name": "The Accent Is a Slot Rule",
+        "body": "Never hard-code a hue where the accent belongs. Use `var(--accent)` and `var(--on-accent)`, and check the result in Gray (the default) and at least one saturated preset, in light and dark.",
+        "section": "colors"
+      },
+      {
+        "name": "The Focus Earns Color Rule",
+        "body": "A selected card or row is gray (`selected`) until its pane has keyboard focus; only then does it fill with the accent. Color tells the writer where their keys will go.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Decoration Rule",
+        "body": "Color is never decoration: no colored headers, badges, banners or gradients. It signals state, the writer's own marks, or code, and nothing else.",
+        "section": "colors"
+      },
+      {
+        "name": "The Four Sizes Rule",
+        "body": "Interface text is 11, 12, 13 or 15px over the 14px body base (which pane titles inherit). A new size needs a reason that one of these cannot serve; larger sizes are for headings in the text and empty states only.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Labels, section headings and menu items are sentence case. No all-caps labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Only Floating Things Cast Shadows Rule",
+        "body": "If it is part of the window, it is flat. If it floats over the window and goes away, it gets the popover shadow, a hairline border and Editor Paper.",
+        "section": "elevation & depth"
+      }
+    ],
+    "dos": [
+      "Do use the CSS custom properties (`--bg`, `--list`, `--sidebar`, `--text`, `--muted`, `--faint`, `--border`, `--hover`, `--selected`, `--accent`, `--on-accent`, `--danger`), because themes and settings replace them at runtime.",
+      "Do scale interface sizes with `calc(Npx * var(--ui-scale, 1))` and stay on the 11/12/13/15px scale.",
+      "Do make tinted fills from ink with `color-mix(in srgb, var(--text) N%, transparent)` so they work in light, dark and any theme.",
+      "Do reuse the shared `.btn`, `.input`, `.dlg` and `ContextMenu`/`Select` components instead of restyling one-offs.",
+      "Do show keyboard focus with the 2px accent outline, and draw no ring for the mouse or for `tabindex=\"-1\"` containers.",
+      "Do check new UI in light and dark, in the Gray accent and one saturated preset."
+    ],
+    "donts": [
+      "Don't use native per-OS styling inside the window: no platform-specific controls, system dropdowns, native checkboxes or scrollbars, or per-OS fonts for the interface. The look is the same on every OS.",
+      "Don't use color as decoration: no colored headers, badges, banners, icons-for-flair or gradients. Color signals state, the writer's own marks, or code.",
+      "Don't hard-code an accent hue; the accent is whatever the writer picked.",
+      "Don't introduce new interface font sizes or all-caps labels."
+    ]
+  }
+}
