@@ -18,6 +18,8 @@
     filter: string
     el: HTMLElement | undefined
     sel: SelectionState
+    /** A sheet whose right-click menu is showing without it being selected. */
+    menuTarget: string | null
     gluedFrom: Set<string>
     sheetHint: { path: string; after: boolean } | 'end' | null
     keyMod: string
@@ -47,6 +49,7 @@
     filter = $bindable(),
     el = $bindable(),
     sel,
+    menuTarget,
     gluedFrom,
     sheetHint,
     keyMod,
@@ -179,6 +182,7 @@
           <button
             class="sheet"
             class:selected={sel.has(sheet.path)}
+            class:menu-target={menuTarget === sheet.path}
             class:run-start={sheet.glued && !gluedFrom.has(sheet.path)}
             class:run-middle={sheet.glued && gluedFrom.has(sheet.path)}
             class:run-end={!sheet.glued && gluedFrom.has(sheet.path)}
@@ -340,6 +344,10 @@
   }
   .sheet.selected {
     background: var(--selected);
+  }
+  .sheet.menu-target {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
   .sort-wrap {
     position: relative;

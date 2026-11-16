@@ -42,11 +42,6 @@ export class TabsState {
     }
   }
 
-  /** Puts `path` in the front tab, in place of its sheet. */
-  replaceFront(path: string): void {
-    this.list = this.list.map((p, i) => (i === this.active ? path : p))
-  }
-
   /** Drops the tabs whose sheet is gone, keeping the same sheet in front where it survives. */
   prune(exists: (path: string) => boolean): void {
     const kept = this.list.filter(exists)

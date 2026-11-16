@@ -25,10 +25,7 @@ export interface MenuHost {
   focusTree(): void
   newSheet(): Promise<void>
   newGroup(atRoot: boolean): Promise<void>
-  /** The sheet in the front tab. */
-  frontTab(): string | undefined
-  /** Opens `path` in a tab beside `before`, the sheet the front tab had before the right-click selected `path`. */
-  openTab(path: string, before: string | undefined): Promise<void>
+  openTab(path: string): Promise<void>
   openKeywords(): void
   startRename(path: string): void
   duplicate(): Promise<void>
@@ -40,6 +37,12 @@ export interface MenuHost {
 
 /** The right-click menus: for text, and for sheets and groups in the library. */
 export class ContextMenus {
+  /** A sheet that was right-clicked without being selected; marked in the list while its menu is shown. */
+  private pending = $state<string | null>(null)
+  get target(): string | null {
+    return this.current ? this.pending : null
+  }
+
   /** The menu being shown, or null. */
   current = $state<{
     x: number
@@ -77,34 +80,32 @@ export class ContextMenus {
   /** Right-click menu: act on what was clicked, selecting it first if it is not already. */
   showNode = async (kind: NodeKind, path: string, at: { x: number; y: number }): Promise<void> => {
     if (!this.host.hasLibrary()) return
-    // Selecting a sheet replaces the front tab's sheet, so note what it held for Open in New Tab.
-    const before = this.host.frontTab()
-    if (kind === 'sheet') {
-      if (!this.host.isSelected(path)) await this.host.selectSheet(path)
-    } else if (this.host.selectedGroup() !== path) {
+    // A sheet is not selected by the click, since selecting it would open it in the tab you are
+    // in. It is marked while the menu is up, and selected only for a command that acts on the selection.
+    this.pending = kind === 'sheet' && !this.host.isSelected(path) ? path : null
+    if (kind !== 'sheet' && this.host.selectedGroup() !== path) {
       this.host.selectGroup(path)
       await this.host.tick()
     }
     this.current = {
       ...at,
       items: nodeMenuItems(kind, this.host.canPaste(), this.host.isMac),
-      onpick: (item) => void this.act(kind, path, item.action, before)
+      onpick: (item) => void this.act(kind, path, item.action)
     }
   }
 
   /** Does what a chosen item says. Commands that act on the selection first make sure the right pane has focus. */
-  act = async (
-    kind: NodeKind,
-    path: string,
-    action: string | undefined,
-    before?: string
-  ): Promise<void> => {
+  act = async (kind: NodeKind, path: string, action: string | undefined): Promise<void> => {
     const h = this.host
+    const onSelection = ['keywords', 'rename', 'duplicate', 'copy', 'cut', 'paste', 'move', 'delete']
+    if (kind === 'sheet' && action && onSelection.includes(action) && !h.isSelected(path)) {
+      await h.selectSheet(path)
+    }
     if (action === 'reveal') await this.api.revealPath(path)
     else if (action === 'copy-path') await this.api.copyPath(path)
     else if (action === 'new-sheet') await h.newSheet()
     else if (action === 'new-group') await h.newGroup(kind === 'root')
-    else if (action === 'open-tab') await h.openTab(path, before)
+    else if (action === 'open-tab') await h.openTab(path)
     else if (action === 'open-window') await this.api.newWindow(path)
     else if (action === 'keywords') h.openKeywords()
     else if (action === 'rename') h.startRename(path)

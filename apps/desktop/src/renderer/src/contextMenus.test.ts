@@ -24,7 +24,6 @@ function setup(over: { library?: boolean; selected?: boolean; group?: string } =
     focusTree: vi.fn(() => void order.push('focus')),
     newSheet: vi.fn(async () => undefined),
     newGroup: vi.fn(async () => undefined),
-    frontTab: vi.fn(() => '/L/Front'),
     openTab: vi.fn(async () => undefined),
     openKeywords: vi.fn(),
     startRename: vi.fn(),
@@ -41,14 +40,14 @@ const run = (t: ReturnType<typeof setup>, kind: NodeKind, action: string): Promi
   t.menus.act(kind, '/L/A', action)
 
 describe('ContextMenus', () => {
-  it('selects the sheet that was right-clicked, unless it already is', async () => {
+  it('marks a right-clicked sheet that is not selected, and nothing when it already is', async () => {
     const t = setup()
     await t.menus.showNode('sheet', '/L/a', at)
-    expect(t.host.selectSheet).toHaveBeenCalledWith('/L/a')
     expect(t.menus.current).toMatchObject(at)
+    expect(t.menus.target).toBe('/L/a')
     const sel = setup({ selected: true })
     await sel.menus.showNode('sheet', '/L/a', at)
-    expect(sel.host.selectSheet).not.toHaveBeenCalled()
+    expect(sel.menus.target).toBeNull()
   })
 
   it('selects the group that was right-clicked, unless it already is', async () => {
@@ -71,12 +70,22 @@ describe('ContextMenus', () => {
     expect(u.menus.current).toBeNull()
   })
 
-  it('hands Open in New Tab the sheet the front tab had before the click selected the new one', async () => {
+  it('does not open a right-clicked sheet, so Open in New Tab leaves the current tab alone', async () => {
     const t = setup()
     await t.menus.showNode('sheet', '/L/a', at)
+    expect(t.host.selectSheet).not.toHaveBeenCalled()
+    expect(t.menus.target).toBe('/L/a')
     t.menus.current?.onpick({ label: 'Open in New Tab', action: 'open-tab' })
     await Promise.resolve()
-    expect(t.host.openTab).toHaveBeenCalledWith('/L/a', '/L/Front')
+    expect(t.host.openTab).toHaveBeenCalledWith('/L/a')
+    expect(t.host.selectSheet).not.toHaveBeenCalled()
+  })
+
+  it('selects the sheet only for a command that acts on the selection', async () => {
+    const t = setup()
+    await t.menus.showNode('sheet', '/L/a', at)
+    t.menus.current?.onpick({ label: 'Duplicate', action: 'duplicate' })
+    await vi.waitFor(() => expect(t.host.selectSheet).toHaveBeenCalledWith('/L/a'))
   })
 
   it('passes simple actions straight through', async () => {
@@ -89,7 +98,7 @@ describe('ContextMenus', () => {
     expect(t.api.revealPath).toHaveBeenCalledWith('/L/A')
     expect(t.api.copyPath).toHaveBeenCalledWith('/L/A')
     expect(t.api.newWindow).toHaveBeenCalledWith('/L/A')
-    expect(t.host.openTab).toHaveBeenCalledWith('/L/A', undefined)
+    expect(t.host.openTab).toHaveBeenCalledWith('/L/A')
     expect(t.host.newGroup).toHaveBeenCalledWith(true)
   })
 
@@ -97,7 +106,7 @@ describe('ContextMenus', () => {
     const t = setup()
     await run(t, 'group', 'delete')
     expect(t.order).toEqual(['focus', 'tick', 'remove'])
-    const s = setup()
+    const s = setup({ selected: true })
     await run(s, 'sheet', 'duplicate')
     expect(s.order).toEqual(['tick', 'duplicate'])
   })
@@ -112,7 +121,7 @@ describe('ContextMenus', () => {
   })
 
   it('opens Move to… after the right pane has focus', async () => {
-    const t = setup()
+    const t = setup({ selected: true })
     await run(t, 'group', 'move')
     await run(t, 'sheet', 'move')
     expect(t.order).toEqual(['focus', 'move', 'tick', 'move'])

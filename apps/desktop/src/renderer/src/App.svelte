@@ -481,8 +481,7 @@
     focusTree: () => treeEl?.focus(),
     newSheet: () => creation.newSheet(),
     newGroup: (atRoot) => ops.newGroup(atRoot),
-    frontTab: () => tabs.front,
-    openTab: (path, before) => tabFlow.openBeside(path, before),
+    openTab: (path) => tabFlow.open(path),
     openKeywords: () => keywords.open(),
     startRename: (path) => void ops.startRename(path),
     duplicate: () => ops.duplicate(),
@@ -920,6 +919,7 @@
       onsheetdragover={dnd.sheetOver}
       onsheetclick={clickSheet}
       onsheetmenu={(path, at) => void menus.showNode('sheet', path, at)}
+      menuTarget={menus.target}
       onnew={() => void creation.newSheet()}
       onsort={(value) => void window.api.setView({ sheetSort: value })}
     />

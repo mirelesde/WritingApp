@@ -30,13 +30,6 @@ function setup(
 }
 
 describe('TabFlow', () => {
-  it('opens a right-clicked sheet in a new tab, keeping the sheet the front tab had', async () => {
-    const { flow, shown, tabs } = setup(['x'])
-    tabs.replaceFront('z') // the right-click selected z, which took the front tab
-    await flow.openBeside('z', 'x')
-    expect([tabs.list, tabs.active, shown]).toEqual([['x', 'z'], 1, ['z']])
-  })
-
   it('shows the sheet of the tab chosen', async () => {
     const { flow, shown, tabs } = setup()
     await flow.show(2)
