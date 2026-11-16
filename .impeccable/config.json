@@ -23,6 +23,12 @@
         ],
         "createdAt": "2026-11-16T09:29:45.776Z",
         "reason": "existing documented signature: the 3px accent bar marks a glued run of sheets (DESIGN.md Sheet cards); it carries state, not decoration"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-11-16T09:31:08.695Z",
+        "reason": "user confirmed: Geist is the bundled default interface font they chose"
       }
     ]
   }
