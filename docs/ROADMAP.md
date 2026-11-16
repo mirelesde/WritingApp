@@ -133,6 +133,10 @@ Numbers refer to [CHANGELOG.md](CHANGELOG.md). Roughly easiest first within each
 - **Don't Save drops the crash-recovery copy** (manual save mode): a deliberate choice so the text is not offered back later; revisit if anyone loses text this way.
 - **Real-world size:** only small test libraries and a synthetic 3,000-sheet library were measured; a long real sheet (for example the owner's "La Ley Hoy") may behave differently in the editor, outline and export. The Export dialog's width cap is a fixed number, not computed from content, and nothing guards against something else growing too wide later (a long style name, a larger font).
 
+## 4b. Considering
+
+- **A spare window for drag-out:** dragging a tab onto the desktop waits while the new window loads (the tab snaps back at once, then the window appears). Idea: keep one hidden, pre-loaded window and show it on demand, handing it the sheet. It touches window lifecycle: quitting with only the spare left, reopening from the Dock, and the spare's own start-up flow. Not decided; not built.
+
 ## 5. UI and feel
 
 The target is an OS X-inspired look that is the same on every OS, with the main window (sidebar, sheet list, editor) as the reference; not native. The list of what stays with the OS and what the app draws is in [ARCHITECTURE.md](ARCHITECTURE.md), "UI consistency". Still open:
