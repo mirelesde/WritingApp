@@ -1,4 +1,4 @@
-import { editorFontStack, UI_FONT_SIZE, UI_FONT_FAMILIES, THEME_COLORS, type ColorTheme, type ViewSettings } from '@writingapp/core'
+import { editorFontStack, isHexColour, textOn, UI_FONT_SIZE, UI_FONT_FAMILIES, THEME_COLORS, type ColorTheme, type ViewSettings } from '@writingapp/core'
 
 const COLUMN_WIDTH = {
   compact: '30rem',
@@ -18,6 +18,10 @@ export function applyView(view: ViewSettings, theme?: ColorTheme): void {
   // A colour theme and the accent override the stylesheet's own colours.
   for (const key of THEME_COLORS) style.removeProperty(`--${key}`)
   for (const [key, value] of Object.entries(theme?.colors ?? {})) style.setProperty(`--${key}`, value)
+  // Text on the accent follows the accent, so a light accent never gets white text.
+  const accent = view.accent || theme?.colors.accent
+  if (accent && isHexColour(accent)) style.setProperty('--on-accent', textOn(accent))
+  else style.removeProperty('--on-accent')
   if (view.accent) {
     style.setProperty('--accent', view.accent)
     if (!theme?.colors.selection) {

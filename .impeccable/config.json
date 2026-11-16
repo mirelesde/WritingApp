@@ -8,6 +8,12 @@
         "value": "georgia",
         "createdAt": "2026-11-16T09:24:18.669Z",
         "reason": "Claude triage: Georgia appears only in CSS_EXAMPLE, the placeholder text showing writers sample CSS for their own export style; it is not an interface font"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "source serif 4",
+        "createdAt": "2026-11-16T09:26:13.728Z",
+        "reason": "user confirmed: Source Serif 4 is a bundled interface and editor font the user asked for; documented in DESIGN.md Typography"
       }
     ]
   }

@@ -196,6 +196,18 @@ export function isHexColour(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value)
 }
 
+const channel = (hex: string, at: number): number => {
+  const v = parseInt(hex.slice(at, at + 2), 16) / 255
+  return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+}
+
+/** The text colour that reads best on a `#rrggbb` fill: white, or a near-black. */
+export function textOn(fill: string): string {
+  const light = 0.2126 * channel(fill, 1) + 0.7152 * channel(fill, 3) + 0.0722 * channel(fill, 5)
+  // White wins when the fill is darker than the point where both contrast equally (about 0.18).
+  return light < 0.18 ? '#ffffff' : '#111111'
+}
+
 /** Keeps only the valid fields of untrusted data (a settings file, an IPC argument). */
 export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   const out: Partial<ViewSettings> = {}

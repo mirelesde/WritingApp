@@ -57,6 +57,7 @@ export {
   MIN_FONT_SIZE,
   MIN_LINE_SPACING,
   isHexColour,
+  textOn,
   parseViewSettings,
   resolveView,
   THEMES,

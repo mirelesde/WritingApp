@@ -295,7 +295,7 @@ Character: quiet and tactile. Fills instead of frames, the accent held back for 
 ### Sheet cards (signature)
 - The sheet list's cards: 10px radius, 10px × 12px, a 13px semibold title and a 12px Muted preview that is always three lines tall, so every card is the same height.
 - Short inset hairlines (20px in from each side) separate cards, and step aside for a hovered or selected card.
-- Hover: Hover fill. Selected: Selected fill; with pane focus, accent fill and on-accent text, preview at 80% opacity.
+- Hover: Hover fill. Selected: Selected fill; with pane focus, accent fill and on-accent text, preview at 92% opacity.
 - A glued run of sheets shares a 3px accent left bar and its cards touch, so they read as one.
 
 ### Navigation (sidebar group tree)

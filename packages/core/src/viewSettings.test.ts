@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FONT_STACKS, editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView } from './viewSettings'
+import { FONT_STACKS, editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView, textOn } from './viewSettings'
 
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
@@ -160,5 +160,15 @@ describe('old generic font names', () => {
     expect(parseViewSettings({ font: 'serif' })).toEqual({ font: 'source-serif-4' })
     expect(parseViewSettings({ font: 'mono' })).toEqual({ font: 'mono' })
     expect(parseViewSettings({ font: 'georgia' })).toEqual({})
+  })
+})
+
+describe('textOn', () => {
+  it('puts white on dark accents and near-black on light ones', () => {
+    expect(textOn('#6b7280')).toBe('#ffffff')
+    expect(textOn('#3d6fd9')).toBe('#ffffff')
+    expect(textOn('#6fb3ac')).toBe('#111111')
+    expect(textOn('#d9722b')).toBe('#111111')
+    expect(textOn('#ffffff')).toBe('#111111')
   })
 })

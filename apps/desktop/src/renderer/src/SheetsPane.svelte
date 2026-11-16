@@ -260,7 +260,7 @@
   }
   .pane:focus .sheet.selected .sheet-preview {
     color: inherit;
-    opacity: 0.8;
+    opacity: 0.92;
   }
   .pane {
     overflow-y: auto;
@@ -274,8 +274,11 @@
   .placeholder {
     position: absolute;
     inset: var(--topbar-height) 0 0 0;
-    display: grid;
-    place-items: center;
+    /* A column, so the hint sits right under the message instead of in a row of its own. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     margin: 0;
     padding: 0 24px 10vh;
     color: var(--faint);

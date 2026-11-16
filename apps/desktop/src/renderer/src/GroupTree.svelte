@@ -321,7 +321,7 @@
   }
   :global(.pane:focus) .row.selected .count {
     color: inherit;
-    opacity: 0.8;
+    opacity: 0.92;
   }
   .rename {
     flex: 1;

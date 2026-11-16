@@ -54,7 +54,7 @@
   --sidebar: #ebebeb;
   --pane: var(--list);
   --text: #222222;
-  --muted: #757575;
+  --muted: #666666;
   --border: #e2e2e2;
   --hover: #eaeaea;
   --selected: #dcdcdc;
@@ -103,7 +103,7 @@
     --list: #242424;
     --sidebar: #2d2d2d;
     --text: #e6e6e6;
-    --muted: #8e8e8e;
+    --muted: #9a9a9a;
     --border: #353535;
     --hover: #393939;
     --selected: #464646;
