@@ -2,7 +2,7 @@
 
 Working title. A free, open-source writing app in the spirit of Ulysses: a library of ordered sheets, fast keyboard-driven organisation, and clean export. Cross-platform on desktop first, iPad and iPhone later.
 
-Companion docs: [ROADMAP.md](ROADMAP.md) (what is next), [CHANGELOG.md](CHANGELOG.md) (what was built, by item number), [RELEASING.md](RELEASING.md), [UAT.md](UAT.md) (manual test scripts).
+Companion docs: [ROADMAP.md](ROADMAP.md) (what is next), [CHANGELOG.md](CHANGELOG.md) (what was built, by item number), [RELEASING.md](RELEASING.md), [WORKFLOWS.md](WORKFLOWS.md) (the saving and tab styles the app supports), [UAT.md](UAT.md) (manual test scripts).
 
 ## Working in this repo
 

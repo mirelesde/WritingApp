@@ -2,7 +2,7 @@
 
 Working title. A free, open-source writing app: a library of ordered
 Markdown sheets, keyboard-driven organisation, and clean export.
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design, [docs/ROADMAP.md](docs/ROADMAP.md) for what is next.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design, [docs/ROADMAP.md](docs/ROADMAP.md) for what is next, and [docs/WORKFLOWS.md](docs/WORKFLOWS.md) for the different ways of working (saving and tabs) the app supports.
 
 ## Layout
 

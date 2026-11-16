@@ -99,6 +99,8 @@ Numbers refer to [CHANGELOG.md](CHANGELOG.md). Roughly easiest first within each
 
 **Small to medium**
 
+- **First-run setup.** A short setup that asks how the writer likes to work and applies a preset of the save mode, where sheets open and the save indicator (optionally the look too), re-runnable from Preferences or Help, skippable, and showing "Custom" once settings drift from a preset. See [WORKFLOWS.md](WORKFLOWS.md).
+
 - 18 Markdown preview (toggle or side by side, scroll sync optional); 19 Favorites (pinned sheets, stored in the root sidecar); 21 Goals and progress (a word target per sheet or group, in the status bar); 55 Writing session stats (words today, streak, daily target; history in app settings; builds on 21); 56 and 71 Writing aids (repeated words, readability score, dictionary and thesaurus lookup); 78 Session timer or sprint mode; 74 Sample "Welcome" library on first run; 79 Localisation (move UI strings into a table; cheaper to start early).
 - 51 Accessibility pass: screen-reader labels, a high-contrast option, reduced motion, full keyboard use of every dialog and menu.
 - 58 and 77 More export routes and Print (see above); 57 Import remainder (see above).
@@ -155,6 +157,7 @@ The target is an OS X-inspired look that is the same on every OS, with the main 
 
 ## Open questions
 
+- **First-run setup.** Whether it is a dialog or a full page, whether it also covers the look (font, size, width, accent), and whether a fourth preset for people who want tabs with autosave is worth naming.
 - **"Join".** Confirm whether this means something different from merge.
 - **Images.** Resolved: one shared `.assets/` folder per library (alternative A, next to each sheet, was tried and dropped; the browsable "stash" picker was not chosen). Open: whether to offer web-picture auto-load and thumbnails for `http:`.
 - **Name.** "WritingApp" is a placeholder; the sidecar filename depends on it.

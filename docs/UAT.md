@@ -448,7 +448,7 @@ Quick checks that earlier features still work with today's changes.
 ## 13.39 Saving only when I ask (manual mode)
 
 1. Preferences ▸ Saving ▸ Save: choose "Only when I save".
-2. Type in a sheet and wait: the file does not change, the toolbar says "Unsaved", and the toolbar shows Unsaved (the tab dot appears once a second tab is open).
+2. Type in a sheet and wait: the file does not change, the toolbar says "Unsaved" (the tab dot appears once a second tab is open).
 3. Click another sheet in the list: it opens in a new tab beside the first, and the first tab keeps its dot. Click the first tab again: your typing is still there, and the file on disk still has the old text.
 4. Click a sheet while the front tab has no changes: it replaces the front tab, as usual (no pile of tabs). Click a sheet that already has a tab: that tab comes to the front.
 5. ⌘S (File ▸ Save) saves the sheet in front (and the sheets glued to it); other tabs keep their dots. File ▸ Save All (⌘⌥S) saves every tab.
