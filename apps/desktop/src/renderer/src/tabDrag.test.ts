@@ -90,16 +90,31 @@ describe('TabDrag', () => {
     expect(host.close).toHaveBeenCalledWith(1)
   })
 
-  it('opens a window when dropped on the desktop, unless it has unsaved changes', () => {
+  it('opens a window when dropped on the desktop', () => {
     const a = setup()
     a.drag.start(1, ev({ dataTransfer: dt([], {}) }))
     a.drag.end(ev({ clientX: -20, clientY: 50, dataTransfer: dt([], {}) }))
     expect(a.host.newWindow).toHaveBeenCalledWith('/L/b', { x: 5, y: 6 })
     expect(a.host.close).toHaveBeenCalledWith(1)
-    const b = setup(undefined, ['/L/b'])
-    b.drag.start(1, ev({ dataTransfer: dt([], {}) }))
-    b.drag.end(ev({ clientX: -20, clientY: 50, dataTransfer: dt([], {}) }))
-    expect(b.host.newWindow).not.toHaveBeenCalled()
+  })
+
+  it('settles unsaved text first, then moves the sheet to a new window', async () => {
+    const a = setup(undefined, ['/L/b'])
+    a.host.close.mockImplementation(() => {
+      a.tabs.remove(1)
+    })
+    a.drag.start(1, ev({ dataTransfer: dt([], {}) }))
+    a.drag.end(ev({ clientX: -20, clientY: 50, dataTransfer: dt([], {}) }))
+    await vi.waitFor(() => expect(a.host.newWindow).toHaveBeenCalledWith('/L/b', { x: 5, y: 6 }))
+  })
+
+  it('keeps the tab where it is when the unsaved prompt is cancelled', async () => {
+    const a = setup(undefined, ['/L/b'])
+    a.drag.start(1, ev({ dataTransfer: dt([], {}) }))
+    a.drag.end(ev({ clientX: -20, clientY: 50, dataTransfer: dt([], {}) }))
+    await vi.waitFor(() => expect(a.host.close).toHaveBeenCalledWith(1))
+    await Promise.resolve()
+    expect(a.host.newWindow).not.toHaveBeenCalled()
   })
 
   it('leaves a lone tab alone when dropped outside', () => {

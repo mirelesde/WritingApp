@@ -11,7 +11,8 @@ export interface TabDragHost {
   sheetExists(path: string): boolean
   /** Brings tab `index` to the front. */
   show(index: number): Promise<void>
-  close(index: number): void
+  /** Closes tab `index`, first asking about unsaved text; the tab stays if that is cancelled. */
+  close(index: number): void | Promise<void>
   /** Opens a window for the sheet at a screen position. */
   newWindow(path: string, at: { x: number; y: number }): Promise<void>
   /** The window's size, to tell a drop on the desktop from one on the window. */
@@ -77,10 +78,22 @@ export class TabDrag {
     if (e.dataTransfer?.dropEffect === 'move') {
       // Another window took it.
       this.host.close(from)
-    } else if (outside && path && this.tabs.list.length > 1 && !this.host.hasChanges(path)) {
+    } else if (outside && path && this.tabs.list.length > 1) {
       // Dropped on the desktop: it becomes a window of its own.
-      void this.host.newWindow(path, { x: e.screenX, y: e.screenY })
-      this.host.close(from)
+      const at = { x: e.screenX, y: e.screenY }
+      if (this.host.hasChanges(path)) void this.moveOutUnsaved(from, path, at)
+      else {
+        void this.host.newWindow(path, at)
+        void this.host.close(from)
+      }
     }
+  }
+
+  /** Unsaved text lives in this window: settle it (save or discard) before the sheet moves. */
+  private async moveOutUnsaved(from: number, path: string, at: { x: number; y: number }): Promise<void> {
+    await this.host.close(from)
+    // Cancelled: the tab is still there.
+    if (this.tabs.list[from] === path) return
+    await this.host.newWindow(path, at)
   }
 }
