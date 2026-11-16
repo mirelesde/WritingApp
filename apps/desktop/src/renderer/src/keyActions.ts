@@ -151,6 +151,24 @@ export function sheetsKey(
   return { handled: true, action: { kind: 'select', paths: [path], cursor: path, anchor: path } }
 }
 
+/**
+ * Switching tabs: Ctrl+Tab and Ctrl+Shift+Tab, Ctrl+PageDown and PageUp, and Cmd/Ctrl+Shift+] and [.
+ * Returns the step to take, or undefined for any other key.
+ */
+export function tabKey(e: KeyInfo, hasLibrary: boolean): 1 | -1 | undefined {
+  if (!hasLibrary || e.altKey) return undefined
+  if (e.ctrlKey && !e.metaKey) {
+    if (e.key === 'Tab') return e.shiftKey ? -1 : 1
+    if (!e.shiftKey && e.key === 'PageDown') return 1
+    if (!e.shiftKey && e.key === 'PageUp') return -1
+  }
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
+    if (e.key === '}' || e.key === ']') return 1
+    if (e.key === '{' || e.key === '[') return -1
+  }
+  return undefined
+}
+
 export type WindowKeyAction = 'back' | 'forward' | 'focus-library' | 'focus-sheets' | 'focus-editor'
 
 /** Cmd/Ctrl+1, 2, 3 jump between the panes; Cmd/Ctrl+[ and ] go back and forward. */

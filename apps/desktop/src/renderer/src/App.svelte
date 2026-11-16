@@ -366,7 +366,8 @@
     reveal: (path) => (path ? revealSheet(path) : setSelection([], null)),
     runFor,
     resolveUnsaved,
-    closeWindow: () => void window.api.closeWindow()
+    closeWindow: () => void window.api.closeWindow(),
+    exists: (path) => (library ? sheetExists(library.tree, path) : false)
   })
 
   const tabDrag = new TabDrag(tabs, {
@@ -646,6 +647,7 @@
   // --- Keyboard -----------------------------------------------------------
 
   const keys = new KeyboardFlow({
+    cycleTab: (delta) => tabFlow.cycle(delta),
     tree: () => library?.tree,
     expanded: () => nav.expanded,
     setExpanded: (path, open) => (nav.expanded[path] = open),
@@ -695,6 +697,7 @@
   const commandActions: CommandActions = {
     newTab: tabFlow.newTab,
     closeTab: () => void tabFlow.close(),
+    reopenTab: () => void tabFlow.reopen(),
     cycleTab: tabFlow.cycle,
     save: () => void autosaver.flush(manual() ? (run.open?.parts.map((p) => p.path) ?? []) : undefined),
     saveAll: () => void autosaver.flush(),

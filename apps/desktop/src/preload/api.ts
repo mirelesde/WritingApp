@@ -70,6 +70,7 @@ export type MenuCommand =
   | 'resolve-conflicts'
   | 'new-tab'
   | 'close-tab'
+  | 'reopen-tab'
   | 'next-tab'
   | 'previous-tab'
   | 'edit-keywords'

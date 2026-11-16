@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GroupNode, SheetNode } from '@writingapp/core'
 import { visibleGroups, type VisibleGroup } from './organise'
-import { sheetsKey, treeKey, windowKey, type KeyInfo, type SheetsKeyContext } from './keyActions'
+import { sheetsKey, tabKey, treeKey, windowKey, type KeyInfo, type SheetsKeyContext } from './keyActions'
 
 const key = (k: string, mods: Partial<KeyInfo> = {}): KeyInfo => ({
   key: k,
@@ -128,6 +128,22 @@ describe('sheetsKey', () => {
   it('does not cancel keys it has no use for', () => {
     expect(sheetsKey(key('q'), ctx(), no).handled).toBe(false)
     expect(sheetsKey(key('Enter', { altKey: true }), ctx(), no).handled).toBe(false)
+  })
+})
+
+describe('tabKey', () => {
+  it('maps Ctrl+Tab, Ctrl+PageDown/Up and Cmd/Ctrl+Shift+] and [', () => {
+    expect(tabKey(key('Tab', { ctrlKey: true }), true)).toBe(1)
+    expect(tabKey(key('Tab', { ctrlKey: true, shiftKey: true }), true)).toBe(-1)
+    expect(tabKey(key('PageDown', { ctrlKey: true }), true)).toBe(1)
+    expect(tabKey(key('PageUp', { ctrlKey: true }), true)).toBe(-1)
+    expect(tabKey(key('}', { metaKey: true, shiftKey: true }), true)).toBe(1)
+    expect(tabKey(key('{', { metaKey: true, shiftKey: true }), true)).toBe(-1)
+  })
+  it('leaves plain Tab, Alt combinations and a missing library alone', () => {
+    expect(tabKey(key('Tab'), true)).toBeUndefined()
+    expect(tabKey(key('Tab', { ctrlKey: true, altKey: true }), true)).toBeUndefined()
+    expect(tabKey(key('Tab', { ctrlKey: true }), false)).toBeUndefined()
   })
 })
 

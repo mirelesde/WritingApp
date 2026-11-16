@@ -1,9 +1,11 @@
 import type { GroupNode } from '@writingapp/core'
-import { sheetsKey, treeKey, windowKey } from './keyActions'
+import { sheetsKey, tabKey, treeKey, windowKey } from './keyActions'
 import { visibleGroups } from './organise'
 
 /** What the keyboard handlers need from the rest of the app. */
 export interface KeyboardHost {
+  /** Brings the tab `delta` places along to the front. */
+  cycleTab(delta: number): void
   tree(): GroupNode | undefined
   expanded(): Record<string, boolean>
   setExpanded(path: string, open: boolean): void
@@ -81,6 +83,12 @@ export class KeyboardFlow {
   }
 
   window = (e: KeyboardEvent): void => {
+    const step = tabKey(e, this.host.tree() !== undefined)
+    if (step !== undefined) {
+      this.host.cycleTab(step)
+      e.preventDefault()
+      return
+    }
     const first = this.host.selection().paths[0]
     const action = windowKey(e, this.host.tree() !== undefined, first !== undefined)
     if (!action) return

@@ -23,7 +23,8 @@ function setup(
     reveal: async (p) => void shown.push(p),
     runFor: (p) => [p],
     resolveUnsaved: resolve,
-    closeWindow
+    closeWindow,
+    exists: (p) => p !== 'gone'
   })
   return { tabs, flow, shown, closeWindow, resolve }
 }
@@ -60,6 +61,15 @@ describe('TabFlow', () => {
     tabs.active = 1
     await flow.close(1)
     expect([tabs.list, resolve.mock.calls.length]).toEqual([['a'], 0])
+  })
+
+  it('reopens the tab closed last, skipping sheets that are gone', async () => {
+    const { flow, tabs } = setup(['a', 'b', 'gone', 'c'])
+    await flow.close(1) // b
+    await flow.close(1) // gone
+    await flow.reopen()
+    expect(tabs.list).toContain('b')
+    expect(tabs.list).not.toContain('gone')
   })
 
   it('cycles to the next tab', async () => {

@@ -259,6 +259,8 @@ Known gaps: maths appears as its TeX source; export styles do not apply to Word;
 | 11.12 | Drag a tab left or right along the bar. | A line shows where it will land; it moves there and the front tab stays in front. |
 | 11.13 | Drag a tab off the window onto the desktop. | It becomes a new window near the drop point and leaves the first window's bar. |
 | 11.14 | With two windows, drag a tab onto the other window. | It is added there and removed from the first. |
+| 11.15 | With three tabs, press Ctrl+Tab, then Ctrl+Shift+Tab (also Ctrl+PageDown/PageUp, and Cmd/Ctrl+Shift+] and [). | The front tab moves to the next, then the previous, wrapping round at the ends. |
+| 11.16 | Close a tab with Cmd/Ctrl+W, then press Cmd/Ctrl+Shift+T. | The tab comes back with its sheet; pressing again brings back the one closed before it. |
 
 ## 12. Keywords and filters
 

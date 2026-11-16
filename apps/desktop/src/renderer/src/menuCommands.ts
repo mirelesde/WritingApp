@@ -5,6 +5,7 @@ import type { FormatKind } from './blockStyle'
 export interface CommandActions {
   newTab(): void
   closeTab(): void
+  reopenTab(): void
   cycleTab(delta: number): void
   save(): void
   saveAll(): void
@@ -52,6 +53,7 @@ export function runMenuCommand(command: MenuCommand, a: CommandActions): void {
   const table: Partial<Record<MenuCommand, () => void>> = {
     'new-tab': a.newTab,
     'close-tab': a.closeTab,
+    'reopen-tab': a.reopenTab,
     'next-tab': () => a.cycleTab(1),
     'previous-tab': () => a.cycleTab(-1),
     save: a.save,

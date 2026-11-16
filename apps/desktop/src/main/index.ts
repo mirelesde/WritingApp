@@ -217,6 +217,11 @@ function buildMenu(): Menu {
           accelerator: 'CmdOrCtrl+W',
           click: () => sendCommand('close-tab')
         },
+        {
+          label: 'Reopen Closed Tab',
+          accelerator: 'CmdOrCtrl+Shift+T',
+          click: () => sendCommand('reopen-tab')
+        },
         { type: 'separator' },
         {
           label: 'Save',

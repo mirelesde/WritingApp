@@ -33,6 +33,7 @@ function setup(over: Partial<KeyboardHost> = {}) {
     step,
     focusLibrary: vi.fn(),
     focusSheets: vi.fn(),
+    cycleTab: vi.fn(),
     ...over
   }
   return { host, step, keys: new KeyboardFlow(host) }
@@ -92,6 +93,15 @@ describe('KeyboardFlow sheets', () => {
 })
 
 describe('KeyboardFlow window', () => {
+  it('switches tabs with Ctrl+Tab and Ctrl+Shift+Tab, and stops the browser acting on them', () => {
+    const t = setup()
+    const next = key('Tab', { ctrlKey: true })
+    t.keys.window(next)
+    t.keys.window(key('Tab', { ctrlKey: true, shiftKey: true }))
+    expect(vi.mocked(t.host.cycleTab).mock.calls).toEqual([[1], [-1]])
+    expect(next.preventDefault).toHaveBeenCalled()
+  })
+
   it('goes back and forward', () => {
     const t = setup()
     t.keys.window(key('[', { metaKey: true }))

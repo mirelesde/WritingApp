@@ -15,6 +15,8 @@ export interface TabFlowHost {
   /** Settles unsaved text; false when the user cancelled or saving failed. */
   resolveUnsaved(paths: string[], what: UnsavedWhat): Promise<boolean>
   closeWindow(): void
+  /** Whether the sheet is still in the library. */
+  exists(path: string): boolean
 }
 
 /** Showing, opening, cycling and closing tabs. */
@@ -65,7 +67,18 @@ export class TabFlow {
     )
       return
     if (this.tabs.list[index] !== closing) return
+    if (closing !== undefined && closing !== EMPTY_TAB) this.closed.push(closing)
     if (this.tabs.remove(index)) void this.show(this.tabs.active)
+  }
+
+  /** The sheets of tabs closed here, most recent last, for Reopen Closed Tab. */
+  private readonly closed: string[] = []
+
+  /** Reopens the tab closed last whose sheet still exists. */
+  reopen = async (): Promise<void> => {
+    let path = this.closed.pop()
+    while (path !== undefined && !this.host.exists(path)) path = this.closed.pop()
+    if (path !== undefined) await this.open(path)
   }
 
   cycle = (delta: number): void => {
