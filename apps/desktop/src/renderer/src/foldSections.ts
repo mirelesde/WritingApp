@@ -59,7 +59,9 @@ class Chevron extends WidgetType {
     const dom = document.createElement('span')
     dom.className = 'cm-fold-chevron' + (this.folded ? ' cm-fold-closed' : '')
     dom.setAttribute('aria-hidden', 'true')
-    dom.textContent = this.folded ? '▸' : '▾'
+    // Drawn as a shape, not text, so it looks the same in every editor font: right when folded, down when open.
+    const path = this.folded ? 'M5 3l5 5-5 5' : 'M3 5l5 5 5-5'
+    dom.innerHTML = `<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>`
     dom.onmousedown = (event) => {
       event.preventDefault()
       toggleAt(view, view.posAtDOM(dom))
