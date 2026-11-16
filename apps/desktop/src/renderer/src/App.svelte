@@ -12,6 +12,7 @@
   import type { LibraryInfo, MenuCommand } from '../../preload/api'
   import { applyView } from './view'
   import { ViewState } from './viewState.svelte'
+  import { PaneWidths } from './paneWidths.svelte'
   import { RecoveryFlow } from './recoveryFlow.svelte'
   import { KeyboardFlow } from './keyboardFlow'
   import { DragDrop } from './dragDrop.svelte'
@@ -105,6 +106,25 @@
   let info = $state('')
   let infoTimer: ReturnType<typeof setTimeout> | undefined
   let focusEditor = $state(false)
+  const widths = new PaneWidths()
+  /** Drags the hairline after the group list or the sheet list to resize it. */
+  function startResize(which: 'library' | 'sheets', event: PointerEvent): void {
+    event.preventDefault()
+    const startX = event.clientX
+    const start = widths[which]
+    document.body.classList.add('resizing-panes')
+    const move = (e: PointerEvent): void => widths.set(which, start + e.clientX - startX)
+    const stop = (): void => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', stop)
+      window.removeEventListener('pointercancel', stop)
+      document.body.classList.remove('resizing-panes')
+      widths.save()
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
+  }
   const ui = new ViewState(
     (change) => window.api.setView(change),
     () => void autosaver.flush(),
@@ -852,6 +872,8 @@
     class:no-library={ui.sidebarHidden && !ui.zen}
     class:no-sheets={ui.sheetsCollapsed && !ui.zen}
     class:zen={ui.zen}
+    style:--library-w="{widths.library}px"
+    style:--sheets-w="{widths.sheets}px"
   >
     {#if ui.sidebarHidden}
       <div class="edge" role="presentation" onmouseenter={ui.peek}></div>
@@ -924,6 +946,28 @@
       onsort={(value) => void window.api.setView({ sheetSort: value })}
     />
 
+      {#if !ui.sidebarHidden && !ui.zen}
+        <div
+          class="resize"
+          style:left="calc(var(--library-w) - 3px)"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize group list"
+          onpointerdown={(e) => startResize('library', e)}
+          ondblclick={() => widths.reset('library')}
+        ></div>
+        {#if !ui.sheetsCollapsed}
+          <div
+            class="resize"
+            style:left="calc(var(--library-w) + var(--sheets-w) - 3px)"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sheet list"
+            onpointerdown={(e) => startResize('sheets', e)}
+            ondblclick={() => widths.reset('sheets')}
+          ></div>
+        {/if}
+      {/if}
     </div>
 
     <section class="editor" aria-label="Editor" ondragover={tabDrag.over} ondrop={(e) => void tabDrag.drop(e)}>
@@ -1168,7 +1212,8 @@
   }
   .sidebar {
     display: grid;
-    grid-template-columns: 240px 300px;
+    grid-template-columns: var(--library-w) var(--sheets-w);
+    position: relative;
     min-width: 0;
     min-height: 0;
   }
@@ -1185,10 +1230,10 @@
     display: none;
   }
   .layout.no-sheets .sidebar {
-    grid-template-columns: 240px;
+    grid-template-columns: var(--library-w);
   }
   .layout.no-library .sidebar {
-    grid-template-columns: 300px;
+    grid-template-columns: var(--sheets-w);
   }
   .layout.no-library.no-sheets .sidebar {
     grid-template-columns: 0;
@@ -1197,7 +1242,7 @@
   .layout.no-library :global(.library) {
     position: fixed;
     inset: 0 auto 0 0;
-    width: 240px;
+    width: var(--library-w);
     z-index: 30;
     transform: translateX(-101%);
     transition: transform 140ms ease-out;
@@ -1213,14 +1258,14 @@
     transition: transform 140ms ease-out;
   }
   .layout.no-library .sidebar.peek :global(.sheets) {
-    transform: translateX(240px);
+    transform: translateX(var(--library-w));
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
   }
   /* Collapsed, the sidebar floats over the editor, off screen until it is peeked at. */
   .layout.collapsed .sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    width: 540px;
+    width: calc(var(--library-w) + var(--sheets-w));
     z-index: 30;
     transform: translateX(-101%);
     transition: transform 140ms ease-out;
@@ -1230,6 +1275,33 @@
   .layout.collapsed .sidebar:has(:global(:focus-visible)) {
     transform: none;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.25);
+  }
+  /* A strip over the hairline that can be dragged to resize the list on its left. */
+  .resize {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 7px;
+    z-index: 5;
+    cursor: col-resize;
+  }
+  .resize::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 120ms ease-out 150ms;
+  }
+  .resize:hover::after {
+    opacity: 0.5;
+  }
+  :global(body.resizing-panes) {
+    cursor: col-resize;
+    user-select: none;
   }
   .edge {
     position: fixed;
