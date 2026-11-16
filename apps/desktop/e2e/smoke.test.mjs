@@ -37,11 +37,8 @@ async function exportAs(format, out) {
   await app.answerDialogs({ save: out })
   await app.menu('export-html')
   await until(() => app.eval(`document.querySelector('[aria-label=Format]') !== null`), 'the export dialog')
-  await app.click(`document.querySelector('[aria-label=Format]')`)
-  await until(() => app.eval(`document.querySelector('[role=option]') !== null`), 'the format list')
-  await app.click(`[...document.querySelectorAll('[role=option]')].find(o => o.textContent.trim().startsWith(${JSON.stringify(format)}))`)
+  await app.click(`[...document.querySelectorAll('.format')].find(o => o.querySelector('.format-name').textContent.trim() === ${JSON.stringify(format)})`)
   await until(() => app.eval(`document.querySelector('.primary')?.textContent.includes(${JSON.stringify(format)})`), `the ${format} button`)
-  await app.click(`document.querySelector('[aria-label="Export preview"] .name')`)
   await app.click(`document.querySelector('.primary')`)
 }
 
@@ -92,11 +89,8 @@ describe('the app', () => {
     await app.answerDialogs({ save: out })
     await app.menu('export-html')
     await until(() => app.eval(`document.querySelector('[aria-label=Format]') !== null`), 'the export dialog')
-    await app.click(`document.querySelector('[aria-label=Format]')`)
-    await until(() => app.eval(`document.querySelector('[role=option]') !== null`), 'the format list')
-    await app.click(`[...document.querySelectorAll('[role=option]')].find(o => o.textContent.trim().startsWith('HTML'))`)
+    await app.click(`[...document.querySelectorAll('.format')].find(o => o.querySelector('.format-name').textContent.trim() === 'HTML')`)
     await until(() => app.eval(`document.querySelector('.primary')?.textContent.includes('HTML')`), 'the HTML button')
-    await app.click(`document.querySelector('[aria-label="Export preview"] .name')`)
     await app.click(`document.querySelector('.primary')`)
     try {
       await until(async () => (await readFile(out, 'utf8')).includes('the second'), 'the exported file')
@@ -224,12 +218,8 @@ describe('the app', () => {
     await app.answerDialogs({ save: out })
     await app.menu('export-html')
     await until(() => app.eval(`document.querySelector('[aria-label=Format]') !== null`), 'the export dialog')
-    await app.click(`document.querySelector('[aria-label=Format]')`)
-    await until(() => app.eval(`document.querySelector('[role=option]') !== null`), 'the format list')
-    await app.click(`[...document.querySelectorAll('[role=option]')].find(o => o.textContent.trim().startsWith('Markdown'))`)
+    await app.click(`[...document.querySelectorAll('.format')].find(o => o.querySelector('.format-name').textContent.trim() === 'Markdown')`)
     await until(() => app.eval(`document.querySelector('.primary')?.textContent.includes('Markdown')`), 'the Markdown button')
-    // The first click after choosing from a list only closes the list, so click a neutral spot first.
-    await app.click(`document.querySelector('[aria-label="Export preview"] .name')`)
     await app.click(`document.querySelector('.primary')`)
     try {
       await until(async () => (await readFile(out, 'utf8')).includes('# Beta'), 'the exported file')

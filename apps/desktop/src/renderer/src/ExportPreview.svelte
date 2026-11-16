@@ -50,12 +50,13 @@
     n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`
 
   type Format = 'pdf' | 'docx' | 'epub' | 'html' | 'markdown'
-  const FORMATS = [
-    { value: 'pdf', label: 'PDF' },
-    { value: 'docx', label: 'Word' },
-    { value: 'epub', label: 'EPUB' },
-    { value: 'html', label: 'HTML' },
-    { value: 'markdown', label: 'Markdown' }
+  /** The formats, each with what it is for, so the right one is quick to pick. */
+  const FORMATS: { value: Format; label: string; use: string }[] = [
+    { value: 'pdf', label: 'PDF', use: 'Pages to print or share' },
+    { value: 'docx', label: 'Word', use: 'A document to keep editing' },
+    { value: 'epub', label: 'EPUB', use: 'A book for e-readers' },
+    { value: 'html', label: 'HTML', use: 'One web page' },
+    { value: 'markdown', label: 'Markdown', use: 'Plain text, as written' }
   ]
   const FORMAT_NAMES: Record<Format, string> = { pdf: 'PDF', docx: 'Word', epub: 'EPUB', html: 'HTML', markdown: 'Markdown' }
   const CSS_EXAMPLE = 'body { font-family: Georgia, serif; }'
@@ -80,6 +81,9 @@
       // Not remembered; harmless.
     }
   }
+
+  /** Formats whose look comes from an export style. */
+  const styled = $derived(format === 'pdf' || format === 'html' || format === 'epub')
 
   // EPUB details. The author is remembered; the title starts as the export's own.
   const REMEMBER_AUTHOR = 'writingapp.epubAuthor'
@@ -132,7 +136,7 @@
     else onsavemarkdown()
   }
 
-  let saveButton: HTMLButtonElement | undefined
+  let saveButton = $state<HTMLButtonElement>()
 
   // --- Styles ---------------------------------------------------------------
 
@@ -255,267 +259,330 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="dlg-backdrop centered" onkeydown={keydown}>
-  <div class="dlg dialog" role="dialog" aria-modal="true" aria-label="Export preview">
-    <header>
-      <span class="name">{title} · {sheets === 1 ? '1 sheet' : `${sheets} sheets`}</span>
-      <label class="pdf">
-        Format
-        <Select label="Format" value={format} options={FORMATS} onchange={chooseFormat} />
-      </label>
-      <button onclick={onclose}>Close</button>
-      <button class="primary" bind:this={saveButton} disabled={saving} onclick={save}>
-        Export as {FORMAT_NAMES[format]}…
-      </button>
-    </header>
-    {#if format === 'pdf' || format === 'docx' || format === 'epub' || format === 'html' || format === 'markdown'}
-      <div class="options">
-        {#if format === 'pdf' || format === 'docx'}
-          <label class="pdf">
-            <Select label="Page size" value={pageSize} options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'Letter' }]} onchange={(v) => (pageSize = v as PdfOptions['pageSize'])} />
-          </label>
-          <label class="pdf">
-            <Select label="Margins" value={margin} options={[{ value: 'narrow', label: 'Narrow margins' }, { value: 'normal', label: 'Normal margins' }, { value: 'wide', label: 'Wide margins' }]} onchange={(v) => (margin = v as PdfOptions['margin'])} />
-          </label>
-          <label class="pdf"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
-        {:else if format === 'epub'}
-          <input class="input book" bind:value={bookTitle} placeholder={title} aria-label="Book title" />
-          <input class="input book" bind:value={bookAuthor} placeholder="Author" aria-label="Author" />
-          <label class="pdf">
-            <Select label="Language" value={bookLanguage} options={LANGUAGES} onchange={(v) => (bookLanguage = v)} />
-          </label>
-          <button onclick={() => void chooseCover()}>{coverName ? `Cover: ${coverName}` : 'Cover…'}</button>
-          {#if coverName}<button class="link" onclick={() => (coverName = null)}>No cover</button>{/if}
-        {:else if format === 'html'}
-          {#if imageBytes > 0}
-            <label class="pdf" title={suggest ? `The pictures (${size(imageBytes)}) would make the page ${Math.round(growth * 100)}% bigger; a folder keeps it small.` : 'Where the pictures go in an HTML export'}>
-              <Select label="Pictures in HTML" value={pictures} options={[{ value: 'embed', label: 'Pictures inside the file' }, { value: 'folder', label: 'Pictures in a folder' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
-            </label>
-            {#if suggest && pictures === 'embed'}
-              <span class="hint">Pictures make this {Math.round(growth * 100)}% bigger</span>
-            {/if}
-          {:else}
-            <span class="hint muted">One self-contained page.</span>
-          {/if}
-        {:else}
-          <span class="hint muted">Plain Markdown; pictures are copied into a folder beside the file.</span>
-        {/if}
-        {#if format === 'docx' || format === 'markdown' || format === 'epub'}
-          <span class="grow"></span>
-          <span class="hint muted">The preview shows the {format === 'docx' ? 'PDF and HTML' : 'HTML'} look.</span>
-        {/if}
-      </div>
-    {/if}
-    {#if format === 'pdf' || format === 'html' || format === 'epub'}
-    <div class="options extras">
-      <label class="pdf"><input type="checkbox" bind:checked={numberChapters} /> Number chapters</label>
-      {#if format !== 'epub'}
-        <label class="pdf"><input type="checkbox" bind:checked={titlePageOn} /> Title page</label>
-        {#if titlePageOn}
-          <input class="input book" bind:value={bookTitle} placeholder={title} aria-label="Title page title" />
-          <input class="input book" bind:value={bookAuthor} placeholder="Author" aria-label="Title page author" />
-        {/if}
-      {/if}
-      {#if format === 'pdf'}
-        <label class="pdf"><input type="checkbox" bind:checked={runningTitle} /> Title in the top margin</label>
-      {/if}
-    </div>
-    {/if}
-    {#if format === 'pdf' || format === 'html' || format === 'epub'}
-    <div class="styles">
-      <label>
-        Style
-        <Select label="Export style" value={styleId} disabled={editing} options={styleOptions} onchange={choose} />
-      </label>
-      <span class="desc">{current?.description ?? ''}</span>
-      {#if !editing}
-        <button onclick={startEditing}>{current?.builtin ? 'Make my own…' : 'Edit…'}</button>
-        <button class="link" onclick={() => void window.api.openExportStylesFolder()}>Open folder</button>
-      {/if}
-    </div>
-    {/if}
-    {#if editing && (format === 'pdf' || format === 'html' || format === 'epub')}
-      <div class="editor">
-        <div class="meta">
-          <input class="input" bind:value={draftName} placeholder="Style name" aria-label="Style name" />
-          <input class="input" bind:value={draftDescription} placeholder="Description (optional)" aria-label="Style description" />
-        </div>
-        <textarea class="input"
-          bind:value={draftCss}
-          oninput={typedCss}
-          spellcheck="false"
-          aria-label="Style CSS"
-          placeholder={CSS_EXAMPLE}
-        ></textarea>
-        <div class="actions">
-          {#if problem}<span class="problem" role="alert">{problem}</span>{/if}
-          {#if current && !current.builtin}
-            <button class="danger" onclick={() => void deleteStyle()}>{confirmDelete ? 'Really delete?' : 'Delete'}</button>
-          {/if}
-          <span class="grow"></span>
-          <button onclick={() => (editing = false)}>Cancel</button>
-          {#if current && !current.builtin}
-            <button onclick={() => void saveDraft(true)}>Save as new</button>
-          {/if}
-          <button class="primary" disabled={draftName.trim() === ''} onclick={() => void saveDraft(false)}>
-            {current && !current.builtin ? 'Save' : 'Save style'}
-          </button>
-        </div>
-      </div>
-    {/if}
+  <div class="dlg dialog" class:editing role="dialog" aria-modal="true" aria-label="Export preview">
     <!-- No sandbox permissions: the preview cannot run scripts or reach the app. -->
     <!-- A new frame for each style: changing a live sandboxed frame's srcdoc can leave it blank. -->
     {#key shown}
       <iframe title="Preview of {title}" sandbox="" srcdoc={shown}></iframe>
     {/key}
+
+    <!-- The settings read top to bottom: format, its options, its style, then Export. -->
+    <aside>
+      <header>
+        <h2>Export</h2>
+        <span class="name">{title} · {sheets === 1 ? '1 sheet' : `${sheets} sheets`}</span>
+      </header>
+
+      <div class="scroll">
+        {#if editing && styled}
+          <section class="editor">
+            <h3>{current && !current.builtin ? 'Edit style' : 'New style'}</h3>
+            <input class="input" bind:value={draftName} placeholder="Style name" aria-label="Style name" />
+            <input class="input" bind:value={draftDescription} placeholder="Description (optional)" aria-label="Style description" />
+            <textarea
+              class="input"
+              bind:value={draftCss}
+              oninput={typedCss}
+              spellcheck="false"
+              aria-label="Style CSS"
+              placeholder={CSS_EXAMPLE}
+            ></textarea>
+            {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
+            {#if current && !current.builtin}
+              <button class="btn danger delete" onclick={() => void deleteStyle()}>{confirmDelete ? 'Really delete?' : 'Delete style'}</button>
+            {/if}
+          </section>
+        {:else}
+          <section>
+            <h3>Format</h3>
+            <div class="formats" role="radiogroup" aria-label="Format">
+              {#each FORMATS as f (f.value)}
+                <label class="format" class:on={format === f.value}>
+                  <input type="radio" name="export-format" value={f.value} checked={format === f.value} onchange={() => chooseFormat(f.value)} />
+                  <span class="format-name">{f.label}</span>
+                  <span class="format-use">{f.use}</span>
+                  <svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
+                </label>
+              {/each}
+            </div>
+          </section>
+
+          <section>
+            {#if format !== 'markdown'}<h3>Options</h3>{/if}
+            {#if format === 'pdf' || format === 'docx'}
+              <div class="pair">
+                <Select label="Page size" value={pageSize} options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'Letter' }]} onchange={(v) => (pageSize = v as PdfOptions['pageSize'])} />
+                <Select label="Margins" value={margin} options={[{ value: 'narrow', label: 'Narrow margins' }, { value: 'normal', label: 'Normal margins' }, { value: 'wide', label: 'Wide margins' }]} onchange={(v) => (margin = v as PdfOptions['margin'])} />
+              </div>
+              <label class="check"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
+            {:else if format === 'epub'}
+              <input class="input" bind:value={bookTitle} placeholder={title} aria-label="Book title" />
+              <input class="input" bind:value={bookAuthor} placeholder="Author" aria-label="Author" />
+              <div class="pair">
+                <Select label="Language" value={bookLanguage} options={LANGUAGES} onchange={(v) => (bookLanguage = v)} />
+                <button class="btn cover" onclick={() => void chooseCover()} title={coverName ?? 'Choose a cover picture'}>{coverName ? `Cover: ${coverName}` : 'Cover…'}</button>
+              </div>
+              {#if coverName}<button class="link" onclick={() => (coverName = null)}>No cover</button>{/if}
+            {:else if format === 'html'}
+              {#if imageBytes > 0}
+                <Select label="Pictures in HTML" value={pictures} options={[{ value: 'embed', label: 'Pictures inside the file' }, { value: 'folder', label: 'Pictures in a folder' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
+                {#if suggest && pictures === 'embed'}
+                  <p class="note warn">The pictures ({size(imageBytes)}) make the page {Math.round(growth * 100)}% bigger; a folder keeps it small.</p>
+                {/if}
+              {:else}
+                <p class="note">One self-contained page.</p>
+              {/if}
+            {:else}
+              <p class="note">Plain Markdown; pictures are copied into a folder beside the file.</p>
+            {/if}
+            {#if styled}
+              <label class="check"><input type="checkbox" bind:checked={numberChapters} /> Number chapters</label>
+            {/if}
+            {#if format === 'pdf'}
+              <label class="check"><input type="checkbox" bind:checked={runningTitle} /> Title in the top margin</label>
+            {/if}
+            {#if format === 'pdf' || format === 'html'}
+              <label class="check"><input type="checkbox" bind:checked={titlePageOn} /> Title page</label>
+              {#if titlePageOn}
+                <input class="input" bind:value={bookTitle} placeholder={title} aria-label="Title page title" />
+                <input class="input" bind:value={bookAuthor} placeholder="Author" aria-label="Title page author" />
+              {/if}
+            {/if}
+            {#if format === 'docx' || format === 'markdown' || format === 'epub'}
+              <p class="note">The preview shows the {format === 'docx' ? 'PDF and HTML' : 'HTML'} look.</p>
+            {/if}
+          </section>
+
+          {#if styled}
+            <section>
+              <h3>Style</h3>
+              <Select label="Export style" value={styleId} options={styleOptions} onchange={choose} />
+              {#if current?.description}<p class="note">{current.description}</p>{/if}
+              <div class="row">
+                <button class="btn" onclick={startEditing}>{current?.builtin ? 'Make my own…' : 'Edit…'}</button>
+                <button class="link" onclick={() => void window.api.openExportStylesFolder()}>Open folder</button>
+              </div>
+              {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
+            </section>
+          {/if}
+        {/if}
+      </div>
+
+      <footer>
+        {#if editing && styled}
+          <button class="btn" onclick={() => (editing = false)}>Cancel</button>
+          {#if current && !current.builtin}
+            <button class="btn" onclick={() => void saveDraft(true)}>Save as new</button>
+          {/if}
+          <button class="btn primary" disabled={draftName.trim() === ''} onclick={() => void saveDraft(false)}>
+            {current && !current.builtin ? 'Save' : 'Save style'}
+          </button>
+        {:else}
+          <button class="btn" onclick={onclose}>Close</button>
+          <button class="btn primary export" bind:this={saveButton} disabled={saving} onclick={save}>
+            Export as {FORMAT_NAMES[format]}…
+          </button>
+        {/if}
+      </footer>
+    </aside>
   </div>
 </div>
 
 <style>
-  .styles {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    border-bottom: 1px solid var(--border);
-    font-size: calc(13px * var(--ui-scale, 1));
-  }
-  .styles .desc {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--muted);
-  }
-  .styles label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  button.link {
-    background: none;
-    color: var(--muted);
-    padding: 5px 4px;
-  }
-  .options .book {
-    width: 170px;
-  }
-  .editor {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--pane);
-  }
-  .editor .meta {
-    display: flex;
-    gap: 8px;
-  }
-  .editor input {
-    flex: 1;
-  }
-  .editor textarea {
-    height: 180px;
-    resize: vertical;
-    padding: 8px;
-    font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
-    tab-size: 2;
-  }
-  .editor .actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .grow {
-    flex: 1;
-  }
-  .problem {
-    color: var(--danger);
-    font-size: calc(12px * var(--ui-scale, 1));
-  }
-  button.danger {
-    color: var(--danger);
-  }
   .dialog {
     width: min(1160px, calc(100vw - 48px));
     height: calc(100vh - 48px);
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
     overflow: clip;
   }
-  header button {
-    padding: 5px 10px;
-    white-space: nowrap;
+  /* Writing CSS wants more room than picking a format does. */
+  .dialog.editing {
+    grid-template-columns: minmax(0, 1fr) 420px;
   }
-  header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  .name {
-    flex: 1 1 140px;
-    min-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--muted);
-  }
-  button {
-    font: inherit;
-    font-size: calc(13px * var(--ui-scale, 1));
-    padding: 5px 12px;
-    color: inherit;
-    background: color-mix(in srgb, var(--text) 8%, transparent);
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: default;
-  }
-  button:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--text) 13%, transparent);
-  }
-  button.primary {
-    background: var(--accent);
-    color: var(--on-accent);
-  }
-  button:disabled {
-    opacity: 0.45;
-  }
-  .pdf {
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: calc(12px * var(--ui-scale, 1));
-    color: var(--muted);
-  }
-
   iframe {
-    flex: 1;
+    width: 100%;
+    height: 100%;
     border: none;
     background: #fff;
   }
-  /* A dropdown the same height as the buttons beside it. */
-  header :global(.select),
-  .options :global(.select) {
-    padding: 4px 8px 4px 10px;
-  }
-  .options {
+
+  aside {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 14px;
-    border-bottom: 1px solid var(--border);
-    min-height: 20px;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--list);
+    border-left: 1px solid var(--border);
   }
-  .hint.muted {
+  header {
+    padding: 16px 16px 4px;
+  }
+  h2 {
+    font-size: calc(15px * var(--ui-scale, 1));
+  }
+  .name {
+    display: block;
+    margin-top: 2px;
+    font-size: calc(12px * var(--ui-scale, 1));
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 16px 16px;
+  }
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 18px;
+  }
+  h3 {
+    margin: 0 0 2px;
+    font-size: calc(12px * var(--ui-scale, 1));
+    font-weight: 600;
     color: var(--muted);
   }
-  .hint {
+
+  /* The formats: every choice in view, one click each. */
+  .formats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 -8px;
+  }
+  .format {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 8px;
+    padding: 6px 8px;
+    border-radius: var(--radius-md);
+    cursor: default;
+  }
+  .format:hover {
+    background: var(--hover);
+  }
+  .format.on {
+    background: var(--selected);
+  }
+  .format:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  /* The real radio stays for the keyboard (arrow keys move between formats) but is not drawn. */
+  .format input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .format-name {
+    font-size: calc(13px * var(--ui-scale, 1));
+    font-weight: 600;
+  }
+  .format-use {
+    grid-column: 1;
     font-size: calc(12px * var(--ui-scale, 1));
-    color: var(--accent);
+    color: var(--muted);
+  }
+  .tick {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: var(--text);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    visibility: hidden;
+  }
+  .format.on .tick {
+    visibility: visible;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .scroll :global(.select) {
+    width: 100%;
+    min-width: 0;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(13px * var(--ui-scale, 1));
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .cover {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .note {
+    margin: 0;
+    font-size: calc(12px * var(--ui-scale, 1));
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  .note.warn {
+    color: var(--text);
+  }
+  .problem {
+    margin: 0;
+    color: var(--danger);
+    font-size: calc(12px * var(--ui-scale, 1));
+  }
+  button.link {
+    align-self: flex-start;
+    font: inherit;
+    font-size: calc(13px * var(--ui-scale, 1));
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 5px 6px;
+    border-radius: var(--radius-sm);
+    cursor: default;
+  }
+  button.link:hover {
+    color: var(--text);
+  }
+
+  .editor textarea {
+    flex: none;
+    height: 320px;
+    resize: vertical;
+    padding: 8px;
+    font: calc(12px * var(--ui-scale, 1)) / 1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    tab-size: 2;
+  }
+  .editor .delete {
+    align-self: flex-start;
+  }
+
+  /* Export stays in reach at the foot of the column, however long the options get. */
+  footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  footer .export {
+    flex: 1;
     white-space: nowrap;
   }
 </style>

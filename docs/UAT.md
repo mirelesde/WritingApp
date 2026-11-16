@@ -237,7 +237,7 @@ Known gaps: exports leave code uncoloured; no KaTeX macros; no menu entry or sho
 | 10.W3 | Export a group of several sheets. | One document, sheets separated by a rule. |
 | 10.W4 | Import the file you just saved. | The text comes back as it was (the round trip). |
 
-The dialog has one Format picker (PDF, Word, EPUB, HTML, Markdown) and one Export button; the row below shows only that format's options (page size, margins and page numbers for PDF and Word; title, author, language and cover for EPUB; the pictures choice for HTML; nothing for Markdown), an extras row (Number chapters, Title page, title in the margin) shows for PDF, HTML and EPUB, and the Style row shows for PDF, HTML and EPUB. The last format is remembered.
+The preview fills the dialog; a column on the right reads top to bottom: Format (all five listed, each with what it is for: PDF, Word, EPUB, HTML, Markdown), then Options for that format only (page size, margins and page numbers for PDF and Word; title, author, language and cover for EPUB; the pictures choice for HTML; Number chapters for PDF, HTML and EPUB; Title page for PDF and HTML; title in the top margin for PDF; only a note for Markdown), then Style for PDF, HTML and EPUB. Close and Export as … sit at the foot of the column. Arrow keys move between formats; Return exports. The last format is remembered.
 
 Known gaps: maths appears as its TeX source; export styles do not apply to Word; SVG and WebP pictures appear as their alt text.
 
@@ -359,20 +359,20 @@ Quick checks that earlier features still work with today's changes.
 
 ## 13.25 EPUB export
 
-1. Select a group with several sheets, open Export, choose Format > EPUB. A row shows title, author, language and Cover….
+1. Select a group with several sheets, open Export, choose EPUB under Format. Options shows title, author, language and Cover….
 2. Fill in a title and author, pick a cover picture, and Export as EPUB….
 3. Run `epubcheck` on the file if you have it: no errors expected.
 4. Open it in Apple Books (or another reader): the cover shows, the contents list the headings, each sheet starts a new chapter, pictures and tables show, and the style you chose is applied. Footnotes jump to their notes.
 
 ## 13.26 Export extras
 
-1. Export > Format PDF. Tick Number chapters, Title page (fill title and author) and Title in the top margin. The preview shows a title page and numbered headings. Export: page 1 is the title page, headings read "1. …", each page has the title at the top. A table of contents (if any) still shows the right page numbers.
+1. Export, choose PDF. Tick Number chapters, Title page (fill title and author) and Title in the top margin. The preview shows a title page and numbered headings. Export: page 1 is the title page, headings read "1. …", each page has the title at the top. A table of contents (if any) still shows the right page numbers.
 2. Make a style with `@page { size: 6in 9in; margin: 0.8in }`, export as PDF: the pages are 6 by 9 inches whatever the dialog says.
 3. Number chapters also works for HTML and EPUB; Title page for HTML.
 
 ## 13.27 Dropdowns in dialog headers (macOS)
 
-1. Open Export. Click the Format picker: the list opens below it, with the same row height as the buttons beside it.
+1. Open Export (PDF). Click the Margins picker: the list opens below it, the same height as the Page size picker beside it.
 2. Click an option: it is chosen and the list closes. Open it again and click outside it (on the preview or the title): the list closes and the dialog responds as normal.
 3. Press Escape with the list open: the list closes first; Escape again closes the dialog.
 4. Repeat for the Page size, Margins, Language and Style pickers. None of them leaves the dialog unresponsive or drags the window.
@@ -479,7 +479,7 @@ Known limits: operations that rewrite sheets on disk (merge, split, move, Replac
 Things the developer could not drive in the test harness. Tick each one on your own machine; the full steps are in the section named at the end of each line.
 
 - [ ] **⌘S from the File menu** saves the sheet in front (the harness could only send the command directly). 13.37, 13.39
-- [ ] **Format dropdown** in the export dialog opens and picks a format without crashing. 13.27
+- [ ] **Dropdowns in the export dialog** (Margins, Style) open and pick without crashing. 13.27
 - [ ] **Sheet cards** update their title and preview right after typing, with no stale text after switching sheets. 13.31
 - [ ] **Autosave off / "When I switch or close"**: the toolbar says "Unsaved" while typing and "Saved" after switching sheets. 13.37
 - [ ] **Preferences tabs**: clicking, ←/→ keys, and the last tab being remembered after reopening. 13.38
@@ -492,7 +492,7 @@ Things the developer could not drive in the test harness. Tick each one on your 
 - [ ] **Inline group rename**: right-click ▸ Rename, type `Act I: Why? Because`, Return; list shows it as typed. 13.40 step 1
 - [ ] **Rename the group's folder in Finder**: the group then shows the folder name. 13.40 step 2
 - [ ] **Sheet file rename**: first line `# Why: is it so?`, leave the sheet: file becomes `Why is it so.md`. 13.40 step 6
-- [ ] **Export dialog layout**: open Export; the preview sits centred, the toolbar fits on one row (or wraps, never overflows), and the Format list opens and closes. 13.27
+- [ ] **Export dialog layout**: open Export; the preview fills the left, the settings column scrolls if the window is short while Export stays at its foot, and nothing overflows. 13.27
 - [ ] **Stray marks on sheet cards**: in your own library, no `<!-->` or `**` shows in card previews. 13.31
 - [ ] **Native menus and dialogs**: click through Format, Insert and File menu items, the right-click menus, each save dialog and the Import and Insert Picture pickers; ⌘, opens Preferences; ⌘⇧V pastes plain; ⌘-click opens a link. Full list: ROADMAP section 1.
 - [ ] **Hard quit and quit with unsaved changes**: force-quit while typing, relaunch and get the text back; quit with unsaved changes and press Cancel. 13.28
