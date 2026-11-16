@@ -1,6 +1,9 @@
 import type { TabsState } from './tabsState.svelte'
 import type { UnsavedWhat } from './unsavedPrompt.svelte'
 
+/** The path of a tab that holds no sheet yet. */
+export const EMPTY_TAB = ''
+
 /** What opening and closing tabs needs from the rest of the app. */
 export interface TabFlowHost {
   /** The sheet being edited alone, if exactly one is selected. */
@@ -29,7 +32,7 @@ export class TabFlow {
 
   /** Opens `path` in a tab after the front one, or switches to the tab that already has it. */
   open = async (path: string | undefined, reuse = true): Promise<void> => {
-    if (!path) return
+    if (path === undefined) return
     await this.show(this.tabs.open(path, reuse))
   }
 
@@ -43,8 +46,9 @@ export class TabFlow {
     await this.open(path)
   }
 
+  /** A new tab shows no sheet: an empty path, until one is chosen. */
   newTab = (): void => {
-    void this.open(this.host.only() ?? this.tabs.front, false)
+    void this.open(EMPTY_TAB, false)
   }
 
   close = async (index = this.tabs.active): Promise<void> => {
@@ -56,6 +60,7 @@ export class TabFlow {
     const closing = this.tabs.list[index]
     if (
       closing !== undefined &&
+      closing !== EMPTY_TAB &&
       !(await this.host.resolveUnsaved(this.host.runFor(closing), 'tab'))
     )
       return

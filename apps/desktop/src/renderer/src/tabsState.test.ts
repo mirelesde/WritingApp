@@ -19,6 +19,12 @@ describe('follow', () => {
     expect([tabs.list, tabs.active]).toEqual([['a'], 0])
   })
 
+  it('fills an empty front tab with the sheet chosen', () => {
+    setup(['a', ''], 1)
+    tabs.follow('x', false, none)
+    expect([tabs.list, tabs.active]).toEqual([['a', 'x'], 1])
+  })
+
   it('replaces the front tab, leaving the others', () => {
     setup(['a', 'b', 'c'], 1)
     tabs.follow('x', false, none)

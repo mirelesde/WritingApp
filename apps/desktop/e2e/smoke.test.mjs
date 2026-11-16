@@ -167,21 +167,24 @@ describe('the app', () => {
     await until(() => app.eval(`document.body.innerText.includes('LOSTTEXT')`), 'the recovery offer')
   })
 
-  it('does not bring back text that Don’t Save discarded, even with the sheet in two tabs', async () => {
+  it('does not bring back text that Don’t Save discarded when its tab is closed', async () => {
     await start()
     await app.eval(`window.api.setView({ saveMode: 'manual' })`)
     await sleep(300)
     await app.open('Alpha')
-    // New tab: a copy of the open sheet, then type in it and close it without saving.
+    await app.type('DISCARDME ')
+    // A new tab is empty; close the first one without saving.
     await app.click(`document.querySelector('[aria-label="New tab"]')`)
     await until(() => app.eval(`document.querySelectorAll('.tab').length === 2`), 'the second tab')
-    await app.type('DISCARDME ')
-    await app.click(`document.querySelectorAll('.tab-close')[1]`)
+    await app.click(`document.querySelectorAll('.tab-close')[0]`)
     await until(() => app.eval(`${app.button('Don’t Save')} !== undefined`), 'the question')
     await app.click(app.button('Don’t Save'))
     await until(() => app.eval(`document.querySelectorAll('.tab').length === 1`), 'one tab left')
-    // The editor returns to the saved text a moment after the tab closes.
-    await until(() => app.eval(`!document.querySelector('.cm-content').innerText.includes('DISCARDME')`), 'the editor back to the saved text')
+    // Opening the sheet again shows the saved text.
+    await app.open('Alpha')
+    await until(() => app.eval(`document.querySelector('.cm-content') !== null`), 'the editor')
+    await sleep(500)
+    assert.ok(!(await app.eval(`document.querySelector('.cm-content').innerText.includes('DISCARDME')`)))
     assert.ok(!(await readFile(join(library, 'Novel', 'Alpha.md'), 'utf8')).includes('DISCARDME'))
   })
 

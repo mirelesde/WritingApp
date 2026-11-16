@@ -48,10 +48,18 @@ describe('TabFlow', () => {
     expect([shown, tabs.list.length]).toEqual([['c'], 3])
   })
 
-  it('opens a new tab for the selected sheet', async () => {
-    const { flow, tabs } = setup()
+  it('opens a new tab with no sheet in it', async () => {
+    const { flow, tabs, shown } = setup()
     flow.newTab()
     await vi.waitFor(() => expect(tabs.list).toHaveLength(4))
+    expect([tabs.list[tabs.active], shown.at(-1)]).toEqual(['', ''])
+  })
+
+  it('closes an empty tab without asking about unsaved text', async () => {
+    const { flow, tabs, resolve } = setup(['a', ''])
+    tabs.active = 1
+    await flow.close(1)
+    expect([tabs.list, resolve.mock.calls.length]).toEqual([['a'], 0])
   })
 
   it('cycles to the next tab', async () => {

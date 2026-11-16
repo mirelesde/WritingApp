@@ -100,7 +100,7 @@ export class TabsState {
 
   /** Follows sheets that were renamed or moved. */
   remap(change: (path: string) => string): void {
-    this.list = this.list.map(change)
+    this.list = this.list.map((p) => (p === '' ? p : change(p)))
   }
 
   startDrag(index: number): void {

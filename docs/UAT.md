@@ -245,7 +245,7 @@ Known gaps: maths appears as its TeX source; export styles do not apply to Word;
 
 | # | Do | Expect |
 |---|----|--------|
-| 11.1 | Open a sheet, press Cmd/Ctrl+T. | A tab bar appears with two tabs; the new one is in front. |
+| 11.1 | Open a sheet, press Cmd/Ctrl+T. | A tab bar appears with two tabs; the new one is in front, called "New tab", with no sheet shown. Choosing a sheet fills it. |
 | 11.2 | Click another sheet in the list. | The front tab changes to it; the other tab is unchanged. |
 | 11.3 | Click the first tab. | Its sheet opens and the list follows it. |
 | 11.4 | Window > Next Tab / Previous Tab. | The tabs cycle. |

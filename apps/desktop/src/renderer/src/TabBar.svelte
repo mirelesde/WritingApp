@@ -35,14 +35,14 @@
         class="tab-label"
         role="tab"
         aria-selected={i === active}
-        title={titles.get(path) ?? path}
+        title={path === '' ? 'New tab' : (titles.get(path) ?? path)}
         onclick={() => onshow(i)}
         onauxclick={(e) => {
           if (e.button === 1) onclose(i)
         }}
       >
         {#if hasChanges(path)}<span class="tab-dot" role="img" aria-label="Unsaved changes"></span>{/if}
-        {titles.get(path) ?? 'Untitled'}
+        {path === '' ? 'New tab' : (titles.get(path) ?? 'Untitled')}
       </button>
       <button class="tab-close" aria-label="Close tab" onclick={() => onclose(i)}>×</button>
     </div>
@@ -51,41 +51,54 @@
 </div>
 
 <style>
+  /* VS Code's tab strip: a darker bar, square tabs divided by thin lines, and the front tab
+     on the editor's own colour with a line along its top. */
   .tabs {
     display: flex;
-    align-items: center;
-    gap: 2px;
-    padding: 0 10px 4px;
+    align-items: stretch;
+    padding: 0;
     overflow-x: auto;
     user-select: none;
+    background: var(--sidebar);
     border-bottom: 1px solid var(--border);
   }
   .tab {
+    position: relative;
     display: flex;
     align-items: center;
     flex: 0 1 180px;
     min-width: 90px;
-    border-bottom: 2px solid transparent;
+    height: 35px;
+    box-sizing: border-box;
+    border-right: 1px solid var(--border);
+    border-top: 1px solid transparent;
     color: var(--muted);
+    background: var(--sidebar);
   }
-  .tab {
-    position: relative;
+  .tab:hover {
+    color: var(--text);
+  }
+  .tab.active {
+    margin-bottom: -1px;
+    height: 36px;
+    border-top-color: var(--accent);
+    color: var(--text);
+    background: var(--bg);
   }
   .tab.before::before,
   .tab.after::after {
     content: '';
     position: absolute;
-    top: 3px;
-    bottom: 3px;
+    top: 0;
+    bottom: 0;
     width: 2px;
-    border-radius: 1px;
     background: var(--accent);
   }
   .tab.before::before {
-    left: -2px;
+    left: -1px;
   }
   .tab.after::after {
-    right: -2px;
+    right: -1px;
   }
   .tab-dot {
     display: inline-block;
@@ -95,13 +108,6 @@
     border-radius: 50%;
     background: var(--accent);
     vertical-align: 1px;
-  }
-  .tab:hover {
-    color: var(--text);
-  }
-  .tab.active {
-    border-bottom-color: var(--accent);
-    color: var(--text);
   }
   .tab button,
   .tabs .tab-new {
@@ -114,15 +120,19 @@
   }
   .tab-label {
     flex: 1;
+    align-self: stretch;
     min-width: 0;
-    padding: 4px 4px 4px 10px;
+    padding: 0 4px 0 12px;
     text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .tab-close {
-    padding: 2px 7px;
+    margin-right: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
     opacity: 0;
   }
   .tab:hover .tab-close,
@@ -132,11 +142,11 @@
   }
   .tab-close:hover {
     opacity: 1;
-    background: var(--border);
+    background: var(--hover);
   }
   .tabs .tab-new {
     flex-shrink: 0;
-    padding: 2px 9px;
+    padding: 0 12px;
     color: var(--muted);
   }
   .tabs .tab-new:hover {

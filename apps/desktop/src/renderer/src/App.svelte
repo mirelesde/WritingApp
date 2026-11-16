@@ -44,7 +44,7 @@
   import { createAutosaver, type SaveStatus } from './autosave'
   import UnsavedDialog from './UnsavedDialog.svelte'
   import Editor from './Editor.svelte'
-  import { TabFlow } from './tabFlow'
+  import { EMPTY_TAB, TabFlow } from './tabFlow'
   import { SelectionFlow } from './selectionFlow'
   import { OpRunner } from './opRunner'
   import { OutlineState } from './outlineState.svelte'
@@ -326,7 +326,7 @@
   $effect(() => {
     const tree = library?.tree
     if (!tree) return
-    untrack(() => tabs.prune((p) => sheetExists(tree, p)))
+    untrack(() => tabs.prune((p) => p === EMPTY_TAB || sheetExists(tree, p)))
   })
 
   const tabTitles = $derived(
@@ -363,7 +363,7 @@
 
   const tabFlow = new TabFlow(tabs, {
     only: () => sel.only,
-    reveal: (path) => revealSheet(path),
+    reveal: (path) => (path ? revealSheet(path) : setSelection([], null)),
     runFor,
     resolveUnsaved,
     closeWindow: () => void window.api.closeWindow()
