@@ -70,7 +70,7 @@ class Chevron extends WidgetType {
     dom.setAttribute('aria-hidden', 'true')
     dom.style.setProperty('--level', String(this.level))
     // As tall as the heading's first line, so the chevron sits at the middle of its text.
-    dom.style.height = `calc(var(--editor-size) * max(var(--editor-line-height, 1.65), ${LINE_FACTOR[this.level]}))`
+    dom.style.height = `calc(var(--editor-size) * max(var(--editor-line-height, 1.75), ${LINE_FACTOR[this.level]}))`
     // Drawn as a shape, not text, so it looks the same in every editor font: right when folded, down when open.
     const path = this.folded ? 'M5 3l5 5-5 5' : 'M3 5l5 5 5-5'
     dom.innerHTML = `<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>`

@@ -37,7 +37,7 @@ Desktop windows with a sidebar (library groups), a sheet list and the editor; se
 
 ## Brand Commitments
 
-Working title "WritingApp". The look is OS X-inspired but identical on every OS, not native (see `docs/ARCHITECTURE.md`, "UI consistency"). Default writing style: Sans, 16px, spacing 1.65, medium width, justified, gray accent. Subtle hairline dividers between panes were chosen over none.
+Working title "WritingApp". The look is OS X-inspired but identical on every OS, not native (see `docs/ARCHITECTURE.md`, "UI consistency"). Default writing style: Sans, 16px, spacing 1.75, medium width, justified, gray accent. Subtle hairline dividers between panes were chosen over none.
 
 ## Evidence on Hand
 

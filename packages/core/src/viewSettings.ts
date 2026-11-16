@@ -132,7 +132,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   typewriter: false,
   lineNumbers: false,
   columnWidth: 'medium',
-  lineSpacing: 1.65,
+  lineSpacing: 1.75,
   paragraphSpacing: 'normal',
   currentLine: 'off',
   caretWidth: 'normal',

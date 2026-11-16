@@ -103,7 +103,7 @@ const theme = EditorView.theme({
   '.cm-fold-chevron:hover': { color: 'var(--accent)' },
   '.cm-heading-line': { textAlign: 'left' },
   '.cm-heading-tight': {
-    paddingBottom: 'calc(var(--editor-size) * var(--editor-line-height, 1.65) * var(--blank-line-scale, 1))'
+    paddingBottom: 'calc(var(--editor-size) * var(--editor-line-height, 1.75) * var(--blank-line-scale, 1))'
   },
   '.cm-fold-placeholder': {
     color: 'var(--faint)',
