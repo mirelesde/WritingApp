@@ -24,7 +24,8 @@
 
   /** Accent presets; the first keeps the theme's own colour. */
   const ACCENTS: [string, string][] = [
-    ['Default', ''],
+    ['Theme', ''],
+    ['Gray', '#6b7280'],
     ['Blue', '#3d6fd9'],
     ['Purple', '#8a5cd0'],
     ['Pink', '#d0488a'],
