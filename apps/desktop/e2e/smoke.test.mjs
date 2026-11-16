@@ -179,7 +179,7 @@ describe('the app', () => {
     await app.click(`document.querySelectorAll('.tab-close')[0]`)
     await until(() => app.eval(`${app.button('Don’t Save')} !== undefined`), 'the question')
     await app.click(app.button('Don’t Save'))
-    await until(() => app.eval(`document.querySelectorAll('.tab').length === 1`), 'one tab left')
+    await until(() => app.eval(`document.querySelector('.tabs') === null`), 'one tab left, so no bar')
     // Opening the sheet again shows the saved text.
     await app.open('Alpha')
     await until(() => app.eval(`document.querySelector('.cm-content') !== null`), 'the editor')
