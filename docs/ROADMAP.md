@@ -138,6 +138,41 @@ Numbers refer to [CHANGELOG.md](CHANGELOG.md). Roughly easiest first within each
 
 - **A spare window for drag-out:** dragging a tab onto the desktop waits while the new window loads (the tab snaps back at once, then the window appears). Idea: keep one hidden, pre-loaded window and show it on demand, handing it the sheet. It touches window lifecycle: quitting with only the spare left, reopening from the Dock, and the spare's own start-up flow. Not decided; not built.
 
+### More preferences to consider
+
+Preferences added so far: When the app starts, Confirm before moving to the trash, Word count, Hyphenate justified text, Close brackets and quotes, Save delay. Ideas not built, grouped by where they would live:
+
+**General**
+- Open the last sheet again at launch, and restore the previous windows and tabs (a companion to "When the app starts"). Clear the recent-libraries list on quit, for privacy.
+- Show hidden files and folders; which extensions count as sheets (`.md`, `.markdown`, `.txt`).
+- Moving to the trash: the computer's trash (today) or permanent deletion.
+- Line endings when saving (keep as is, LF, CRLF) and a final newline. Matters for Windows users and for Git.
+- Spell check on or off, and its languages. Window title shows the sheet or its path.
+- Check for updates (once there is an updater).
+
+**Appearance**
+- Reduce motion. High contrast. A dyslexia-friendly font. Cursor blink on or off. Scrollbars always, when scrolling, or hidden.
+- Sheet cards: how many preview lines, whether to show dates or word counts, compact or comfortable spacing.
+- Heading size in the editor (compact, normal, large). Width of the first-line indent.
+
+**Editor and writing**
+- Quote style for smart punctuation (“…”, «…», „…“). Tab key: indent a list item or insert a tab; tab width.
+- Continue lists on Return. Paste: keep formatting as Markdown, or plain text by default. Link click: open on click or Cmd/Ctrl-click.
+- Find: remember case, whole-word and pattern options.
+- Writing goals: a word goal per sheet, session or day, with progress. What the word count includes (comments, headings, footnotes) and the reading speed behind "min read".
+
+**Library and files**
+- Daily Note: which folder, which template, name format. New sheets: at the top or bottom, with a first heading or not. Whether sheet file names follow their titles.
+- Images: the name of the assets folder, a maximum width, and conversion to a smaller format.
+- Backups or version history: keep dated copies of sheets. How long recovered text is kept.
+- Large-file warning size. How often to look for sync conflicts, and whether to watch the folder for outside changes.
+
+**Export**
+- Default format, style, page size and margins. Author name and language remembered for EPUB and title pages.
+
+**Keyboard**
+- Custom keyboard shortcuts (the big one other editors have).
+
 ## 5. UI and feel
 
 The target is an OS X-inspired look that is the same on every OS, with the main window (sidebar, sheet list, editor) as the reference; not native. The list of what stays with the OS and what the app draws is in [ARCHITECTURE.md](ARCHITECTURE.md), "UI consistency". Still open:

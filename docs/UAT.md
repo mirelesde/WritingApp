@@ -440,7 +440,7 @@ Quick checks that earlier features still work with today's changes.
 
 ## 13.38 Tabbed Preferences
 
-1. Open Preferences: four tabs, Appearance, Editor, Writing and Saving, with Appearance first on a fresh install. The dialog stays the same size as you change tabs; a tab with many settings scrolls inside it.
+1. Open Preferences: five tabs, General, Appearance, Editor, Writing and Saving, with General first on a fresh install. The dialog stays the same size as you change tabs; a tab with many settings scrolls inside it.
 2. Click each tab: its settings appear and every switch, picker and stepper still works.
 3. With a tab focused, the Left and Right arrow keys move to the previous or next tab. Escape closes the dialog.
 4. Choose Editor, close Preferences, reopen it: it opens on Editor. Quit and reopen the app: still Editor.
@@ -566,6 +566,20 @@ Added after an audit found features with no script: the folder chooser and Close
 | 16.7.4 | Close Window (Cmd/Ctrl+Shift+W) with two windows open. | Only that window closes. |
 | 16.7.5 | Help > Show Error Log. | The log opens (or says there are no errors). |
 
+### 16.8 General settings, and the newer Editor, Writing and Saving ones
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.8.1 | Preferences ▸ General ▸ When the app starts: Ask me. Quit and start again. | The folder chooser shows. Choosing a folder opens it; a second window (File > New Window) then opens that library, not the chooser. |
+| 16.8.2 | Set it to Open the last library; quit and start again. | The library opens by itself, as before. |
+| 16.8.3 | Turn on Confirm before moving to the trash. Select a sheet and press Cmd/Ctrl+Alt+Backspace. | "Move “name” to the trash?" with Cancel and Move to Trash. Cancel changes nothing; Escape also cancels. |
+| 16.8.4 | Choose Move to Trash. Then select three sheets and do it again. | The sheet goes and the notice says how to undo. The second question says "Move 3 items to the trash?". Right-click ▸ Move to Trash asks too. Undo Library Change brings them back. |
+| 16.8.5 | Turn the setting off. | Deleting needs no question, as before. |
+| 16.8.6 | Turn off Word count. | The word-count pill leaves the corner of the editor; on again, it returns. |
+| 16.8.7 | Editor ▸ Alignment Justified: the Hyphenate switch shows. Turn it on in a narrow column with long words. | Long words break with a hyphen at line ends and the gaps between words even out. Choose Left alignment: the Hyphenate switch disappears. |
+| 16.8.8 | Writing ▸ Close brackets and quotes off; type `(` at the end of a line. | Only `(` appears. On: `()` appears with the cursor between. Selecting a word and typing `(` still wraps it when on. |
+| 16.8.9 | Saving ▸ with While typing chosen, set Save after you stop typing for: Quick, Normal, Relaxed. Type and watch the toolbar. | "Unsaved" turns to "Saved" after about 0.3 s, under a second, or about 3 s. The choice is not offered in the other two save modes. |
+
 ## 15. Still to confirm live (checklist)
 
 Things the developer could not drive in the test harness. Tick each one on your own machine; the full steps are in the section named at the end of each line.
@@ -588,5 +602,6 @@ Things the developer could not drive in the test harness. Tick each one on your 
 - [ ] **Stray marks on sheet cards**: in your own library, no `<!-->` or `**` shows in card previews. 13.31
 - [ ] **Native menus and dialogs**: click through Format, Insert and File menu items, the right-click menus, each save dialog and the Import and Insert Picture pickers; ⌘, opens Preferences; ⌘⇧V pastes plain; ⌘-click opens a link. Full list: ROADMAP section 1.
 - [ ] **First launch and Close Library**: with the settings folder moved aside the chooser shows; Close Library then a restart shows it again. 16.1
+- [ ] **New preferences** (16.8): When the app starts, Confirm before moving to the trash, Word count, Hyphenate, Close brackets and quotes, Save delay. 16.8
 - [ ] **Reset all preferences** from the packaged app, including the question and Cancel. 16.4
 - [ ] **Hard quit and quit with unsaved changes**: force-quit while typing, relaunch and get the text back; quit with unsaved changes and press Cancel. 13.28
