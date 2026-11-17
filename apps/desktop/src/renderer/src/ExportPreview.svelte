@@ -55,8 +55,8 @@
     { value: 'pdf', label: 'PDF', use: 'Pages to print or share' },
     { value: 'docx', label: 'Word', use: 'A document to keep editing' },
     { value: 'epub', label: 'EPUB', use: 'A book for e-readers' },
-    { value: 'html', label: 'HTML', use: 'One web page' },
-    { value: 'markdown', label: 'Markdown', use: 'Plain text, as written' }
+    { value: 'html', label: 'HTML', use: 'A page for a website or browser' },
+    { value: 'markdown', label: 'Markdown', use: 'Plain text, for other writing apps' }
   ]
   const FORMAT_NAMES: Record<Format, string> = { pdf: 'PDF', docx: 'Word', epub: 'EPUB', html: 'HTML', markdown: 'Markdown' }
   const CSS_EXAMPLE = 'body { font-family: Georgia, serif; }'
@@ -277,6 +277,7 @@
         {#if editing && styled}
           <section class="editor">
             <h3>{current && !current.builtin ? 'Edit style' : 'New style'}</h3>
+            <p class="note">A style is a set of CSS rules for fonts, spacing and colours. The preview updates as you type.</p>
             <input class="input" bind:value={draftName} placeholder="Style name" aria-label="Style name" />
             <input class="input" bind:value={draftDescription} placeholder="Description (optional)" aria-label="Style description" />
             <textarea
@@ -289,7 +290,7 @@
             ></textarea>
             {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
             {#if current && !current.builtin}
-              <button class="btn danger delete" onclick={() => void deleteStyle()}>{confirmDelete ? 'Really delete?' : 'Delete style'}</button>
+              <button class="btn danger delete" onclick={() => void deleteStyle()}>{confirmDelete ? 'Click again to delete' : 'Delete style'}</button>
             {/if}
           </section>
         {:else}
@@ -316,8 +317,8 @@
               </div>
               <label class="check"><input type="checkbox" bind:checked={pageNumbers} /> Page numbers</label>
             {:else if format === 'epub'}
-              <input class="input" bind:value={bookTitle} placeholder={title} aria-label="Book title" />
-              <input class="input" bind:value={bookAuthor} placeholder="Author" aria-label="Author" />
+              <input class="input" bind:value={bookTitle} placeholder="Book title (default: {title})" aria-label="Book title" />
+              <input class="input" bind:value={bookAuthor} placeholder="Author (optional)" aria-label="Author" />
               <div class="pair">
                 <Select label="Language" value={bookLanguage} options={LANGUAGES} onchange={(v) => (bookLanguage = v)} />
                 <button class="btn cover" onclick={() => void chooseCover()} title={coverName ?? 'Choose a cover picture'}>{coverName ? `Cover: ${coverName}` : 'Cover…'}</button>
@@ -325,31 +326,31 @@
               {#if coverName}<button class="link" onclick={() => (coverName = null)}>No cover</button>{/if}
             {:else if format === 'html'}
               {#if imageBytes > 0}
-                <Select label="Pictures in HTML" value={pictures} options={[{ value: 'embed', label: 'Pictures inside the file' }, { value: 'folder', label: 'Pictures in a folder' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
+                <Select label="Pictures" value={pictures} options={[{ value: 'embed', label: 'Inside the page (one file)' }, { value: 'folder', label: 'In a folder beside the page' }]} onchange={(v) => (chosen = v as 'embed' | 'folder')} />
                 {#if suggest && pictures === 'embed'}
-                  <p class="note warn">The pictures ({size(imageBytes)}) make the page {Math.round(growth * 100)}% bigger; a folder keeps it small.</p>
+                  <p class="note warn">Embedding the pictures adds {size(imageBytes)} to the page. A folder keeps the page small.</p>
                 {/if}
               {:else}
-                <p class="note">One self-contained page.</p>
+                <p class="note">One file; it needs nothing else to open.</p>
               {/if}
             {:else}
-              <p class="note">Plain Markdown; pictures are copied into a folder beside the file.</p>
+              <p class="note">Plain Markdown with no styling. Pictures are copied into a folder beside the file.</p>
             {/if}
             {#if styled}
-              <label class="check"><input type="checkbox" bind:checked={numberChapters} /> Number chapters</label>
+              <label class="check"><input type="checkbox" bind:checked={numberChapters} /> Number chapters (top-level headings)</label>
             {/if}
             {#if format === 'pdf'}
-              <label class="check"><input type="checkbox" bind:checked={runningTitle} /> Title in the top margin</label>
+              <label class="check"><input type="checkbox" bind:checked={runningTitle} /> Title at the top of each page</label>
             {/if}
             {#if format === 'pdf' || format === 'html'}
               <label class="check"><input type="checkbox" bind:checked={titlePageOn} /> Title page</label>
               {#if titlePageOn}
-                <input class="input" bind:value={bookTitle} placeholder={title} aria-label="Title page title" />
-                <input class="input" bind:value={bookAuthor} placeholder="Author" aria-label="Title page author" />
+                <input class="input" bind:value={bookTitle} placeholder="Title (default: {title})" aria-label="Title page title" />
+                <input class="input" bind:value={bookAuthor} placeholder="Author (optional)" aria-label="Title page author" />
               {/if}
             {/if}
-            {#if format === 'docx' || format === 'markdown' || format === 'epub'}
-              <p class="note">The preview shows the {format === 'docx' ? 'PDF and HTML' : 'HTML'} look.</p>
+            {#if format === 'docx' || format === 'epub'}
+              <p class="note">{format === 'docx' ? 'The preview shows the content; Word lays out the pages itself.' : 'The preview shows the content; each e-reader lays out the pages itself.'}</p>
             {/if}
           </section>
 
@@ -359,8 +360,8 @@
               <Select label="Export style" value={styleId} options={styleOptions} onchange={choose} />
               {#if current?.description}<p class="note">{current.description}</p>{/if}
               <div class="row">
-                <button class="btn" onclick={startEditing}>{current?.builtin ? 'Make my own…' : 'Edit…'}</button>
-                <button class="link" onclick={() => void window.api.openExportStylesFolder()}>Open folder</button>
+                <button class="btn" onclick={startEditing}>{current?.builtin ? 'Copy and edit…' : 'Edit…'}</button>
+                <button class="link" onclick={() => void window.api.openExportStylesFolder()}>Show styles folder</button>
               </div>
               {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
             </section>
@@ -372,7 +373,7 @@
         {#if editing && styled}
           <button class="btn" onclick={() => (editing = false)}>Cancel</button>
           {#if current && !current.builtin}
-            <button class="btn" onclick={() => void saveDraft(true)}>Save as new</button>
+            <button class="btn" onclick={() => void saveDraft(true)}>Save as new style</button>
           {/if}
           <button class="btn primary" disabled={draftName.trim() === ''} onclick={() => void saveDraft(false)}>
             {current && !current.builtin ? 'Save' : 'Save style'}
