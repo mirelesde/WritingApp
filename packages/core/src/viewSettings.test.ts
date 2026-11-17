@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FONT_STACKS, editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, parseViewSettings, resolveView, textOn } from './viewSettings'
+import { FONT_STACKS, editorFontStack, clampFontSize, clampLineSpacing, DEFAULT_VIEW, defaultPreferences, parseViewSettings, resolveView, textOn } from './viewSettings'
 
 describe('parseViewSettings', () => {
   it('keeps valid fields', () => {
@@ -160,6 +160,17 @@ describe('old generic font names', () => {
     expect(parseViewSettings({ font: 'serif' })).toEqual({ font: 'source-serif-4' })
     expect(parseViewSettings({ font: 'mono' })).toEqual({ font: 'mono' })
     expect(parseViewSettings({ font: 'georgia' })).toEqual({})
+  })
+})
+
+describe('defaultPreferences', () => {
+  it('is every default except the pane layout', () => {
+    const d = defaultPreferences()
+    expect(d.fontSize).toBe(DEFAULT_VIEW.fontSize)
+    expect(d.accent).toBe(DEFAULT_VIEW.accent)
+    expect(d).not.toHaveProperty('sidebarCollapsed')
+    expect(d).not.toHaveProperty('sheetsCollapsed')
+    expect(d).not.toHaveProperty('outline')
   })
 })
 

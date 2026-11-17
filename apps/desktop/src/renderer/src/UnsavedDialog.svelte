@@ -20,7 +20,7 @@
     what === 'tab'
       ? 'Your changes will be lost if you close this tab without saving them.'
       : what === 'library'
-        ? 'Your changes will be lost if you open another library without saving them.'
+        ? 'Your changes will be lost if you leave this library without saving them.'
         : 'Your changes will be lost if you close this window without saving them.'
   )
 

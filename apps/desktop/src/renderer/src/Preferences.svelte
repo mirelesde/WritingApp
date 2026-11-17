@@ -2,6 +2,7 @@
   import Select, { type Option } from './Select.svelte'
   import {
     CHOICES,
+    defaultPreferences,
     MAX_LINE_SPACING,
     MIN_LINE_SPACING,
     MAX_FONT_SIZE,
@@ -127,6 +128,19 @@
       localStorage.setItem(REMEMBER_TAB, id)
     } catch {
       // Not remembered; harmless.
+    }
+  }
+
+  let confirmingReset = $state(false)
+  function resetAll(): void {
+    onchange(defaultPreferences())
+    confirmingReset = false
+  }
+  function resetKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      confirmingReset = false
     }
   }
 
@@ -460,10 +474,75 @@
     </div>
     {/if}
     </div>
+    <footer>
+      <button class="link danger" onclick={() => (confirmingReset = true)}>Reset all preferences…</button>
+    </footer>
   </div>
 </div>
 
+{#if confirmingReset}
+  <div class="dlg-backdrop centered modal" role="presentation">
+    <div
+      class="dlg confirm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="reset-title"
+      aria-describedby="reset-body"
+      tabindex="-1"
+      use:focusDialog
+      onkeydown={resetKeydown}
+    >
+      <h2 id="reset-title">Reset all preferences?</h2>
+      <p id="reset-body">
+        Every setting goes back to how it was when you first installed the app: theme, colours, fonts, sizes, writing
+        options and how sheets are saved. This can’t be undone. Your library and sheets are not touched.
+      </p>
+      <div class="buttons">
+        <button onclick={() => (confirmingReset = false)}>Cancel</button>
+        <button class="danger-fill" onclick={resetAll}>Reset Preferences</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <style>
+  footer {
+    display: flex;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .link.danger {
+    color: var(--danger);
+  }
+  .confirm {
+    width: min(440px, 92vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 20px;
+  }
+  .confirm h2 {
+    margin: 0;
+    font-size: calc(15px * var(--ui-scale, 1));
+  }
+  .confirm p {
+    margin: 0;
+    font-size: calc(13px * var(--ui-scale, 1));
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .confirm .buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .confirm .buttons > button.danger-fill {
+    background: var(--danger);
+    color: var(--bg);
+  }
+  .confirm .buttons > button.danger-fill:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 88%, var(--text));
+  }
   .swatches,
   .theme-pick {
     display: flex;

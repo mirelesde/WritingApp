@@ -305,3 +305,21 @@ describe('close library', () => {
     assert.equal(saved.libraryPath, undefined)
   })
 })
+
+describe('reset preferences', () => {
+  it('asks first, and puts every setting back', async () => {
+    await start()
+    await app.eval(`window.api.setView({ fontSize: 22, accent: '#d9722b' })`)
+    await app.menu('preferences')
+    await until(() => app.eval(`document.querySelector('[aria-label=Preferences]') !== null`), 'preferences')
+    await app.click(`[...document.querySelectorAll('footer button')].find(b => b.textContent.includes('Reset all'))`)
+    await until(() => app.eval(`document.querySelector('[role=alertdialog]') !== null`), 'the question')
+    // Cancel changes nothing.
+    await app.click(`[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent === 'Cancel')`)
+    assert.equal(await app.eval(`window.api.getView().then(v => v.fontSize)`), 22)
+    await app.click(`[...document.querySelectorAll('footer button')].find(b => b.textContent.includes('Reset all'))`)
+    await until(() => app.eval(`document.querySelector('[role=alertdialog]') !== null`), 'the question')
+    await app.click(`[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent === 'Reset Preferences')`)
+    await until(() => app.eval(`window.api.getView().then(v => v.fontSize === 16 && v.accent === '#6b7280')`), 'the defaults')
+  })
+})

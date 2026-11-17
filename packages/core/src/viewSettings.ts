@@ -156,6 +156,16 @@ export const DEFAULT_VIEW: ViewSettings = {
   saveIndicator: true,
 }
 
+/** Where the window's panes are, which Preferences does not own: a reset leaves these alone. */
+const LAYOUT_KEYS = ['sidebarCollapsed', 'sheetsCollapsed', 'outline'] as const
+
+/** Every setting back at its default, except the layout the writer has arranged. */
+export function defaultPreferences(): Partial<ViewSettings> {
+  const out: Partial<ViewSettings> = { ...DEFAULT_VIEW }
+  for (const key of LAYOUT_KEYS) delete out[key]
+  return out
+}
+
 /** CSS font names of the bundled interface fonts. */
 export const UI_FONT_FAMILIES: Record<UiFont, string> = {
   geist: "'Geist'",

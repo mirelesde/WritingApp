@@ -45,6 +45,7 @@ export {
   clampFontSize,
   clampLineSpacing,
   DEFAULT_VIEW,
+  defaultPreferences,
   FONT_STACKS,
   editorFontStack,
   isFontName,
