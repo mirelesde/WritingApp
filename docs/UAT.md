@@ -1,6 +1,6 @@
 # User acceptance scripts
 
-Manual checks (section 15 lists everything still to confirm live) for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
+Manual checks (section 16 covers the menus, Preferences and first launch; section 15 lists everything still to confirm live) for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
 
 Items marked **(not yet checked live)** are ones the developer could not drive in the test harness, so look at them closely.
 
@@ -474,6 +474,98 @@ Known limits: operations that rewrite sheets on disk (merge, split, move, Replac
 7. Existing sheets named the old way (`the-station.md`) are not renamed just because of this change.
 8. Quick Open, the Move picker and Find results show group names as typed.
 
+## 16. Coverage sweep: first launch, menus and Preferences
+
+Added after an audit found features with no script: the folder chooser and Close Library, Reset preferences, the Appearance, Editor and Writing settings, the Format menu, Daily Note and templates, Quick Open and the command palette, the outline, and the error log. These steps were written from the menus and code, not yet run, so a step that does not match what you see may be a wrong script as much as a bug. Use the test library from the Setup section. For a first-launch test, rename the settings folder first (`~/Library/Application Support/@writingapp/desktop` on macOS) and put it back afterwards.
+
+### 16.1 First launch, Close Library and Open Recent
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.1.1 | With no settings folder, start the app. | The "choose a folder" screen shows, not a library. |
+| 16.1.2 | Choose the test library. | It opens. Quit and start again: it opens again without asking. |
+| 16.1.3 | File > Close Library. | The folder chooser shows in every open window; no sheet or tab is left. |
+| 16.1.4 | Quit and start again after closing. | The folder chooser shows. The library is not reopened. |
+| 16.1.5 | File > Open Recent. | The closed library is listed. Choosing it opens it again. |
+| 16.1.6 | Type in a sheet, then File > Close Library (in "Only when I save" mode). | It asks "Do you want to save the changes…?" first. Cancel keeps the library open. |
+| 16.1.7 | File > Open Recent > Clear Menu. | The list empties. The open library stays open. |
+| 16.1.8 | Open Recent, choose a library whose folder you have renamed. | An error says the folder could not be read, and it is dropped from the list. |
+
+### 16.2 Preferences: Appearance
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.2.1 | Theme: Light, Dark, then Match system. | The whole window follows each; Match system follows the computer's setting. |
+| 16.2.2 | Pick each accent colour, then the custom colour picker. | Buttons, selection and the sheet-card highlight change. Text on a light accent stays readable. |
+| 16.2.3 | Colour theme: choose one, then None; Open folder. | The colours change and revert. The folder opens in Finder; a theme file added there shows after reopening Preferences. |
+| 16.2.4 | System font, then System text size − and +. | Lists, menus and dialogs change font and size; the editor text does not. |
+| 16.2.5 | Turn off Sheet count in groups. | The numbers beside the groups disappear; on again, they return. |
+
+### 16.3 Preferences: Editor and Writing
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.3.1 | Editor font: Follow System Font, a bundled font, an installed font. Then Text size − and +. | The editor changes font and size at once, and the choice is kept after a restart. |
+| 16.3.2 | Text column: Compact through Full. | The text column narrows and widens. |
+| 16.3.3 | Line spacing − and +. Space between paragraphs: Compact, Normal, Airy. | The editor's spacing follows. |
+| 16.3.4 | Turn on Indent paragraphs. | Paragraphs are indented, the gaps close, and the Space between paragraphs choice disappears. Export to HTML: the indent shows there too. |
+| 16.3.5 | Hang heading marks on and off. | The # sits in the margin, or in the line. |
+| 16.3.6 | Hide Markdown marks on and off. | ** and # hide except on the line being edited. |
+| 16.3.7 | Alignment: Left, Justified. Cursor width: Thin to Thick. Highlight current line: Off, Subtle. | Each shows in the editor. |
+| 16.3.8 | Choosing a sheet opens it in: This tab, A new tab, A new window. | Clicking a sheet does each; the grey note under the heading changes with the choice. |
+| 16.3.9 | Focus mode on; Focus on: Line, Sentence, Paragraph; Fade the rest: Light to Strong. | Everything but the chosen part dims by the chosen amount. |
+| 16.3.10 | Typewriter scrolling on; Typewriter line sits: Middle, Upper third. | The line being written stays at that height. |
+| 16.3.11 | Scroll past the end on and off. | There is, or is not, room below the last line. |
+| 16.3.12 | Smart punctuation on; type `"hi"`, `--` and `...`. | Curly quotes, a dash and … appear. Off: they stay as typed. |
+| 16.3.13 | Line numbers on and off (also View > Line Numbers). | Numbers show beside each line, or not. |
+
+### 16.4 Reset all preferences
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.4.1 | Change the theme, accent, text size and Save mode. Open Preferences, press Reset all preferences… (bottom left). | A question: "Reset all preferences?", saying nothing in the library is touched. Focus is in the dialog. |
+| 16.4.2 | Press Cancel, or Escape. | The question closes. Preferences stay open and nothing changed. |
+| 16.4.3 | Press Reset all preferences… then Reset Preferences. | Every setting is back to its default, on every tab. The sidebar, sheet list and outline stay as you arranged them. |
+| 16.4.4 | Quit and start again. | The defaults are still in force. The library and sheets are unchanged. |
+
+### 16.5 Format and Insert menus
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.5.1 | Format > Heading 1, 2, 3, then Body Text, on a line. | The line gets #, ##, ### and then plain text. |
+| 16.5.2 | Format > Quote, Bulleted List, Numbered List, Task List. | The line gets the matching prefix; choosing it again takes it off. |
+| 16.5.3 | Select a word; Format > Bold, Italic, Strikethrough, Highlight, Inline Code. | The word is wrapped in the marks; choosing again unwraps it. Cmd/Ctrl+B and I do the same. |
+| 16.5.4 | Format > Link (Cmd/Ctrl+K), Code Block, Comment (Cmd/Ctrl+/), Horizontal Rule. | Each inserts or wraps correctly. A comment does not appear in an export. |
+| 16.5.5 | Format > Toggle Task (Cmd/Ctrl+Return) on a `- [ ]` line. | It ticks, then unticks. |
+| 16.5.6 | Insert > Table, Image…, Footnote, Table of Contents; Go to Footnote. | Each inserts; Go to Footnote jumps between the mark and its note. |
+| 16.5.7 | Fold menu: Fold Section, Unfold Section, Fold All, Unfold All, Go to Previous/Next Heading. | Each does what it says. |
+
+### 16.6 Sheets, templates and finding things
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.6.1 | File > Daily Note (Cmd/Ctrl+Alt+D) twice. | A sheet for today is made, then the second time opens that same sheet. |
+| 16.6.2 | Save Sheet as Template; then New Sheet from Template…. | The template is offered, and a new sheet is made from it. |
+| 16.6.3 | Select two sheets; Sheet > Merge Sheets, then Undo Library Change. | They join, then separate again. |
+| 16.6.4 | Put the cursor mid-sheet; Sheet > Split at Cursor, then Undo Library Change. | The sheet becomes two, then one. |
+| 16.6.5 | Sheet > Glue Sheets on two neighbours; then Unglue. | They read as one run (a bar along the edge), then separate. |
+| 16.6.6 | Duplicate; then Move to Trash on the copy. | A copy appears; then it is removed, and it is in the computer's trash. |
+| 16.6.7 | Cmd/Ctrl+P and type part of a sheet's name. | Matching sheets are listed; Return opens one. Escape closes the box. |
+| 16.6.8 | Cmd/Ctrl+Shift+P and type `export`. | The commands are listed with their shortcuts; Return runs one. |
+| 16.6.9 | Cmd/Ctrl+Shift+F, search for a word. | Every sheet that has it is listed; clicking a result opens the sheet at that place. |
+| 16.6.10 | Show the outline (View) in a sheet with headings; click a heading. | The editor jumps to it. |
+| 16.6.11 | The sheet list's sort button: choose each order. | The list re-orders; Manual puts it back. |
+
+### 16.7 Window, View and Help
+
+| # | Do | Expect |
+|---|----|--------|
+| 16.7.1 | View > Distraction-Free Mode, then again. | The sidebar and sheet list hide, then return. |
+| 16.7.2 | View > Larger Text, Smaller Text, Default Text Size. | The editor size follows; Default returns it. |
+| 16.7.3 | View > Toggle Sidebar, Toggle Sheet List. | Each hides and shows. |
+| 16.7.4 | Close Window (Cmd/Ctrl+Shift+W) with two windows open. | Only that window closes. |
+| 16.7.5 | Help > Show Error Log. | The log opens (or says there are no errors). |
+
 ## 15. Still to confirm live (checklist)
 
 Things the developer could not drive in the test harness. Tick each one on your own machine; the full steps are in the section named at the end of each line.
@@ -495,4 +587,6 @@ Things the developer could not drive in the test harness. Tick each one on your 
 - [ ] **Export dialog layout**: open Export; the preview fills the left, the settings column scrolls if the window is short while Export stays at its foot, and nothing overflows. 13.27
 - [ ] **Stray marks on sheet cards**: in your own library, no `<!-->` or `**` shows in card previews. 13.31
 - [ ] **Native menus and dialogs**: click through Format, Insert and File menu items, the right-click menus, each save dialog and the Import and Insert Picture pickers; ⌘, opens Preferences; ⌘⇧V pastes plain; ⌘-click opens a link. Full list: ROADMAP section 1.
+- [ ] **First launch and Close Library**: with the settings folder moved aside the chooser shows; Close Library then a restart shows it again. 16.1
+- [ ] **Reset all preferences** from the packaged app, including the question and Cancel. 16.4
 - [ ] **Hard quit and quit with unsaved changes**: force-quit while typing, relaunch and get the text back; quit with unsaved changes and press Cancel. 13.28
