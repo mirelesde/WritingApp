@@ -1,6 +1,6 @@
 # User acceptance scripts
 
-Manual checks (section 16 covers the menus, Preferences and first launch; section 15 lists everything still to confirm live) for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
+Manual checks (section 17 covers the everyday paths and section 18 the packaged build; section 16 covers the menus, Preferences and first launch; section 15 lists everything still to confirm live) for the features added on 2026-11-13: wiki links and backlinks, hiding Markdown marks, folding sections, import, code colours and maths, and drag-and-drop drop lines. Run `npm run dev` in `apps/desktop` (or open a build), use a throwaway library, and tick each step.
 
 Items marked **(not yet checked live)** are ones the developer could not drive in the test harness, so look at them closely.
 
@@ -580,6 +580,170 @@ Added after an audit found features with no script: the folder chooser and Close
 | 16.8.8 | Writing ▸ Close brackets and quotes off; type `(` at the end of a line. | Only `(` appears. On: `()` appears with the cursor between. Selecting a word and typing `(` still wraps it when on. |
 | 16.8.9 | Saving ▸ with While typing chosen, set Save after you stop typing for: Quick, Normal, Relaxed. Type and watch the toolbar. | "Unsaved" turns to "Saved" after about 0.3 s, under a second, or about 3 s. The choice is not offered in the other two save modes. |
 
+## 17. Core workflows: the everyday paths
+
+Added after a second audit that compared this file with the CHANGELOG, ARCHITECTURE, WORKFLOWS and ROADMAP. Sections 1 to 13 test the features added late; the basics a writer meets first (browsing, creating, organising, writing, sheet operations, export, outside changes) had no script of their own. Steps are written from the documented behaviour and have not all been run; where a step differs from what you see, check the CHANGELOG item named in brackets before filing a bug. Use the test library from the Setup section.
+
+### 17.1 Opening and browsing a library [milestone 3, L1 to L10]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.1.1 | Open a library folder holding projects, nested groups and `.md` files. | Three panes: the library tree, the sheet list (cards with a title and the first lines) and the editor. Folders are projects and groups; `.md` files are sheets. |
+| 17.1.2 | Put a `notes.txt`, a `photo.png` and a `.hidden.md` file in a group. | None of them shows. Only folders and `.md` files appear. |
+| 17.1.3 | Click a group, then a sheet. | The sheet's text shows in the editor. A group with sheets opens its first sheet by itself. |
+| 17.1.4 | Click the library name at the top of the sidebar. | The root is selected and lists its own sheets. |
+| 17.1.5 | Look at each group row. | An icon for projects and for groups, a chevron on groups with children, and a sheet-count badge (Preferences ▸ Appearance ▸ Sheet count in groups turns it off). |
+| 17.1.6 | Type part of a title in the Filter box above the sheet list. | The list narrows to matching sheets; clearing it restores the list. Choosing another group clears the filter. |
+| 17.1.7 | Click a few sheets, then the back and forward arrows in the editor's toolbar. | The arrows step through the sheets visited, and are dim when there is nowhere to go. |
+| 17.1.8 | Hover a group or project row and click its colour button (tooltip "Colour"), then pick a swatch; try "No colour". | A row of swatches opens under it; the folder icon takes the colour, and "No colour" clears it. It is still there after a restart and is kept in the folder's `.writingapp.json`. [L8] |
+| 17.1.9 | Hide the sidebar (View > Toggle Sidebar, Cmd/Ctrl+\, or its button), then move the pointer to the window's left edge. | The sidebar hides and the editor widens. At the left edge the sidebar slides in over the editor and goes when the pointer leaves. The state is kept after a restart. [item 9] |
+| 17.1.10 | View > Toggle Sheet List. | The sheet list hides and shows; the editor widens. |
+| 17.1.11 | Rename a folder outside the app, add a file, delete a file. | The tree and list update by themselves. An open sheet that was not edited reloads quietly. [milestone 9] |
+| 17.1.12 | Delete a folder's `.writingapp.json` in Finder, then edit the folder. | Nothing breaks: sheets list in name order, and the sidecar is made again. A damaged sidecar (not valid JSON) is also survived. |
+| 17.1.13 | Quit and start again. | The same library and the same sheet come back (without stealing the keyboard focus). [item 12] |
+
+### 17.2 Creating, renaming, moving and the keyboard [milestone 5, items 16, 17]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.2.1 | Cmd/Ctrl+N. | A new sheet appears in the selected group and is selected, with the cursor in the editor. Titled "Untitled" until you type a first line. |
+| 17.2.2 | Cmd/Ctrl+Shift+N, then type a name and press Return. | A new group in the selected group, with its name open for editing. Cmd/Ctrl+Alt+Shift+N makes a project at the top level. |
+| 17.2.3 | Type a first line `# The Station` in a new sheet and click away. | The sheet's file becomes `The Station.md`; the card title is "The Station". Two sheets with the same title get `The Station 2.md`. |
+| 17.2.4 | Focus the tree with Cmd/Ctrl+1, the sheet list with 2, the editor with 3. | The keyboard focus moves to each pane. Escape in the editor returns to the sheet list. |
+| 17.2.5 | In the tree: Up/Down, Left/Right (collapse/expand), Return or F2. | The selection moves, groups open and close, and Return or F2 opens the rename box. |
+| 17.2.6 | In the tree, Alt+Up / Alt+Down on a group. | The group moves up or down among its siblings; Undo Library Change moves it back. |
+| 17.2.7 | In the sheet list: Up/Down, Shift+Up/Down, Home, End, Cmd/Ctrl+A. | The selection moves and extends; Home and End jump to the ends; Cmd/Ctrl+A selects every sheet in the list. |
+| 17.2.8 | With sheets selected, Alt+Up / Alt+Down. | The selection moves up or down together, in the saved order. |
+| 17.2.9 | Select a sheet; Cmd/Ctrl+Shift+M, type a group name, Return. | "Move to" lists the groups, narrows as you type, and the sheet moves there. The library and the sheet list follow. |
+| 17.2.10 | Select two groups' worth of sheets with Shift+click across sections. | The range selects across the section headings. |
+| 17.2.11 | Drag a sheet into a group row, and a group into another group. | The sheet moves; the group moves with its sheets. Dropping a group into itself or its own child is refused. One undo reverses it. |
+| 17.2.12 | Restructure a project (new group, move three sheets in, reorder, rename) without touching the mouse. | It can be done; that is the milestone's "done when". [milestone 5] |
+| 17.2.13 | Rename a group to the name of a sibling. | It says the name is taken (or adds a number) and nothing is lost. |
+
+### 17.3 Right-click, clipboard and Finder [items 17, 43, 81]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.3.1 | Right-click a sheet. | New Sheet, New Group, Open in New Tab, Open in New Window, Keywords…, Duplicate, Cut, Copy, Paste (dimmed until something is cut or copied), Move to…, Move to Trash, Reveal in Finder (Show in File Manager on Windows and Linux) and Copy Path. There is no Rename for a sheet: its title is its first line. |
+| 17.3.2 | Copy Path, then paste into any text box. | The sheet's full file path. |
+| 17.3.3 | Reveal in Finder. | Finder opens with the file selected. |
+| 17.3.4 | Select a sheet; Cmd/Ctrl+C, click another group, Cmd/Ctrl+V. | A copy lands there. The original stays. One Undo Library Change removes the copy. |
+| 17.3.5 | Cut with Cmd/Ctrl+X, then paste in another group. | The sheet moves. Cutting then pasting a group into itself is refused. |
+| 17.3.6 | Cmd/Ctrl+D on a sheet in the list. | A duplicate appears next to it (the editor keeps Cmd/Ctrl+D for itself). |
+| 17.3.7 | Right-click a group, then the library name. | Group: the same list plus Rename. Library name: New Sheet, New Group, Paste, Reveal and Copy Path. |
+
+### 17.4 Writing basics [milestone 4, items 4 to 7, 33 to 36, 46, 52]
+
+Use a scratch sheet.
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.4.1 | Type `- one`, Return, `two`, Return, Return. | Return continues the bullet; Return on an empty bullet ends the list. Same for `1. ` (numbers count up) and for `> ` quotes and `- [ ] ` tasks. |
+| 17.4.2 | In a list, Tab and Shift+Tab (also with several lines selected). | The item (or lines) indent and outdent by four spaces under both bullets and numbers. Backspace at the start of an item removes its marker. |
+| 17.4.3 | Select a word; Cmd/Ctrl+B, Cmd/Ctrl+I; again. | It is wrapped in `**` / `*`, and unwrapped the second time. The toolbar's Bold and Italic do the same and keep the selection. |
+| 17.4.4 | Type `*` then text, then `*`. Also `**`, and `_`. At a line start type `* ` for a bullet. | The closing mark is inserted and typing it steps over it. A bullet `* ` does not auto-close. Backspace on an empty pair removes both. |
+| 17.4.5 | Select text and type `(`, `[`, `` ` `` or `"`. | The selection is wrapped. Typing `"` straight after a word (`5"`, `don`t`) does not open a pair. |
+| 17.4.6 | Select text and paste a URL. | The text becomes `[text](url)`. |
+| 17.4.7 | Select text; Cmd/Ctrl+K. | `[text](url)` with the `url` selected, ready to type over. |
+| 17.4.8 | Copy a formatted paragraph from a web page or Word and paste. | It arrives as Markdown (headings, bold, links, lists). Cmd/Ctrl+Shift+V pastes plain text instead. |
+| 17.4.9 | Format > Strikethrough, Highlight (`==`), Inline Code, Code Block, Quote, Horizontal Rule on a line. | The marks go on, and off again when repeated. A rule draws as a dashed line. |
+| 17.4.10 | Click the Aa button in the editor header. | A popover offers styles, lists and inline marks; each acts on the cursor or selection. |
+| 17.4.11 | Press Alt+Up / Alt+Down on a line in the editor. | The line moves up or down. |
+| 17.4.12 | Type `- [ ] item`; click the box; press Cmd/Ctrl+Return on it. | The box draws as a checkbox; clicking ticks and unticks it in the text (`[x]`); Cmd/Ctrl+Return toggles the item at the cursor. |
+| 17.4.13 | Cmd/Ctrl+/ on a line and on a selection. | `<!-- … -->` wraps it and it is dimmed. A comment does not appear in HTML or PDF export, is not counted in the word count, but Find still finds it. A comment inside a code fence stays as code. [item 13] |
+| 17.4.14 | Insert > Footnote; type its note; click the `[^1]` chip. | The chip opens the note in an editable popover; the definition is hidden from the text, previews and word count; the export numbers it. Insert > Go to Footnote moves between mark and note. [item 20] |
+| 17.4.15 | Insert > Table; edit a cell; Tab through cells; add and delete rows and columns; change a column's alignment. | The table is an editable grid. Clicking into it shows its Markdown; the saved Markdown is clean. Undo works. [item 28] |
+| 17.4.16 | Cmd/Ctrl+Alt+Up and Down in a sheet with headings. | The cursor moves to the previous and next heading; the outline marks the current one. |
+| 17.4.17 | Right-click a misspelled word. | Spelling suggestions appear and Add to Dictionary. The red wavy underline shows on misspellings. |
+| 17.4.18 | Type `Wait -- really...` with Smart punctuation on, inside text, a code span and a comment. | Outside code and comments: an en or em dash and a real ellipsis. Inside code and comments they stay as typed. |
+| 17.4.19 | Write a full sheet (a few hundred words with headings, lists, a quote). | It feels unremarkable: no lag, no stray marks, undo and redo behave. [milestone 4] |
+| 17.4.20 | Use Preferences ▸ Editor ▸ Indent paragraphs with a sheet of paragraphs. | Paragraphs indent and the gaps close, except the first after a heading, lists and quotes. The file's text is unchanged. |
+
+### 17.5 Word count, outline, templates and sorting [items 3, 14, 47, 48]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.5.1 | Look at the pill in the editor's corner; select some text. | "N words"; with a selection, "n of N words selected". Hovering shows characters with spaces, minutes to read and the group's total. Folding does not change it. |
+| 17.5.2 | Type a comment `<!-- x -->` and a footnote definition. | They do not add to the count. |
+| 17.5.3 | Show the outline (View > Show Outline, Cmd/Ctrl+Alt+O, or the toolbar button). | Headings of the open sheet are listed, indented by level; clicking one moves the cursor there. Headings in code and comments are skipped. The panel's state is kept. |
+| 17.5.4 | Sort button in the sheet list header: Manual, Title, Modified, Created, Words. | The list re-orders each way within each section; Modified, Created and Words also show the value on each card. Dragging to reorder is off while sorted; Manual restores your saved order. |
+| 17.5.5 | Save Sheet as Template; File > New Sheet from Template…; open the Command Palette and type the template's name. | The template is listed in both; the new sheet has its text. `{{date}}`, `{{time}}` and `{{weekday}}` in the template are filled in. Templates live in a hidden `.templates` group that the tree does not show. |
+| 17.5.6 | Make a template titled "Daily Note" with `{{date}}`; File > Daily Note. | Today's sheet is made from it; running it again the same day opens the same sheet. |
+
+### 17.6 Sheet operations [milestone 6]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.6.1 | Put the cursor mid-sheet; Cmd/Ctrl+Shift+Return (Sheet > Split at Cursor). | Two sheets: the text before stays, the tail becomes the next sheet. Both are on disk. |
+| 17.6.2 | Select three sheets; Cmd/Ctrl+Shift+J (Merge). | One sheet in the first position of display order, the texts joined with a blank line; the others are in the trash. |
+| 17.6.3 | Select two or more neighbours; Cmd/Ctrl+Shift+G (Glue). | The cards show an accent bar joining them. In the editor they read as one continuous document: arrow keys cross from one to the next. A text selection cannot span two sheets. |
+| 17.6.4 | Select a sheet in a glued run; Cmd/Ctrl+Alt+G (Unglue). | It detaches from its neighbours on both sides. |
+| 17.6.5 | Export a glued run with one sheet selected. | The whole run exports as one flowing document. |
+| 17.6.6 | Do split, merge, glue, move and delete one after another; then Cmd/Ctrl+Alt+Z repeatedly. | Each is undone in reverse order, up to 20 steps. Plain Cmd/Ctrl+Z still undoes typing, not these. Opening another library clears the stack. |
+| 17.6.7 | Split a sheet that was glued to the one after it. | The tail inherits the glue to what follows. |
+| 17.6.8 | Delete a group (Cmd/Ctrl+Alt+Backspace with the tree focused) then undo. | The group and its sheets are back; the group is in the system trash meanwhile. |
+
+### 17.7 Export, the basic paths [milestones 7 and 8, items 58, 69]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.7.1 | Select one sheet; Cmd/Ctrl+E; choose HTML; Export as HTML…. | A preview shows first (a sandboxed page; scripts do not run). The saved file opens alone in a browser with its styling. |
+| 17.7.2 | Select several sheets, then export. | One document, in library order, with a `* * *` break between unglued sheets and none inside a glued run. |
+| 17.7.3 | With the tree focused, export. | The whole selected group exports. |
+| 17.7.4 | Put raw HTML such as `<script>alert(1)</script>` in a sheet and export. | It shows as text; nothing runs. |
+| 17.7.5 | Export as PDF; open it. | Paginated, black on white even in dark mode, headings kept with their text, page numbers "n / total" in the footer. A4 and Letter differ. |
+| 17.7.6 | Export as Markdown. | A single `.md` file; pictures go in a `-images` folder beside it. |
+| 17.7.7 | Export a sheet with a comment, a footnote, a task list, a table, highlight, strikethrough and a code block. | The comment is gone; the footnote is numbered; the others render. |
+| 17.7.8 | Cancel each save dialog. | Nothing is written and the dialog closes cleanly. |
+| 17.7.9 | Export with Indent paragraphs on. | The HTML and PDF are indented too. |
+
+### 17.8 Find in Library, outside changes and undo [milestone 9, items 49, 54]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.8.1 | Cmd/Ctrl+Shift+F; type a word. | Matching sheets, in library order, with a snippet each; case does not matter by default; the first 50 sheets are searched. Clicking a result opens that sheet at the match. |
+| 17.8.2 | Type a replacement; Replace in this sheet; Replace All. | The snippets preview the change; unsaved edits are saved first; one Undo Library Change reverses a Replace All. |
+| 17.8.3 | Edit an open, unedited sheet in another editor and save. | The sheet in the app updates quietly. |
+| 17.8.4 | Type in an open sheet in the app, then change the same file outside, then type again. | The save raises the "changed outside the app" dialog with both versions. |
+| 17.8.5 | Delete the open sheet's file outside the app. | The sheet leaves the list; the editor empties; nothing crashes. |
+| 17.8.6 | Move a project out of the library folder and back. | The library follows both changes. |
+
+### 17.9 Themes, accent and look [items 8, 38, 50, 60]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.9.1 | Open Preferences ▸ Appearance ▸ Colour theme ▸ Open folder; add a JSON file with a few colour tokens (see the other themes); reopen Preferences. | The theme is listed and changes the colours when chosen. A broken file is ignored, not fatal. |
+| 17.9.2 | View > Theme: Light, Dark, Match System; View > Editor Font; Larger, Smaller, Default Text Size (Cmd/Ctrl + / - / 0). | Each applies at once and is remembered. Dialogs and menus follow the theme. |
+| 17.9.3 | Distraction-Free Mode (Cmd/Ctrl+Shift+D); move the pointer to the top and the left edge; press Escape. | Panes and header rows hide, return when the pointer reaches an edge, and Escape leaves the mode. |
+| 17.9.4 | Focus Mode (Cmd/Ctrl+Shift+L) in a glued run. | The paragraph being written stays bright; other sheets of the run fade. |
+| 17.9.5 | View > Typewriter Scrolling. | The cursor line stays vertically centred. |
+
+### 17.10 Performance and large libraries [items 72, 75]
+
+| # | Do | Expect |
+|---|----|--------|
+| 17.10.1 | Open a library of 1,000+ sheets (copy a folder many times). | It loads in a second or two, and the next launch is faster (the cache). |
+| 17.10.2 | Change a file outside the app and reopen the app. | The changed sheet shows its new title and preview; unchanged ones are not slow. |
+| 17.10.3 | Type in a 5,000-line sheet. | Typing and scrolling stay smooth. |
+
+## 18. Checks only a packaged build can do
+
+The dev build runs from the source folder; an installed app runs inside its own bundle, with its own paths and the OS's file rules. Do these on the DMG, installer or AppImage, not `npm run dev`. [ROADMAP section 2]
+
+| # | Do | Expect |
+|---|----|--------|
+| 18.1 | Install from the DMG (drag to Applications) and open it. | It opens. On a Mac without the developer's certificate, Gatekeeper may ask you to confirm; note exactly what it says. The icon and the app name are right in the Dock and the About box. |
+| 18.2 | Open a library from the Desktop, Documents and an external drive. | Each opens and saves. A folder macOS protects asks for permission once and then works. |
+| 18.3 | Insert, paste and show pictures; export with pictures. | Thumbnails draw (the `wa-asset://` route works in the bundle); the export carries them. |
+| 18.4 | Export to PDF, Word, EPUB, HTML and Markdown. | Each saves and opens. PDF fonts and page numbers are right. |
+| 18.5 | Check the fonts: the interface in Geist, an editor with Source Serif 4. | They show; nothing falls back to a system font unless chosen. |
+| 18.6 | Spell check: misspell a word. | The underline and suggestions appear. |
+| 18.7 | Force quit while typing; relaunch. | The text comes back through the recovery dialog. |
+| 18.8 | Open the settings folder (`~/Library/Application Support/@writingapp/desktop` on macOS, `%APPDATA%` on Windows, `~/.config` on Linux). | `settings.json`, `sheet-cache`, `journal`, `themes` and `export-styles` live there, and `errors.log` once something fails. |
+| 18.9 | Replace the app with a newer build over the old one. | Settings, recent libraries and the open library survive the update. |
+| 18.10 | Windows and Linux only: menu accelerators use Ctrl (not ⌘); the menu bar and window frame look right; tabs, drag-out, Save and Export work; a group named `Act I: Why?` is handled. | As on macOS. Note any toast or dialog that still says ⌘ on these platforms. |
+| 18.11 | Uninstall the app. | Your libraries are untouched. |
+
 ## 15. Still to confirm live (checklist)
 
 Things the developer could not drive in the test harness. Tick each one on your own machine; the full steps are in the section named at the end of each line.
@@ -601,6 +765,8 @@ Things the developer could not drive in the test harness. Tick each one on your 
 - [ ] **Export dialog layout**: open Export; the preview fills the left, the settings column scrolls if the window is short while Export stays at its foot, and nothing overflows. 13.27
 - [ ] **Stray marks on sheet cards**: in your own library, no `<!-->` or `**` shows in card previews. 13.31
 - [ ] **Native menus and dialogs**: click through Format, Insert and File menu items, the right-click menus, each save dialog and the Import and Insert Picture pickers; ⌘, opens Preferences; ⌘⇧V pastes plain; ⌘-click opens a link. Full list: ROADMAP section 1.
+- [ ] **Everyday paths** (17): browsing, creating, keyboard organising, writing basics, sheet operations, export, outside changes. 17
+- [ ] **Packaged build** (18): install, folders, pictures, exports, recovery, update, uninstall. 18
 - [ ] **First launch and Close Library**: with the settings folder moved aside the chooser shows; Close Library then a restart shows it again. 16.1
 - [ ] **New preferences** (16.8): When the app starts, Confirm before moving to the trash, Word count, Hyphenate, Close brackets and quotes, Save delay. 16.8
 - [ ] **Reset all preferences** from the packaged app, including the question and Cancel. 16.4
