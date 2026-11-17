@@ -319,6 +319,13 @@
     if (info) showLibrary(info)
   }
 
+  /** Saves what is outstanding, then closes the library; the next launch asks for a folder. */
+  async function closeLibrary(): Promise<void> {
+    if (!(await resolveUnsaved(autosaver.unsavedPaths(), 'library'))) return
+    await autosaver.flush()
+    await window.api.closeLibrary()
+  }
+
   /** The sheets that read as one with `path`: its glued run, or just itself. */
   function runPaths(path: string): string[] {
     return runOf(group?.children ?? [], path)
@@ -745,6 +752,7 @@
     commandPalette: () => openPalette(),
     distractionFree: () => void ui.toggleZen(),
     preferences: () => (preferencesOpen = true),
+    closeLibrary: () => void closeLibrary(),
     insertTable: editing.insertTable,
     insertFootnote: editing.insertFootnote,
     insertContents: editing.insertContents,
@@ -824,6 +832,7 @@
       })
       .finally(() => (loading = false))
     const unsubscribeOpened = window.api.onLibraryOpened(showLibrary)
+    const unsubscribeClosed = window.api.onLibraryClosed(navigation.closeLibrary)
     const unsubscribeChanged = window.api.onLibraryChanged((info) => void externalChange(info))
     const unsubscribeMenu = window.api.onMenuCommand(handleCommand)
     const unsubscribeText = window.api.onEditMenu(menus.showText)
@@ -850,6 +859,7 @@
     return () => {
       unsubscribeFlush()
       unsubscribeOpened()
+      unsubscribeClosed()
       unsubscribeChanged()
       unsubscribeMenu()
       unsubscribeText()

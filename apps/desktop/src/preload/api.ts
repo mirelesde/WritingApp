@@ -37,6 +37,7 @@ export type MenuCommand =
   | 'command-palette'
   | 'distraction-free'
   | 'preferences'
+  | 'close-library'
   | 'split'
   | 'merge'
   | 'glue'
@@ -137,6 +138,8 @@ export interface Api {
   getLibrary(): Promise<LibraryInfo | null>
   /** Shows the folder picker. Null if cancelled or the folder cannot be opened. */
   chooseLibrary(): Promise<LibraryInfo | null>
+  /** Closes the open library, so the next launch asks for a folder. */
+  closeLibrary(): Promise<void>
   /** The text of a sheet in the open library. */
   readSheet(path: string): Promise<string>
   /** Replaces the text of an existing sheet in the open library. */
@@ -267,4 +270,5 @@ export interface Api {
   onLibraryChanged(callback: (library: LibraryInfo) => void): () => void
   /** Called when File > Open Library loads a library. Returns an unsubscribe function. */
   onLibraryOpened(callback: (library: LibraryInfo) => void): () => void
+  onLibraryClosed(callback: () => void): () => void
 }

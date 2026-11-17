@@ -6,7 +6,7 @@ import type { SelectionState } from './selectionState.svelte'
 export interface NavigationHost {
   /** Waits for a pending selection change to finish, and saves what is outstanding. */
   settle(): Promise<void>
-  setLibrary(info: LibraryInfo): void
+  setLibrary(info: LibraryInfo | null): void
   library(): LibraryInfo | null
   /** Empties the selection and the editor. */
   clearSheets(): void
@@ -35,6 +35,13 @@ export class Navigation {
     this.nav.reset(info.tree.path)
     this.host.clearSheets()
     this.host.onOpened()
+  }
+
+  /** The library was closed: nothing is open, so the folder chooser shows. */
+  closeLibrary = (): void => {
+    this.host.clearSheets()
+    this.host.closeQuick()
+    this.host.setLibrary(null)
   }
 
   /** Chooses a group. Its first sheet opens, so choosing a group rarely leaves the editor empty. */

@@ -36,6 +36,13 @@ describe('Navigation', () => {
     expect(t.host.onOpened).toHaveBeenCalled()
   })
 
+  it('closes a library: nothing showing and nothing open', () => {
+    const t = setup()
+    t.go.closeLibrary()
+    expect(t.host.clearSheets).toHaveBeenCalled()
+    expect(t.host.setLibrary).toHaveBeenCalledWith(null)
+  })
+
   it('chooses a group, clears the filter, and opens its first sheet', async () => {
     const t = setup()
     await t.go.selectGroup('/L/A')

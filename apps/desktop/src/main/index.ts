@@ -201,6 +201,10 @@ function buildMenu(): Menu {
             }
           ]
         },
+        {
+          label: 'Close Library',
+          click: () => sendCommand('close-library')
+        },
         { type: 'separator' },
         {
           label: 'New Window',

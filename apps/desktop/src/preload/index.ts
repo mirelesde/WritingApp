@@ -8,6 +8,7 @@ const api: Api = {
   journalPending: () => ipcRenderer.invoke('journal:pending'),
   getLibrary: () => ipcRenderer.invoke('library:get'),
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
+  closeLibrary: () => ipcRenderer.invoke('library:close'),
   readSheet: (path) => ipcRenderer.invoke('sheet:read', path),
   writeSheet: (path, text) => ipcRenderer.invoke('sheet:write', path, text),
   recreateSheet: (path, text) => ipcRenderer.invoke('sheet:recreate', path, text),
@@ -109,6 +110,13 @@ const api: Api = {
     ipcRenderer.on('library:opened', listener)
     return () => {
       ipcRenderer.removeListener('library:opened', listener)
+    }
+  },
+  onLibraryClosed(callback) {
+    const listener = (): void => callback()
+    ipcRenderer.on('library:closed', listener)
+    return () => {
+      ipcRenderer.removeListener('library:closed', listener)
     }
   }
 }

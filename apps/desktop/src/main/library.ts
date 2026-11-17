@@ -220,6 +220,16 @@ export async function openRecentLibrary(path: string): Promise<LibraryInfo | nul
   return info
 }
 
+/** Closes the open library: nothing is reopened at the next launch. The recent list stays. */
+export async function closeLibrary(): Promise<void> {
+  stopWatching?.()
+  stopWatching = undefined
+  currentRoot = undefined
+  undoStack.length = 0
+  await settings.update({ libraryPath: undefined, lastSheet: undefined })
+  for (const window of BrowserWindow.getAllWindows()) window.webContents.send('library:closed')
+}
+
 /** Runs a change to the library, then reloads it so the UI sees the result. */
 /** The text of an imported file: UTF-16 or UTF-8 as marked, else UTF-8 falling back to Windows-1252. */
 function decodeImported(bytes: Buffer, ext: string): string {
@@ -357,6 +367,8 @@ export function registerLibraryIpc(): void {
       await settings.update({ lastSheet: path })
     }
   })
+
+  ipcMain.handle('library:close', () => closeLibrary())
 
   ipcMain.handle('library:choose', (event) =>
     chooseLibrary(BrowserWindow.fromWebContents(event.sender) ?? undefined)

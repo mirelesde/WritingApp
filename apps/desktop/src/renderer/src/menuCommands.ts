@@ -23,6 +23,7 @@ export interface CommandActions {
   commandPalette(): void
   distractionFree(): void
   preferences(): void
+  closeLibrary(): void
   insertTable(): void
   insertFootnote(): void
   insertContents(): void
@@ -72,6 +73,7 @@ export function runMenuCommand(command: MenuCommand, a: CommandActions): void {
     'command-palette': a.commandPalette,
     'distraction-free': a.distractionFree,
     preferences: a.preferences,
+    'close-library': a.closeLibrary,
     'insert-table': a.insertTable,
     'insert-footnote': a.insertFootnote,
     'insert-contents': a.insertContents,

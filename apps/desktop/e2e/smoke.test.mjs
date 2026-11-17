@@ -295,3 +295,13 @@ describe('the app', () => {
     assert.ok(!(await readFile(join(library, 'Novel', 'Alpha.md'), 'utf8')).includes('UNSAVED'))
   })
 })
+
+describe('close library', () => {
+  it('shows the folder chooser and is not reopened on the next launch', async () => {
+    await start()
+    await app.menu('close-library')
+    await until(() => app.eval(`document.querySelector('.layout') === null`), 'the chooser')
+    const saved = JSON.parse(await readFile(join(app.dataDir, 'settings.json'), 'utf8'))
+    assert.equal(saved.libraryPath, undefined)
+  })
+})
