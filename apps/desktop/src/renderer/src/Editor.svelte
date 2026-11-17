@@ -3,7 +3,8 @@
   import { Compartment } from '@codemirror/state'
   import { EditorView } from '@codemirror/view'
   import { closeSearchPanel, openSearchPanel, SearchQuery, setSearchQuery } from '@codemirror/search'
-  import { createEditorState, fromDisk } from './editor'
+  import { createEditorState, fromDisk, pairing } from './editor'
+  import { bracketPairs } from './pairs'
   import { focusExtensions } from './focusMode'
   import { smartTypography } from './smartTypography'
   import { lineNumbers as lineNumbersExtension } from '@codemirror/view'
@@ -48,6 +49,8 @@
     typewriterAt?: 'centre' | 'upper'
     /** Curly quotes, dashes and ellipses as you type. */
     smartTypography?: boolean
+    /** Close a bracket or quote as it is typed. */
+    autoClose?: boolean
     /** Hide Markdown markers away from the cursor. */
     hideMarkers?: boolean
     /** Show line numbers in a gutter. */
@@ -72,6 +75,7 @@
     typewriterAt = 'centre',
     smartTypography: smart = false,
     hideMarkers: hide = false,
+    autoClose = true,
     lineNumbers = false,
     autofocus = false,
     titles = [],
@@ -262,6 +266,11 @@
   $effect(() => {
     const on = smart
     view?.dispatch({ effects: typography.reconfigure(on ? smartTypography : []) })
+  })
+
+  $effect(() => {
+    const on = autoClose
+    view?.dispatch({ effects: pairing.reconfigure(on ? bracketPairs : []) })
   })
 
   $effect(() => {

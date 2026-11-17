@@ -38,6 +38,7 @@ export function applyView(view: ViewSettings, theme?: ColorTheme): void {
   style.setProperty('--caret-width', CARET_WIDTH[view.caretWidth])
   style.setProperty('--dim-opacity', DIM_OPACITY[view.focusDim])
   style.setProperty('--text-align', view.textAlign)
+  style.setProperty('--hyphens', view.hyphenate && view.textAlign === 'justify' ? 'auto' : 'manual')
   style.setProperty(
     '--active-line',
     view.currentLine === 'subtle' ? 'color-mix(in srgb, var(--text) 6%, transparent)' : 'transparent'

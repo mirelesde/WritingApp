@@ -41,6 +41,7 @@ export type { SearchHit, SearchOptions, TextMatch } from './search'
 export { countWords, groupWordCount, textStats, WORDS_PER_MINUTE } from './stats'
 export type { TextStats } from './stats'
 export {
+  AUTOSAVE_DELAY_MS,
   CHOICES,
   clampFontSize,
   clampLineSpacing,
@@ -64,7 +65,7 @@ export {
   THEMES,
   UI_FONT_FAMILIES,
 } from './viewSettings'
-export type { Font, SheetSort, Theme, ViewSettings } from './viewSettings'
+export type { AutosaveDelay, Font, OnLaunch, SheetSort, Theme, ViewSettings } from './viewSettings'
 export { fuzzyScore, listSheets, rankSheets } from './quickOpen'
 export type { QuickOpenItem } from './quickOpen'
 export { stripComments } from './comments'

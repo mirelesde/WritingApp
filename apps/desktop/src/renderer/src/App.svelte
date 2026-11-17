@@ -8,6 +8,7 @@
     type GroupNode,
     type ColorTheme,
     allSheets as librarySheets,
+    AUTOSAVE_DELAY_MS,
   } from '@writingapp/core'
   import type { LibraryInfo, MenuCommand } from '../../preload/api'
   import { applyView } from './view'
@@ -70,6 +71,7 @@
   import TabBar from './TabBar.svelte'
   import type { FormatKind, LineStyle } from './blockStyle'
   import Preferences from './Preferences.svelte'
+  import ConfirmDialog from './ConfirmDialog.svelte'
   import EditorBar from './EditorBar.svelte'
   import Outline from './Outline.svelte'
   import ExportPreview from './ExportPreview.svelte'
@@ -159,6 +161,7 @@
     onStatus: (status) => (saveStatus = status),
     onUnsaved: (paths) => (dirty = paths),
     enabled: () => prefs?.saveMode === 'auto',
+    delay: () => AUTOSAVE_DELAY_MS[prefs?.autosaveDelay ?? 'normal'],
     journal: {
       put: (path, text) => window.api.journalPut(path, text),
       clear: (path) => window.api.journalClear(path)
@@ -305,6 +308,22 @@
   })
 
   let preferencesOpen = $state(false)
+
+  /** A question waiting for the writer, answered by `ask`'s promise. */
+  let question = $state<{ title: string; body: string; yes: string; answer: (yes: boolean) => void } | null>(null)
+  function ask(title: string, body: string, yes: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      question = {
+        title,
+        body,
+        yes,
+        answer: (ok) => {
+          question = null
+          resolve(ok)
+        }
+      }
+    })
+  }
 
   let themes = $state<ColorTheme[]>([])
   const activeTheme = $derived(themes.find((t) => t.id === prefs?.colorTheme))
@@ -492,7 +511,16 @@
       return part && where ? { path: part.path, text: where.text, offset: where.offset } : undefined
     },
     info: showInfo,
-    warn: (text) => (notice = text)
+    warn: (text) => (notice = text),
+    confirmTrash: async (paths) => {
+      if (!prefs?.confirmTrash) return true
+      const name = (p: string): string => p.slice(p.lastIndexOf('/') + 1).replace(/\.md$/i, '')
+      return ask(
+        paths.length === 1 ? `Move “${name(paths[0]!)}” to the trash?` : `Move ${paths.length} items to the trash?`,
+        'You can bring them back with Undo (Cmd/Ctrl+Alt+Z), or from the computer’s trash.',
+        'Move to Trash'
+      )
+    }
   })
 
 
@@ -1066,6 +1094,7 @@
                   typewriter={ui.typewriter}
                   lineNumbers={ui.lineNumbers}
                   smartTypography={prefs?.smartTypography}
+                  autoClose={prefs?.autoCloseBrackets}
                   hideMarkers={prefs?.hideMarkers}
                   focusScope={prefs?.focusScope}
                   typewriterAt={prefs?.typewriterPosition}
@@ -1084,7 +1113,7 @@
         <p class="placeholder">No Sheet Selected</p>
       {/if}
       </div>
-      {#if run.open}
+      {#if run.open && prefs?.showWordCount !== false}
         <StatusBar text={run.text} selected={run.selectedText} groupWords={words.total} />
       {/if}
       {#if ui.outlineOpen && !ui.zen}
@@ -1092,6 +1121,10 @@
       {/if}
     </section>
   </div>
+{/if}
+
+{#if question}
+  <ConfirmDialog title={question.title} body={question.body} yes={question.yes} onyes={() => question?.answer(true)} oncancel={() => question?.answer(false)} />
 {/if}
 
 {#if preferencesOpen && prefs}

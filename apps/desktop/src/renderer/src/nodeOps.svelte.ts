@@ -28,6 +28,8 @@ export interface NodeHost {
   info(text: string): void
   /** Shows a message about something that could not be done. */
   warn(text: string): void
+  /** Asks before sheets or groups go to the trash, when the preference is on. Absent or true goes ahead. */
+  confirmTrash?(paths: string[]): Promise<boolean>
 }
 
 const dirOf = (path: string): string => path.slice(0, path.lastIndexOf('/'))
@@ -183,6 +185,7 @@ export class NodeOps {
       paths = [nav.selectedGroup]
       fallback = dirOf(nav.selectedGroup)
     } else paths = [...sel.paths] // a plain array: state proxies cannot cross the bridge
+    if (this.host.confirmTrash && !(await this.host.confirmTrash(paths))) return
     const result = await this.host.runOp(() => this.api.deleteNodes(paths))
     if (!result) return
     nav.keep(result.library.tree, fallback)

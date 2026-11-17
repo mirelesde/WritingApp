@@ -163,6 +163,18 @@ describe('old generic font names', () => {
   })
 })
 
+describe('newer preferences', () => {
+  it('defaults keep today\'s behaviour', () => {
+    expect(DEFAULT_VIEW).toMatchObject({ onLaunch: 'last', autosaveDelay: 'normal', showWordCount: true, hyphenate: false, autoCloseBrackets: true, confirmTrash: false })
+  })
+  it('keeps valid values and drops invalid ones', () => {
+    expect(parseViewSettings({ onLaunch: 'ask', autosaveDelay: 'relaxed', hyphenate: true, confirmTrash: true, showWordCount: false, autoCloseBrackets: true })).toEqual({
+      onLaunch: 'ask', autosaveDelay: 'relaxed', hyphenate: true, confirmTrash: true, showWordCount: false, autoCloseBrackets: true
+    })
+    expect(parseViewSettings({ onLaunch: 'never', autosaveDelay: 5, hyphenate: 'yes' })).toEqual({})
+  })
+})
+
 describe('defaultPreferences', () => {
   it('is every default except the pane layout', () => {
     const d = defaultPreferences()

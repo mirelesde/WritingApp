@@ -323,3 +323,38 @@ describe('reset preferences', () => {
     await until(() => app.eval(`window.api.getView().then(v => v.fontSize === 16 && v.accent === '#6b7280')`), 'the defaults')
   })
 })
+
+describe('launch and trash preferences', () => {
+  it('asks for a folder at launch when told to, and not otherwise', { skip: onWindows }, async () => {
+    await start()
+    await app.eval(`window.api.setView({ onLaunch: 'ask' })`)
+    await sleep(500)
+    const dataDir = app.dataDir
+    await app.quit()
+    app = await App.launch(library, dataDir)
+    assert.equal(await app.eval(`document.querySelector('main.empty h1') !== null`), true)
+    // A library opened from the chooser stays open for a new window.
+    await app.eval(`window.api.setView({ onLaunch: 'last' })`)
+    await sleep(500)
+    await app.quit()
+    app = await App.launch(library, dataDir)
+    await until(() => app.eval(`document.querySelector('.layout') !== null`), 'the library')
+  })
+
+  it('asks before moving to the trash when switched on', { skip: onWindows }, async () => {
+    await start()
+    await app.eval(`window.api.setView({ confirmTrash: true })`)
+    await sleep(300)
+    await app.open('Beta')
+    await app.chooseFromMenu(app.sheetCard('Beta'), 'Move to Trash')
+    await until(() => app.eval(`document.querySelector('[role=alertdialog]') !== null`), 'the question')
+    await app.click(`[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent === 'Cancel')`)
+    await sleep(300)
+    assert.equal((await names('Novel')).length, 2)
+    await app.chooseFromMenu(app.sheetCard('Beta'), 'Move to Trash')
+    await until(() => app.eval(`document.querySelector('[role=alertdialog]') !== null`), 'the question')
+    await app.click(`[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent === 'Move to Trash')`)
+    await until(async () => (await names('Novel')).length === 1, 'the trash')
+  })
+})
+

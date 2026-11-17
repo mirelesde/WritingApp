@@ -18,8 +18,8 @@ export interface Autosaver {
 interface Options {
   save: (path: string, text: string) => Promise<void>
   onStatus?: (status: SaveStatus) => void
-  /** Quiet time after the last keystroke before saving. */
-  delay?: number
+  /** Quiet time after the last keystroke before saving; a function is asked each time, so a setting can change it. */
+  delay?: number | (() => number)
   /** How long to wait before retrying after a failed save. */
   retryDelay?: number
   /** Keeps unsaved text somewhere safe, so a crash before the save loses nothing. */
@@ -133,7 +133,7 @@ export function createAutosaver({
     change(path, text) {
       unsaved.set(path, text)
       status()
-      if (enabled()) schedule(delay)
+      if (enabled()) schedule(typeof delay === 'function' ? delay() : delay)
       if (journal) {
         clearTimeout(journalTimer)
         journalTimer = setTimeout(writeJournal, journalDelay)

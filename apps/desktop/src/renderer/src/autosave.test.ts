@@ -22,6 +22,21 @@ function setup(overrides: { save?: (p: string, t: string) => Promise<void> } = {
 }
 
 describe('createAutosaver', () => {
+  it('asks for the delay each time, so a setting can change it', async () => {
+    const writes: string[] = []
+    let ms = 300
+    const autosaver = createAutosaver({ save: async (_p, t) => void writes.push(t), delay: () => ms })
+    autosaver.change('/a.md', 'one')
+    await vi.advanceTimersByTimeAsync(350)
+    expect(writes).toEqual(['one'])
+    ms = 3000
+    autosaver.change('/a.md', 'two')
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(writes).toEqual(['one'])
+    await vi.advanceTimersByTimeAsync(1100)
+    expect(writes).toEqual(['one', 'two'])
+  })
+
   it('saves after a pause, once, with the latest text', async () => {
     const { autosaver, writes } = setup()
     autosaver.change('/a.md', 'h')

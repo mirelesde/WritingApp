@@ -104,7 +104,7 @@ export class App {
       const d = JSON.parse(m.data)
       this.waiting.get(d.id)?.(d)
     }
-    await until(() => this.eval(`document.querySelector('.cm-content, .sheet, .row, .welcome') !== null`), 'the UI')
+    await until(() => this.eval(`document.querySelector('.cm-content, .sheet, .row, .welcome, main.empty h1') !== null`), 'the UI')
   }
 
   send(method, params = {}) {

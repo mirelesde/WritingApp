@@ -57,7 +57,9 @@
     sheetSort: {},
     openSheetIn: { same: 'This tab', tab: 'A new tab', window: 'A new window' },
     uiFont: { geist: 'Geist', 'source-serif-4': 'Source Serif 4' },
-    saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' }
+    saveMode: { auto: 'While typing', switch: 'When I switch or close', manual: 'Only when I save' },
+    onLaunch: { last: 'Open the last library', ask: 'Ask me' },
+    autosaveDelay: { quick: 'Quick', normal: 'Normal', relaxed: 'Relaxed' }
   }
 
   const themeNames: Record<(typeof THEMES)[number], string> = {
@@ -89,8 +91,8 @@
     // An old setting that is no longer offered stays visible while it is in use.
     if (view.font === 'mono') out.push({ value: 'mono', label: 'Monospace (old setting)', group: 'Included with the app' })
     for (const f of INCLUDED_FONTS) out.push({ ...f, group: 'Included with the app' })
-    const installed = new Set(systemFonts.filter((f) => !INCLUDED_FONTS.some((i) => i.label === f)))
-    if (view.font === 'custom' && view.fontCustom) installed.add(view.fontCustom)
+    const installed = systemFonts.filter((f) => !INCLUDED_FONTS.some((i) => i.label === f))
+    if (view.font === 'custom' && view.fontCustom && !installed.includes(view.fontCustom)) installed.push(view.fontCustom)
     for (const f of [...installed].sort((a, b) => a.localeCompare(b))) {
       out.push({ value: `family:${f}`, label: f, family: `'${f}'`, group: 'Installed on this computer' })
     }
@@ -103,6 +105,7 @@
   }
 
   const TABS = [
+    ['general', 'General'],
     ['appearance', 'Appearance'],
     ['editor', 'Editor'],
     ['writing', 'Writing'],
@@ -115,9 +118,9 @@
     (() => {
       try {
         const saved = localStorage.getItem(REMEMBER_TAB)
-        return TABS.find(([id]) => id === saved)?.[0] ?? 'appearance'
+        return TABS.find(([id]) => id === saved)?.[0] ?? 'general'
       } catch {
-        return 'appearance'
+        return 'general'
       }
     })()
   )
@@ -209,6 +212,45 @@
       {/each}
     </div>
     <div class="panel">
+
+    {#if tab === 'general'}
+    <div id="pref-panel-general" role="tabpanel" aria-labelledby="pref-tab-general">
+      <div class="row">
+        <span id="pref-onLaunch"
+          >When the app starts<small>{view.onLaunch === 'ask'
+            ? 'It asks which folder to open each time. Recent libraries are in File ▸ Open Recent'
+            : 'It opens the library you had open last'}</small></span
+        >
+        <div class="segments" role="radiogroup" aria-labelledby="pref-onLaunch">
+          {#each CHOICES.onLaunch as value (value)}
+            <button
+              role="radio"
+              aria-checked={view.onLaunch === value}
+              onclick={() => onchange({ onLaunch: value })}>{names.onLaunch[value]}</button
+            >
+          {/each}
+        </div>
+      </div>
+      <label class="row">
+        <span>Confirm before moving to the trash<small>Ask first when deleting sheets or groups. Undo and the computer’s trash still work either way</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.confirmTrash}
+          onchange={(e) => onchange({ confirmTrash: e.currentTarget.checked })}
+        />
+      </label>
+      <label class="row">
+        <span>Word count<small>Show the number of words in the corner of the editor</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.showWordCount}
+          onchange={(e) => onchange({ showWordCount: e.currentTarget.checked })}
+        />
+      </label>
+    </div>
+    {/if}
 
     {#if tab === 'appearance'}
     <div id="pref-panel-appearance" role="tabpanel" aria-labelledby="pref-tab-appearance">
@@ -366,6 +408,17 @@
         />
       </label>
       {@render choice('Alignment', 'textAlign')}
+      {#if view.textAlign === 'justify'}
+        <label class="row">
+          <span>Hyphenate justified text<small>Break long words at the end of a line, so the gaps between words stay even</small></span>
+          <input
+            type="checkbox"
+            class="switch"
+            checked={view.hyphenate}
+            onchange={(e) => onchange({ hyphenate: e.currentTarget.checked })}
+          />
+        </label>
+      {/if}
       {@render choice('Cursor width', 'caretWidth')}
       {@render choice('Highlight current line', 'currentLine')}
     </div>
@@ -422,6 +475,15 @@
         />
       </label>
       <label class="row">
+        <span>Close brackets and quotes<small>Typing ( [ {'{'} " or ` also types the closing one</small></span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={view.autoCloseBrackets}
+          onchange={(e) => onchange({ autoCloseBrackets: e.currentTarget.checked })}
+        />
+      </label>
+      <label class="row">
         <span>Smart punctuation<small>Curly quotes, – and — dashes, and … as you type</small></span>
         <input
           type="checkbox"
@@ -462,6 +524,26 @@
           {/each}
         </div>
       </div>
+      {#if view.saveMode === 'auto'}
+        <div class="row">
+          <span id="pref-autosaveDelay"
+            >Save after you stop typing for<small>{view.autosaveDelay === 'quick'
+              ? 'About a third of a second'
+              : view.autosaveDelay === 'relaxed'
+                ? 'About three seconds. Unsaved text is still kept safe meanwhile'
+                : 'Under a second'}</small></span
+          >
+          <div class="segments" role="radiogroup" aria-labelledby="pref-autosaveDelay">
+            {#each CHOICES.autosaveDelay as value (value)}
+              <button
+                role="radio"
+                aria-checked={view.autosaveDelay === value}
+                onclick={() => onchange({ autosaveDelay: value })}>{names.autosaveDelay[value]}</button
+              >
+            {/each}
+          </div>
+        </div>
+      {/if}
       <label class="row">
         <span>Show save status<small>The Saved / Saving note in the toolbar. A failed save is always shown</small></span>
         <input

@@ -23,7 +23,9 @@ export const CHOICES = {
   sheetSort: ['manual', 'title', 'modified', 'created', 'words'],
   saveMode: ['auto', 'switch', 'manual'],
   openSheetIn: ['same', 'tab', 'window'],
-  uiFont: ['geist', 'source-serif-4']
+  uiFont: ['geist', 'source-serif-4'],
+  onLaunch: ['last', 'ask'],
+  autosaveDelay: ['quick', 'normal', 'relaxed']
 } as const
 
 export type ColumnWidth = (typeof CHOICES.columnWidth)[number]
@@ -38,6 +40,12 @@ export type TextAlign = (typeof CHOICES.textAlign)[number]
 export type OpenSheetIn = (typeof CHOICES.openSheetIn)[number]
 /** The typeface of the app's own interface (the editor has its own font setting). */
 export type UiFont = (typeof CHOICES.uiFont)[number]
+/** What starting the app does: open the library that was open last, or ask for a folder. */
+export type OnLaunch = (typeof CHOICES.onLaunch)[number]
+/** How long to wait after typing stops before saving, when saving while typing. */
+export type AutosaveDelay = (typeof CHOICES.autosaveDelay)[number]
+/** Milliseconds for each autosave delay. */
+export const AUTOSAVE_DELAY_MS: Record<AutosaveDelay, number> = { quick: 300, normal: 800, relaxed: 3000 }
 export type SheetSort = (typeof CHOICES.sheetSort)[number]
 /** When text is written to disk: while typing; on Save, switching sheets and closing; or only when asked (manual, with tabs). */
 export type SaveMode = (typeof CHOICES.saveMode)[number]
@@ -118,6 +126,18 @@ export interface ViewSettings {
   groupCounts: boolean
   /** Show the Saved / Saving indicator in the toolbar (a failed save is always shown). */
   saveIndicator: boolean
+  /** Open the last library at launch, or ask for a folder every time. */
+  onLaunch: OnLaunch
+  /** Quiet time after typing before an automatic save. */
+  autosaveDelay: AutosaveDelay
+  /** Show the word count in the corner of the editor. */
+  showWordCount: boolean
+  /** Break long words at line ends in justified text, so the gaps between words stay even. */
+  hyphenate: boolean
+  /** Type an opening bracket or quote and get the closing one too. */
+  autoCloseBrackets: boolean
+  /** Ask before moving sheets or groups to the trash. */
+  confirmTrash: boolean
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -154,6 +174,12 @@ export const DEFAULT_VIEW: ViewSettings = {
   uiFontSize: UI_FONT_SIZE,
   groupCounts: true,
   saveIndicator: true,
+  onLaunch: 'last',
+  autosaveDelay: 'normal',
+  showWordCount: true,
+  hyphenate: false,
+  autoCloseBrackets: true,
+  confirmTrash: false,
 }
 
 /** Where the window's panes are, which Preferences does not own: a reset leaves these alone. */
@@ -265,6 +291,9 @@ export function parseViewSettings(data: unknown): Partial<ViewSettings> {
   }
   if (typeof record.groupCounts === 'boolean') out.groupCounts = record.groupCounts
   if (typeof record.saveIndicator === 'boolean') out.saveIndicator = record.saveIndicator
+  for (const key of ['showWordCount', 'hyphenate', 'autoCloseBrackets', 'confirmTrash'] as const) {
+    if (typeof record[key] === 'boolean') out[key] = record[key]
+  }
   if (typeof record.accent === 'string' && (record.accent === '' || isHexColour(record.accent))) {
     out.accent = record.accent.toLowerCase()
   }

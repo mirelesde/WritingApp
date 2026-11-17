@@ -296,7 +296,10 @@ export function registerLibraryIpc(): void {
   settings = createSettingsStore(join(app.getPath('userData'), 'settings.json'))
 
   ipcMain.handle('library:get', async () => {
-    const { libraryPath } = await settings.load()
+    // A library already open stays open for new windows; at launch, "ask" starts from the chooser.
+    if (currentRoot) return open(currentRoot)
+    const { libraryPath, view } = await settings.load()
+    if (view?.onLaunch === 'ask') return null
     return libraryPath ? open(libraryPath) : null
   })
 

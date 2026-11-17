@@ -1,4 +1,4 @@
-import { Annotation, EditorState, type Extension } from '@codemirror/state'
+import { Annotation, Compartment, EditorState, type Extension } from '@codemirror/state'
 import {
   EditorView,
   drawSelection,
@@ -35,6 +35,9 @@ import { paragraphStarts } from './paragraphs'
 import { lineBreaks } from './breaks'
 import { currentHeading, nextHeading, previousHeading } from './headingJump'
 
+/** Holds the auto-closing of brackets and quotes, so a preference can switch it. */
+export const pairing = new Compartment()
+
 const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 
 /** Layout and typography: a readable column, generous leading. */
@@ -50,6 +53,7 @@ const theme = EditorView.theme({
     // A 46rem column with 64px of air each side leaves about 38rem of text.
     maxWidth: 'var(--editor-width, 46rem)',
     textAlign: 'var(--text-align, left)',
+    hyphens: 'var(--hyphens, manual)',
     margin: '0 auto',
     padding: '0 64px',
     caretColor: 'var(--text)'
@@ -273,7 +277,7 @@ export function editorExtensions({
     // removes list markers on Backspace.
     markdown({ base: markdownLanguage, extensions: [highlightSyntax], codeLanguages: languages }),
     ...emphasisPairs,
-    ...bracketPairs,
+    pairing.of(bracketPairs),
     linkBehaviour,
     // Before richPaste: a copied web image carries both a picture and HTML.
     imagePaste,
